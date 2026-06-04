@@ -52,7 +52,44 @@ The database will be PostgreSQL, storing the locally closed media dataset, user 
 
 ## Project Status
 
-Initial monorepo architecture setup. Vue, Quarkus, database migrations, and matching logic have not been scaffolded yet.
+Initial monorepo architecture setup. The backend has an initial Quarkus scaffold. Vue, database migrations, and matching logic have not been scaffolded yet.
+
+## Backend Setup
+
+The backend is a Quarkus Maven project located in `backend/`.
+
+Requirements:
+
+* Java 21 or newer
+* Maven Wrapper from the backend project
+
+Start the backend locally:
+
+```powershell
+cd backend
+.\mvnw.cmd quarkus:dev
+```
+
+The minimal startup verification endpoint is available at:
+
+```text
+GET http://localhost:8080/api/health
+```
+
+Expected response:
+
+```json
+{
+  "status": "UP"
+}
+```
+
+Run backend tests:
+
+```powershell
+cd backend
+.\mvnw.cmd test
+```
 
 ## License
 
