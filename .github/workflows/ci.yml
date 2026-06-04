@@ -1,0 +1,17 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  placeholder:
+    name: Placeholder CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Print planned build message
+        run: echo "Frontend and backend builds will be added after project scaffolding."

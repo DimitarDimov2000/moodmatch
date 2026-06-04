@@ -28,15 +28,31 @@ Unlike traditional recommendation systems, MoodMatch does not use artificial int
 
 ## Architecture
 
+MoodMatch uses a monorepo structure:
+
+| Path | Purpose |
+| --- | --- |
+| `frontend/` | Planned Vue 3 and TypeScript frontend. |
+| `backend/` | Planned Quarkus and Java backend. |
+| `docs/` | Shared architecture, API, data model, testing, and ADR documentation. |
+
 The frontend will be a Vue 3 and TypeScript application responsible for collection management, candidate browsing, filtering, and explanation-focused result views.
 
 The backend will be a Quarkus and Java REST API that owns media data, interest profile generation, deterministic scoring rules, and recommendation explanations.
 
 The database will be PostgreSQL, storing the locally closed media dataset, user collection state, predefined tags, ratings, and matching metadata.
 
+## Documentation
+
+* [Architecture](docs/architecture.md)
+* [API Contract](docs/api-contract.md)
+* [Data Model](docs/data-model.md)
+* [Testing Strategy](docs/testing-strategy.md)
+* [ADR 0001: Use a Monorepo](docs/adr/0001-monorepo.md)
+
 ## Project Status
 
-Early project setup / repository initialization.
+Initial monorepo architecture setup. Vue, Quarkus, database migrations, and matching logic have not been scaffolded yet.
 
 ## License
 
