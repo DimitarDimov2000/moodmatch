@@ -1,28 +1,41 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from "vue";
 
-import { ApiRequestError } from '@/api/client';
-import { getMatches } from '@/api/matches';
-import AppMessage from '@/components/common/AppMessage.vue';
-import CandidateSummaryCard from '@/components/matching/CandidateSummaryCard.vue';
-import MatchExplanation from '@/components/matching/MatchExplanation.vue';
-import MatchScoreDisplay from '@/components/matching/MatchScoreDisplay.vue';
-import InterestProfileWeights from '@/components/profile/InterestProfileWeights.vue';
-import type { MatchResultResponse, MatchingResponse } from '@/types/api';
+import { ApiRequestError } from "@/api/client";
+import { getMatches } from "@/api/matches";
+import AppMessage from "@/components/common/AppMessage.vue";
+import CandidateSummaryCard from "@/components/matching/CandidateSummaryCard.vue";
+import MatchExplanation from "@/components/matching/MatchExplanation.vue";
+import MatchScoreDisplay from "@/components/matching/MatchScoreDisplay.vue";
+import InterestProfileWeights from "@/components/profile/InterestProfileWeights.vue";
+import type { MatchResultResponse, MatchingResponse } from "@/types/api";
 
 const matching = ref<MatchingResponse | null>(null);
 const loading = ref(true);
-const errorMessage = ref('');
+const errorMessage = ref("");
 
 const meaningfulScoreCount = computed(
-  () => matching.value?.matches.filter((item) => item.relativeScore !== null).length ?? 0,
+  () =>
+    matching.value?.matches.filter((item) => item.relativeScore !== null)
+      .length ?? 0,
 );
 
 const incompleteCount = computed(
-  () => matching.value?.matches.filter((item) => !item.candidate.isCompleteForMatching).length ?? 0,
+  () =>
+    matching.value?.matches.filter(
+      (item) => !item.candidate.isCompleteForMatching,
+    ).length ?? 0,
 );
 
-const bestMatch = computed<MatchResultResponse | null>(() => matching.value?.matches[0] ?? null);
+const noScoreCount = computed(
+  () =>
+    matching.value?.matches.filter((item) => item.relativeScore === null)
+      .length ?? 0,
+);
+
+const bestMatch = computed<MatchResultResponse | null>(
+  () => matching.value?.matches[0] ?? null,
+);
 
 onMounted(async () => {
   await loadMatches();
@@ -30,7 +43,7 @@ onMounted(async () => {
 
 async function loadMatches() {
   loading.value = true;
-  errorMessage.value = '';
+  errorMessage.value = "";
 
   try {
     matching.value = await getMatches();
@@ -46,7 +59,7 @@ function toUserMessage(error: unknown): string {
     return error.message;
   }
 
-  return 'Die Matches konnten nicht geladen werden.';
+  return "Die Matches konnten nicht geladen werden.";
 }
 </script>
 
@@ -61,8 +74,10 @@ function toUserMessage(error: unknown): string {
           Erklaerbare Match-Ergebnisse
         </h1>
         <p class="page-copy">
-          Diese Ansicht zeigt Scores nur dann als Prozent, wenn das Backend sie als sinnvoll bewertet.
-          Unzureichende Daten oder fehlende Vergleichbarkeit erscheinen deshalb klar als eigener Zustand.
+          Diese Ansicht zeigt Scores nur dann als Prozent, wenn das Backend sie
+          als sinnvoll bewertet. Unzureichende Daten oder fehlende
+          Vergleichbarkeit bleiben deshalb explizit sichtbar und werden nicht
+          als 0 % dargestellt.
         </p>
       </div>
     </header>
@@ -90,11 +105,11 @@ function toUserMessage(error: unknown): string {
 
       <article class="page-card matches-view__summary-card">
         <p class="eyebrow">
-          Unvollstaendige Kandidaten
+          Ohne Prozentangabe
         </p>
-        <h2>{{ incompleteCount }}</h2>
+        <h2>{{ noScoreCount }}</h2>
         <p class="body-muted">
-          Noch ohne vollstaendige Matching-Daten
+          Davon {{ incompleteCount }} mit unvollstaendiger Datenbasis
         </p>
       </article>
     </section>
@@ -131,6 +146,23 @@ function toUserMessage(error: unknown): string {
         tone="warning"
       />
 
+      <article
+        v-else-if="noScoreCount > 0"
+        class="page-card matches-view__note-card"
+      >
+        <p class="eyebrow">
+          Einordnung
+        </p>
+        <h2 class="section-title">
+          Keine Prozentangabe ist ein eigener Zustand
+        </h2>
+        <p class="body-muted">
+          Ein Kandidat ohne Prozentzahl ist nicht automatisch schwach. Entweder
+          fehlen Tags, es gibt keine Profilueberschneidung, oder der Vergleich
+          ist mit den vorhandenen Kandidaten noch nicht belastbar genug.
+        </p>
+      </article>
+
       <section class="matches-view__hero">
         <InterestProfileWeights
           class="matches-view__weights"
@@ -157,7 +189,6 @@ function toUserMessage(error: unknown): string {
           <MatchScoreDisplay
             :score="bestMatch.relativeScore"
             :suppressed="matching.scoresSuppressed"
-            :insufficient-label="matching.explanationMessage"
           />
         </article>
       </section>
@@ -177,18 +208,28 @@ function toUserMessage(error: unknown): string {
           :key="result.candidate.media.id"
           class="page-card matches-view__match-card"
         >
-          <div class="matches-view__match-top">
-            <CandidateSummaryCard
-              class="matches-view__candidate-card"
-              :candidate="result.candidate"
-              title="Match-Kandidat"
-              :show-expected-note="false"
-            />
+          <div class="matches-view__match-header">
+            <div>
+              <p class="eyebrow">
+                Match-Karte
+              </p>
+              <h2 class="section-title">
+                {{ result.candidate.media.title }}
+              </h2>
+            </div>
 
             <MatchScoreDisplay
               :score="result.relativeScore"
               :suppressed="matching.scoresSuppressed"
-              :insufficient-label="result.explanationMessage"
+            />
+          </div>
+
+          <div class="matches-view__match-top">
+            <CandidateSummaryCard
+              class="matches-view__candidate-card"
+              :candidate="result.candidate"
+              title="Kandidat im Vergleich"
+              :show-expected-note="false"
             />
           </div>
 
@@ -207,6 +248,7 @@ function toUserMessage(error: unknown): string {
 }
 
 .matches-view__summary-card,
+.matches-view__note-card,
 .matches-view__highlight,
 .matches-view__match-card {
   padding: 1.25rem;
@@ -221,6 +263,20 @@ function toUserMessage(error: unknown): string {
   display: grid;
   gap: 1.5rem;
   grid-template-columns: minmax(320px, 1fr) minmax(300px, 0.9fr);
+}
+
+.matches-view__note-card {
+  display: grid;
+  gap: 0.45rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-info-soft) 55%, var(--color-surface)),
+    var(--color-surface)
+  );
+}
+
+.matches-view__note-card p {
+  margin: 0;
 }
 
 .matches-view__highlight {
@@ -243,10 +299,22 @@ function toUserMessage(error: unknown): string {
   gap: 1.25rem;
 }
 
+.matches-view__match-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.matches-view__match-header h2 {
+  margin-top: 0.35rem;
+}
+
 .matches-view__match-top {
   display: grid;
-  gap: 1rem;
-  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
 
@@ -263,8 +331,7 @@ function toUserMessage(error: unknown): string {
 
 @media (max-width: 980px) {
   .matches-view__summary,
-  .matches-view__hero,
-  .matches-view__match-top {
+  .matches-view__hero {
     grid-template-columns: 1fr;
   }
 }

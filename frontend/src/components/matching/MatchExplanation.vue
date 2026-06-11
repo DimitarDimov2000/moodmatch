@@ -1,17 +1,32 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from "vue";
 
-import TagChip from '@/components/tags/TagChip.vue';
-import type { MatchResultResponse } from '@/types/api';
-import { formatDecimal } from './matching-format';
+import TagChip from "@/components/tags/TagChip.vue";
+import type { MatchResultResponse } from "@/types/api";
+import { formatDecimal } from "./matching-format";
 
 const props = defineProps<{
   result: MatchResultResponse;
 }>();
 
 const rawScoreLabel = computed(() => formatDecimal(props.result.rawScore));
-const adjustedScoreLabel = computed(() => formatDecimal(props.result.adjustedScore));
-const precisionFactorLabel = computed(() => formatDecimal(props.result.precisionFactor));
+const adjustedScoreLabel = computed(() =>
+  formatDecimal(props.result.adjustedScore),
+);
+const precisionFactorLabel = computed(() =>
+  formatDecimal(props.result.precisionFactor),
+);
+const stateToneClass = computed(() => {
+  if (!props.result.candidate.isCompleteForMatching) {
+    return "match-explanation__state--warning";
+  }
+
+  if (props.result.relativeScore === null) {
+    return "match-explanation__state--muted";
+  }
+
+  return "match-explanation__state--success";
+});
 </script>
 
 <template>
@@ -23,8 +38,29 @@ const precisionFactorLabel = computed(() => formatDecimal(props.result.precision
       <p class="body-muted">
         {{ result.explanationMessage }}
       </p>
+    </div>
+
+    <div
+      class="match-explanation__state"
+      :class="stateToneClass"
+    >
+      {{
+        result.candidate.isCompleteForMatching
+          ? "Score-Zustand erklaert"
+          : "Explizit unvollstaendig fuer Matching"
+      }}
+    </div>
+
+    <div class="match-explanation__notes">
       <p class="match-explanation__note">
         {{ result.candidateTagsNote }}
+      </p>
+      <p
+        v-if="result.relativeScore === null"
+        class="match-explanation__note"
+      >
+        Keine Prozentangabe bedeutet hier nicht 0 %, sondern bewusst fehlende
+        Vergleichbarkeit.
       </p>
     </div>
 
@@ -67,15 +103,15 @@ const precisionFactorLabel = computed(() => formatDecimal(props.result.precision
       </div>
       <div>
         <dt>Raw Score</dt>
-        <dd>{{ rawScoreLabel ?? 'Nicht verfuegbar' }}</dd>
+        <dd>{{ rawScoreLabel ?? "Nicht verfuegbar" }}</dd>
       </div>
       <div>
         <dt>Precision</dt>
-        <dd>{{ precisionFactorLabel ?? 'Nicht verfuegbar' }}</dd>
+        <dd>{{ precisionFactorLabel ?? "Nicht verfuegbar" }}</dd>
       </div>
       <div>
         <dt>Adjusted Score</dt>
-        <dd>{{ adjustedScoreLabel ?? 'Nicht verfuegbar' }}</dd>
+        <dd>{{ adjustedScoreLabel ?? "Nicht verfuegbar" }}</dd>
       </div>
     </dl>
   </section>
@@ -88,6 +124,7 @@ const precisionFactorLabel = computed(() => formatDecimal(props.result.precision
 }
 
 .match-explanation__copy,
+.match-explanation__notes,
 .match-explanation__section {
   display: grid;
   gap: 0.5rem;
@@ -98,9 +135,47 @@ const precisionFactorLabel = computed(() => formatDecimal(props.result.precision
   margin: 0;
 }
 
+.match-explanation__state {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 2rem;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.match-explanation__state--success {
+  background: var(--color-success-soft);
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 30%,
+    var(--color-border)
+  );
+  color: var(--color-success);
+}
+
+.match-explanation__state--warning {
+  background: var(--color-warning-soft);
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 30%,
+    var(--color-border)
+  );
+  color: var(--color-warning);
+}
+
+.match-explanation__state--muted {
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+}
+
 .match-explanation__note {
   color: var(--color-text-muted);
   font-size: 0.92rem;
+  margin: 0;
 }
 
 .match-explanation__label {
