@@ -84,7 +84,7 @@ public class MediaResource {
 
     @PUT
     @Path("/{id}/tags")
-    public MediaResponse replaceMediaTags(@PathParam("id") UUID id, @Valid ReplaceMediaTagsRequest request) {
+    public MediaResponse replaceMediaTags(@PathParam("id") UUID id, @NotNull @Valid ReplaceMediaTagsRequest request) {
         return mediaService.replaceMediaTags(id, request);
     }
 }

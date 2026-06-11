@@ -126,16 +126,19 @@ class MediaServiceTest {
 
         MediaResponse updated = mediaService.replaceMediaTags(
                 created.id(),
-                new ReplaceMediaTagsRequest(
-                        List.of(existingGenre.id()),
-                        List.of(
-                                new CreateTagRequest(" science-fiction ", TagCategory.GENRE),
-                                new CreateTagRequest("Space Opera", TagCategory.GENRE),
-                                new CreateTagRequest("Space Opera", TagCategory.GENRE))));
+                new ReplaceMediaTagsRequest(List.of(existingGenre.id())));
 
-        assertEquals(2, updated.tags().size());
+        assertEquals(1, updated.tags().size());
         assertEquals("Science-Fiction", updated.tags().getFirst().name());
-        assertEquals("Space Opera", updated.tags().get(1).name());
+
+        TagResponse spaceOpera = tagService.createTagIfNeeded(new CreateTagRequest("Space Opera", TagCategory.GENRE));
+        MediaResponse replaced = mediaService.replaceMediaTags(
+                created.id(),
+                new ReplaceMediaTagsRequest(List.of(existingGenre.id(), existingGenre.id(), spaceOpera.id())));
+
+        assertEquals(2, replaced.tags().size());
+        assertEquals("Science-Fiction", replaced.tags().getFirst().name());
+        assertEquals("Space Opera", replaced.tags().get(1).name());
         assertEquals(2, tagRepository.count());
     }
 

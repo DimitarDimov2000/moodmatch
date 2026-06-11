@@ -1,11 +1,8 @@
 package com.moodmatch.service;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -49,30 +46,8 @@ public class TagService {
                 .orElseThrow(() -> new ResourceNotFoundException("Tag not found: " + tagId));
     }
 
-    Set<Tag> findOrCreateTags(ReplaceMediaTagsRequest request) {
-        LinkedHashSet<Tag> resolvedTags = new LinkedHashSet<>();
-        resolvedTags.addAll(findExistingTags(request == null ? null : request.tagIds()));
-
-        if (request == null || request.createTags() == null) {
-            return resolvedTags;
-        }
-
-        Map<TagKey, CreateTagRequest> uniqueCreateRequests = new LinkedHashMap<>();
-        for (CreateTagRequest createTagRequest : request.createTags()) {
-            if (createTagRequest == null) {
-                continue;
-            }
-
-            String normalizedName = normalizeTagName(createTagRequest.name());
-            TagKey key = new TagKey(normalizedName, createTagRequest.category());
-            uniqueCreateRequests.putIfAbsent(key, new CreateTagRequest(normalizedName, createTagRequest.category()));
-        }
-
-        for (CreateTagRequest createTagRequest : uniqueCreateRequests.values()) {
-            resolvedTags.add(findOrCreateTag(createTagRequest));
-        }
-
-        return resolvedTags;
+    Set<Tag> requireTags(ReplaceMediaTagsRequest request) {
+        return new LinkedHashSet<>(findExistingTags(request == null ? null : request.tagIds()));
     }
 
     private List<Tag> findExistingTags(List<UUID> tagIds) {
@@ -119,12 +94,5 @@ public class TagService {
             throw new IllegalArgumentException("Tag name must not be blank.");
         }
         return normalized;
-    }
-
-    private record TagKey(String normalizedName, TagCategory category) {
-        private TagKey {
-            normalizedName = normalizedName.toLowerCase(Locale.ROOT);
-            category = Objects.requireNonNull(category, "Tag category must not be null.");
-        }
     }
 }

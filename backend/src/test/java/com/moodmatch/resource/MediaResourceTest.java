@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
 import java.util.LinkedHashMap;
@@ -12,8 +13,14 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import com.moodmatch.dto.tag.CreateTagRequest;
+import com.moodmatch.dto.tag.TagResponse;
+import com.moodmatch.entity.TagCategory;
+import com.moodmatch.service.TagService;
 
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
@@ -27,6 +34,9 @@ class MediaResourceTest {
 
     @Inject
     EntityManager entityManager;
+
+    @Inject
+    TagService tagService;
 
     @BeforeEach
     void cleanDatabaseBefore() {
@@ -52,6 +62,9 @@ class MediaResourceTest {
     void shouldSupportFullMediaLifecycleOverHttp() {
         String suffix = UUID.randomUUID().toString();
         String title = "Interstellar-" + suffix;
+        TagResponse mystery = tagService.createTagIfNeeded(new CreateTagRequest("Mystery-" + suffix, TagCategory.GENRE));
+        TagResponse spannend = tagService.createTagIfNeeded(new CreateTagRequest("Spannend-" + suffix, TagCategory.TONE));
+        TagResponse drama = tagService.createTagIfNeeded(new CreateTagRequest("Drama-" + suffix, TagCategory.GENRE));
 
         Response createdResponse = given()
                 .contentType(ContentType.JSON)
@@ -107,18 +120,24 @@ class MediaResourceTest {
                 .contentType(ContentType.JSON)
                 .body(Map.of(
                         "tagIds",
-                        List.of(),
-                        "createTags",
-                        List.of(
-                                Map.of("name", "Mystery-" + suffix, "category", "GENRE"),
-                                Map.of("name", "Spannend-" + suffix, "category", "TONE"))))
+                        List.of(mystery.id(), spannend.id())))
                 .when()
                 .put("/api/media/{id}/tags", mediaId)
                 .then()
                 .statusCode(200)
                 .body("tags.size()", is(2))
-                .body("tags.name", hasItem("Mystery-" + suffix))
-                .body("tags.name", hasItem("Spannend-" + suffix));
+                .body("tags.name", hasItem(mystery.name()))
+                .body("tags.name", hasItem(spannend.name()));
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("tagIds", List.of(drama.id())))
+                .when()
+                .put("/api/media/{id}/tags", mediaId)
+                .then()
+                .statusCode(200)
+                .body("tags.size()", is(1))
+                .body("tags[0].name", is(drama.name()));
 
         given()
                 .contentType(ContentType.JSON)
@@ -169,6 +188,64 @@ class MediaResourceTest {
                 .statusCode(400)
                 .body("code", is("BUSINESS_RULE_VIOLATION"))
                 .body("message", is("Favourite=true is only allowed when status is CONSUMED and rating is at least 4."));
+
+        String mediaId = given()
+                .contentType(ContentType.JSON)
+                .body(buildMediaPayload("Low Rated Favourite Patch-" + UUID.randomUUID(), 3, false))
+                .when()
+                .post("/api/media")
+                .then()
+                .statusCode(201)
+                .extract()
+                .jsonPath()
+                .getString("id");
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("isFavourite", true))
+                .when()
+                .patch("/api/media/{id}/favorite", mediaId)
+                .then()
+                .statusCode(400)
+                .body("code", is("BUSINESS_RULE_VIOLATION"))
+                .body("message", is("Favourite=true is only allowed when status is CONSUMED and rating is at least 4."));
+    }
+
+    @Test
+    void shouldReturnStructuredErrorsForMissingMediaAndUnknownTagsWithoutStackTrace() {
+        String missingId = UUID.randomUUID().toString();
+
+        given()
+                .when()
+                .delete("/api/media/{id}", missingId)
+                .then()
+                .statusCode(404)
+                .body("code", is("RESOURCE_NOT_FOUND"))
+                .body("message", endsWith(missingId));
+
+        String mediaId = given()
+                .contentType(ContentType.JSON)
+                .body(buildMediaPayload("Tag Check-" + UUID.randomUUID(), 5, false))
+                .when()
+                .post("/api/media")
+                .then()
+                .statusCode(201)
+                .extract()
+                .jsonPath()
+                .getString("id");
+
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("tagIds", List.of(UUID.randomUUID())))
+                .when()
+                .put("/api/media/{id}/tags", mediaId);
+
+        response.then()
+                .statusCode(404)
+                .body("code", is("RESOURCE_NOT_FOUND"))
+                .body("message", is(not(org.hamcrest.Matchers.containsString("Exception"))));
+
+        Assertions.assertFalse(response.asString().contains("stackTrace"));
     }
 
     private Map<String, Object> buildMediaPayload(String title, int rating, boolean isFavourite) {

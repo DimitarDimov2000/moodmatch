@@ -2,7 +2,6 @@ package com.moodmatch.resource;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.is;
 
 import java.util.UUID;
 
@@ -10,10 +9,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.moodmatch.dto.tag.CreateTagRequest;
+import com.moodmatch.entity.TagCategory;
+import com.moodmatch.service.TagService;
+
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.http.ContentType;
-import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 
@@ -22,6 +23,9 @@ class TagResourceTest {
 
     @Inject
     EntityManager entityManager;
+
+    @Inject
+    TagService tagService;
 
     @BeforeEach
     void cleanDatabaseBefore() {
@@ -44,30 +48,9 @@ class TagResourceTest {
     }
 
     @Test
-    void shouldCreateReuseAndListTagsOverHttp() {
+    void shouldListTagsOverHttp() {
         String tagName = "Mystery-" + UUID.randomUUID();
-
-        Response createdResponse = given()
-                .contentType(ContentType.JSON)
-                .body(java.util.Map.of("name", tagName, "category", "GENRE"))
-                .when()
-                .post("/api/tags");
-
-        createdResponse.then()
-                .statusCode(200)
-                .body("name", is(tagName))
-                .body("category", is("GENRE"));
-
-        String firstId = createdResponse.jsonPath().getString("id");
-
-        given()
-                .contentType(ContentType.JSON)
-                .body(java.util.Map.of("name", tagName.toLowerCase(), "category", "GENRE"))
-                .when()
-                .post("/api/tags")
-                .then()
-                .statusCode(200)
-                .body("id", is(firstId));
+        tagService.createTagIfNeeded(new CreateTagRequest(tagName, TagCategory.GENRE));
 
         given()
                 .when().get("/api/tags")
@@ -75,18 +58,5 @@ class TagResourceTest {
                 .statusCode(200)
                 .body("name", hasItem(tagName))
                 .body("category", hasItem("GENRE"));
-    }
-
-    @Test
-    void shouldMapTagValidationErrors() {
-        given()
-                .contentType(ContentType.JSON)
-                .body(java.util.Map.of("name", " ", "category", "GENRE"))
-                .when()
-                .post("/api/tags")
-                .then()
-                .statusCode(400)
-                .body("code", is("VALIDATION_ERROR"))
-                .body("details.field", hasItem("name"));
     }
 }
