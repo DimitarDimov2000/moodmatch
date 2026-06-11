@@ -17,6 +17,16 @@ public class MediaItemRepository implements PanacheRepositoryBase<MediaItem, UUI
         return list("consumptionStatus", consumptionStatus);
     }
 
+    public List<MediaItem> listByConsumptionStatusWithTags(ConsumptionStatus consumptionStatus) {
+        return list(
+                "select distinct mediaItem from MediaItem mediaItem "
+                        + "left join fetch mediaItem.mediaTags mediaTags "
+                        + "left join fetch mediaTags.tag "
+                        + "where mediaItem.consumptionStatus = ?1 "
+                        + "order by mediaItem.createdAt asc, mediaItem.id asc",
+                consumptionStatus);
+    }
+
     public List<MediaItem> listAllWithAssociations() {
         return list(
                 "select distinct mediaItem from MediaItem mediaItem "
