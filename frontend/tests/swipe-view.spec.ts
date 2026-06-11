@@ -1,5 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiRequestError } from '@/api/client';
 import SwipeView from '@/views/SwipeView.vue';
@@ -137,8 +137,14 @@ async function mountView() {
   return wrapper;
 }
 
+async function settleDecisionAnimation() {
+  vi.advanceTimersByTime(220);
+  await flushPromises();
+}
+
 describe('SwipeView', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     pushSpy.mockReset();
     listCandidatesMock.mockReset();
     getMatchesMock.mockReset();
@@ -147,6 +153,11 @@ describe('SwipeView', () => {
     listCandidatesMock.mockResolvedValue(candidateResponse);
     getMatchesMock.mockResolvedValue(matchingResponse);
     updateMediaStatusMock.mockResolvedValue(candidateResponse.candidates[0].media);
+  });
+
+  afterEach(() => {
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
   });
 
   it('renders the first candidate with progress and match context', async () => {
@@ -165,7 +176,7 @@ describe('SwipeView', () => {
     const wrapper = await mountView();
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
-    await flushPromises();
+    await settleDecisionAnimation();
 
     expect(wrapper.text()).toContain('Karte 2 von 2');
     expect(wrapper.text()).toContain('Silo');
@@ -183,7 +194,7 @@ describe('SwipeView', () => {
     });
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 's' }));
-    await flushPromises();
+    await settleDecisionAnimation();
 
     expect(wrapper.text()).toContain('Runde abgeschlossen');
     expect(wrapper.text()).toContain('1 Kandidaten lokal geliket, 0 abgelehnt und 1 uebersprungen');
@@ -193,7 +204,7 @@ describe('SwipeView', () => {
     const wrapper = await mountView();
 
     await wrapper.get('.swipe-decision-controls__button--reject').trigger('click');
-    await flushPromises();
+    await settleDecisionAnimation();
 
     expect(updateMediaStatusMock).toHaveBeenCalledWith('candidate-1', {
       consumptionStatus: 'NOT_INTERESTED',
@@ -204,6 +215,73 @@ describe('SwipeView', () => {
     expect(wrapper.text()).toContain('Silo');
     expect(wrapper.text()).toContain('Abgelehnt');
     expect(wrapper.text()).toContain('1');
+  });
+
+  it('supports swipe-style pointer drag to the right for local like', async () => {
+    const wrapper = await mountView();
+    const card = wrapper.get('.swipe-candidate-card');
+
+    await card.trigger('pointerdown', {
+      pointerId: 1,
+      clientX: 0,
+      clientY: 0,
+    });
+    await card.trigger('pointermove', {
+      pointerId: 1,
+      clientX: 150,
+      clientY: 12,
+    });
+
+    expect(
+      wrapper.find('.swipe-candidate-card__intent--like.swipe-candidate-card__intent--active').exists(),
+    ).toBe(true);
+
+    await card.trigger('pointerup', {
+      pointerId: 1,
+      clientX: 150,
+      clientY: 12,
+    });
+    await settleDecisionAnimation();
+
+    expect(wrapper.text()).toContain('Silo');
+    expect(wrapper.text()).toContain('Geliket');
+    expect(wrapper.text()).toContain('1');
+  });
+
+  it('opens and collapses the in-card details preview on upward drag', async () => {
+    const wrapper = await mountView();
+    const card = wrapper.get('.swipe-candidate-card');
+
+    await card.trigger('pointerdown', {
+      pointerId: 2,
+      clientX: 0,
+      clientY: 0,
+    });
+    await card.trigger('pointermove', {
+      pointerId: 2,
+      clientX: 0,
+      clientY: -130,
+    });
+
+    expect(
+      wrapper.find('.swipe-candidate-card__intent--preview.swipe-candidate-card__intent--active').exists(),
+    ).toBe(true);
+
+    await card.trigger('pointerup', {
+      pointerId: 2,
+      clientX: 0,
+      clientY: -130,
+    });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Details-Vorschau');
+    expect(wrapper.text()).toContain('Vorschau offen');
+
+    await wrapper.get('.swipe-candidate-card__preview-close').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('Details-Vorschau');
+    expect(wrapper.text()).not.toContain('Vorschau offen');
   });
 
   it('keeps the queue usable when match hints fail to load', async () => {

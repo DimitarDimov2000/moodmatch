@@ -11,9 +11,15 @@ import SwipeCandidateCard from '@/components/swipe/SwipeCandidateCard.vue';
 import SwipeDecisionControls from '@/components/swipe/SwipeDecisionControls.vue';
 import SwipeProgress from '@/components/swipe/SwipeProgress.vue';
 import type { MatchResultResponse, UpdateMediaConsumptionStatusRequest } from '@/types/api';
-import type { SwipeQueueItem, SwipeQueueStats } from '@/types/swipe';
+import type { SwipeDecisionAction, SwipeQueueItem, SwipeQueueStats } from '@/types/swipe';
+
+interface SwipeCandidateCardHandle {
+  playDecisionAnimation: (action: SwipeDecisionAction) => Promise<void>;
+  resetGesturePosition: () => void;
+}
 
 const router = useRouter();
+const activeCardRef = ref<SwipeCandidateCardHandle | null>(null);
 const queue = ref<SwipeQueueItem[]>([]);
 const totalCount = ref(0);
 const loading = ref(true);
@@ -21,6 +27,7 @@ const fatalErrorMessage = ref('');
 const matchWarningMessage = ref('');
 const actionErrorMessage = ref('');
 const pendingReject = ref(false);
+const decisionPending = ref(false);
 const matchInsightsAvailable = ref(false);
 const liveMessage = ref('');
 const stats = reactive<SwipeQueueStats>({
@@ -32,6 +39,7 @@ const stats = reactive<SwipeQueueStats>({
 const currentItem = computed(() => queue.value[0] ?? null);
 const remainingCount = computed(() => queue.value.length);
 const hasQueue = computed(() => totalCount.value > 0);
+const interactionLocked = computed(() => pendingReject.value || decisionPending.value);
 const showDoneState = computed(
   () => !loading.value && !fatalErrorMessage.value && hasQueue.value && remainingCount.value === 0,
 );
@@ -51,6 +59,7 @@ async function loadQueue() {
   matchWarningMessage.value = '';
   actionErrorMessage.value = '';
   pendingReject.value = false;
+  decisionPending.value = false;
   matchInsightsAvailable.value = false;
   liveMessage.value = '';
   stats.liked = 0;
@@ -92,36 +101,46 @@ async function loadQueue() {
   }
 }
 
-function handleLike() {
-  if (!currentItem.value || pendingReject.value) {
+async function handleLike() {
+  if (!currentItem.value || interactionLocked.value) {
     return;
   }
 
   const title = currentItem.value.candidate.media.title;
   actionErrorMessage.value = '';
+  decisionPending.value = true;
+
+  await activeCardRef.value?.playDecisionAnimation('like');
+
   stats.liked += 1;
   const nextTitle = removeCurrentItem();
   liveMessage.value = nextTitle
     ? `${title} wurde lokal geliket. ${nextTitle} ist jetzt aktiv.`
     : `${title} wurde lokal geliket.`;
+  decisionPending.value = false;
 }
 
-function handleSkip() {
-  if (!currentItem.value || pendingReject.value) {
+async function handleSkip() {
+  if (!currentItem.value || interactionLocked.value) {
     return;
   }
 
   const title = currentItem.value.candidate.media.title;
   actionErrorMessage.value = '';
+  decisionPending.value = true;
+
+  await activeCardRef.value?.playDecisionAnimation('skip');
+
   stats.skipped += 1;
   const nextTitle = removeCurrentItem();
   liveMessage.value = nextTitle
     ? `${title} wurde fuer spaeter uebersprungen. ${nextTitle} ist jetzt aktiv.`
     : `${title} wurde fuer spaeter uebersprungen.`;
+  decisionPending.value = false;
 }
 
 async function handleReject() {
-  if (!currentItem.value || pendingReject.value) {
+  if (!currentItem.value || interactionLocked.value) {
     return;
   }
 
@@ -138,6 +157,7 @@ async function handleReject() {
 
   try {
     await updateMediaStatus(currentItem.value.candidate.media.id, request);
+    await activeCardRef.value?.playDecisionAnimation('reject');
     stats.rejected += 1;
     const nextTitle = removeCurrentItem();
     liveMessage.value = nextTitle
@@ -146,13 +166,14 @@ async function handleReject() {
   } catch (error) {
     actionErrorMessage.value = toRejectErrorMessage(error);
     liveMessage.value = `Ablehnen von ${title} ist fehlgeschlagen.`;
+    activeCardRef.value?.resetGesturePosition();
   } finally {
     pendingReject.value = false;
   }
 }
 
 async function openDetails() {
-  if (!currentItem.value || pendingReject.value) {
+  if (!currentItem.value || interactionLocked.value) {
     return;
   }
 
@@ -173,7 +194,7 @@ function removeCurrentItem(): string | null {
 function handleWindowKeydown(event: KeyboardEvent) {
   if (
     event.defaultPrevented ||
-    pendingReject.value ||
+    interactionLocked.value ||
     !currentItem.value ||
     event.altKey ||
     event.ctrlKey ||
@@ -188,7 +209,7 @@ function handleWindowKeydown(event: KeyboardEvent) {
 
   if (event.key === 'ArrowRight') {
     event.preventDefault();
-    handleLike();
+    void handleLike();
     return;
   }
 
@@ -200,7 +221,7 @@ function handleWindowKeydown(event: KeyboardEvent) {
 
   if (event.key === 'ArrowDown' || event.key.toLowerCase() === 's') {
     event.preventDefault();
-    handleSkip();
+    void handleSkip();
     return;
   }
 
@@ -208,6 +229,20 @@ function handleWindowKeydown(event: KeyboardEvent) {
     event.preventDefault();
     void openDetails();
   }
+}
+
+function handleGestureDecision(action: SwipeDecisionAction) {
+  if (action === 'like') {
+    void handleLike();
+    return;
+  }
+
+  if (action === 'reject') {
+    void handleReject();
+    return;
+  }
+
+  void handleSkip();
 }
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
@@ -364,12 +399,15 @@ function toRejectErrorMessage(error: unknown): string {
         <template v-else-if="currentItem">
           <section class="swipe-view__deck">
             <SwipeCandidateCard
+              ref="activeCardRef"
               :item="currentItem"
               :match-insights-available="matchInsightsAvailable"
+              :interaction-locked="interactionLocked"
+              @decision-request="handleGestureDecision"
             />
 
             <SwipeDecisionControls
-              :pending="pendingReject"
+              :pending="interactionLocked"
               :reject-persists="true"
               @like="handleLike"
               @reject="handleReject"
