@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { API_BASE_URL } from '@/api/config';
-import { apiRequest, deleteRequest, getJson, patchJson } from '@/api/client';
+import { apiRequest, buildUrl, deleteRequest, getJson, patchJson } from '@/api/client';
 
 describe('api client', () => {
   afterEach(() => {
@@ -30,7 +30,7 @@ describe('api client', () => {
 
     expect(result).toEqual({ ok: true });
     expect(fetchSpy).toHaveBeenCalledWith(
-      `${API_BASE_URL}/media?page=2&includeArchived=false`,
+      new URL(`${API_BASE_URL}/media?page=2&includeArchived=false`, window.location.origin).toString(),
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ title: 'Interstellar' }),
@@ -104,5 +104,11 @@ describe('api client', () => {
       code: 'NETWORK_ERROR',
       message: 'Network request failed.',
     });
+  });
+
+  it('preserves an absolute api base url instead of stripping the backend origin', () => {
+    expect(buildUrl('/profile', undefined, 'http://localhost:8080/api')).toBe(
+      'http://localhost:8080/api/profile',
+    );
   });
 });

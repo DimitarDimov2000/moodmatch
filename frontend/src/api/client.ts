@@ -31,9 +31,13 @@ export class ApiRequestError extends Error {
   }
 }
 
-function buildUrl(path: string, query?: ApiRequestOptions['query']): string {
+export function buildUrl(
+  path: string,
+  query?: ApiRequestOptions['query'],
+  baseUrl = API_BASE_URL,
+): string {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  const url = new URL(`${API_BASE_URL}${normalizedPath}`, window.location.origin);
+  const url = new URL(`${baseUrl}${normalizedPath}`, window.location.origin);
 
   if (query) {
     for (const [key, value] of Object.entries(query)) {
@@ -45,7 +49,7 @@ function buildUrl(path: string, query?: ApiRequestOptions['query']): string {
     }
   }
 
-  return `${url.pathname}${url.search}`;
+  return url.toString();
 }
 
 function isPlainObject(value: ApiRequestOptions['body']): value is Record<string, unknown> {
