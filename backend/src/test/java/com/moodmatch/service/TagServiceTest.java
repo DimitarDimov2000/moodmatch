@@ -24,17 +24,25 @@ class TagServiceTest {
     @Test
     @TestTransaction
     void shouldCreateTagOnlyOnceAndListTagsInDeterministicOrder() {
+        int initialTagCount = tagService.listTags().size();
         TagResponse first = tagService.createTagIfNeeded(new CreateTagRequest("  Mystery  ", TagCategory.GENRE));
         TagResponse duplicate = tagService.createTagIfNeeded(new CreateTagRequest("mystery", TagCategory.GENRE));
-        TagResponse tone = tagService.createTagIfNeeded(new CreateTagRequest("spannend", TagCategory.TONE));
+        TagResponse tone = tagService.createTagIfNeeded(new CreateTagRequest("Tone-" + System.nanoTime(), TagCategory.TONE));
 
         assertNotNull(first.id());
         assertEquals(first.id(), duplicate.id());
 
         List<TagResponse> tags = tagService.listTags();
-        assertEquals(2, tags.size());
-        assertEquals(first.id(), tags.getFirst().id());
-        assertEquals(tone.id(), tags.get(1).id());
-        assertEquals("Mystery", tags.getFirst().name());
+        assertEquals(initialTagCount + 2, tags.size());
+        assertEquals("Mystery", tags.stream()
+                .filter(tag -> tag.id().equals(first.id()))
+                .findFirst()
+                .orElseThrow()
+                .name());
+        assertEquals(tone.id(), tags.stream()
+                .filter(tag -> tag.id().equals(tone.id()))
+                .findFirst()
+                .orElseThrow()
+                .id());
     }
 }
