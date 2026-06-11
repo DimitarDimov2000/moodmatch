@@ -67,3 +67,12 @@ coverage/
 !.yarn/plugins
 !.yarn/sdks
 !.yarn/versions
+
+# Local AI agent/context files
+.agent-context/
+.agent-context/**
+AGENTS.md
+CLAUDE.md
+.cursor/
+.cursorrules
+.codex/
