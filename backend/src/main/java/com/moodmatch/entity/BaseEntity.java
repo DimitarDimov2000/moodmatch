@@ -3,6 +3,7 @@ package com.moodmatch.entity;
 import java.time.Instant;
 import java.util.UUID;
 
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
@@ -10,7 +11,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 
 @MappedSuperclass
-public abstract class BaseEntity {
+public abstract class BaseEntity extends PanacheEntityBase {
 
     @Id
     @Column(name = "id", nullable = false, updatable = false)
