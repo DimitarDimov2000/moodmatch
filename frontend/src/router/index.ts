@@ -1,10 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 import DashboardView from '@/views/DashboardView.vue';
+import CandidatesView from '@/views/CandidatesView.vue';
 import MediaCreateView from '@/views/MediaCreateView.vue';
 import MediaDetailView from '@/views/MediaDetailView.vue';
 import MediaLibraryView from '@/views/MediaLibraryView.vue';
+import MatchesView from '@/views/MatchesView.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
+import ProfileView from '@/views/ProfileView.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -15,6 +18,14 @@ const router = createRouter({
       component: DashboardView,
       meta: {
         title: 'Dashboard',
+      },
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: ProfileView,
+      meta: {
+        title: 'Profil',
       },
     },
     {
@@ -39,6 +50,22 @@ const router = createRouter({
       component: MediaDetailView,
       meta: {
         title: 'Medium Details',
+      },
+    },
+    {
+      path: '/candidates',
+      name: 'candidates',
+      component: CandidatesView,
+      meta: {
+        title: 'Kandidaten',
+      },
+    },
+    {
+      path: '/matches',
+      name: 'matches',
+      component: MatchesView,
+      meta: {
+        title: 'Matches',
       },
     },
     {

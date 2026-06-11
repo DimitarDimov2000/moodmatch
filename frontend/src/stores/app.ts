@@ -21,17 +21,25 @@ export const useAppStore = defineStore('app', {
         to: { name: 'dashboard' },
       },
       {
+        label: 'Profil',
+        to: { name: 'profile' },
+      },
+      {
         label: 'Medien',
         to: { name: 'media-list' },
       },
       {
-        label: 'Neu',
-        to: { name: 'media-create' },
+        label: 'Kandidaten',
+        to: { name: 'candidates' },
+      },
+      {
+        label: 'Matches',
+        to: { name: 'matches' },
       },
     ],
   }),
   getters: {
     bootstrapSummary: () =>
-      'Die erste echte UI ist bereit fuer Medienverwaltung, Tag-Anzeige und typed API-basierte Formularfluesse.',
+      'Die erste echte UI ist bereit fuer Profil, Kandidaten, Matches und typed API-basierte Medienfluesse.',
   },
 });
