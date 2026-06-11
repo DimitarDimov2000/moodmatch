@@ -20,10 +20,18 @@ export const useAppStore = defineStore('app', {
         label: 'Dashboard',
         to: { name: 'dashboard' },
       },
+      {
+        label: 'Medien',
+        to: { name: 'media-list' },
+      },
+      {
+        label: 'Neu',
+        to: { name: 'media-create' },
+      },
     ],
   }),
   getters: {
     bootstrapSummary: () =>
-      'Frontend scaffold is ready for route-level screens, typed API modules, and shared UI components.',
+      'Die erste echte UI ist bereit fuer Medienverwaltung, Tag-Anzeige und typed API-basierte Formularfluesse.',
   },
 });

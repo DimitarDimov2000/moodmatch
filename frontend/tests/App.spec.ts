@@ -4,6 +4,9 @@ import { createMemoryHistory, createRouter } from 'vue-router';
 
 import App from '@/App.vue';
 import DashboardView from '@/views/DashboardView.vue';
+import MediaCreateView from '@/views/MediaCreateView.vue';
+import MediaDetailView from '@/views/MediaDetailView.vue';
+import MediaLibraryView from '@/views/MediaLibraryView.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 
 async function mountApp() {
@@ -11,6 +14,9 @@ async function mountApp() {
     history: createMemoryHistory(),
     routes: [
       { path: '/', name: 'dashboard', component: DashboardView },
+      { path: '/media', name: 'media-list', component: MediaLibraryView },
+      { path: '/media/new', name: 'media-create', component: MediaCreateView },
+      { path: '/media/:id', name: 'media-detail', component: MediaDetailView },
       { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
     ],
   });
@@ -30,6 +36,7 @@ describe('App', () => {
     const wrapper = await mountApp();
 
     expect(wrapper.text()).toContain('MoodMatch');
+    expect(wrapper.text()).toContain('Medien');
     expect(wrapper.text()).toContain('Minimal, buildable MoodMatch shell');
   });
 });

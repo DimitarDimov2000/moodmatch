@@ -35,6 +35,21 @@ select {
   min-height: 100vh;
 }
 
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+input,
+textarea,
+select {
+  color: var(--color-text-primary);
+}
+
 .page-shell {
   width: min(100%, var(--page-max-width));
   margin: 0 auto;
@@ -64,4 +79,103 @@ select {
   font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+.page-stack {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.page-title {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.05;
+}
+
+.page-copy {
+  max-width: 44rem;
+  margin: 0.75rem 0 0;
+  color: var(--color-text-secondary);
+}
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.button--primary {
+  background: var(--color-accent);
+  color: var(--color-surface);
+}
+
+.button--primary:hover:not(:disabled) {
+  background: var(--color-accent-dark);
+}
+
+.button--secondary {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.button--secondary:hover:not(:disabled) {
+  background: var(--color-surface-secondary);
+}
+
+.button--success {
+  background: var(--color-success-soft);
+  border-color: color-mix(in srgb, var(--color-success) 30%, var(--color-border));
+  color: var(--color-success);
+}
+
+.button--danger {
+  background: var(--color-error-soft);
+  border-color: color-mix(in srgb, var(--color-error) 30%, var(--color-border));
+  color: var(--color-error);
+}
+
+.button--ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.button--ghost:hover:not(:disabled) {
+  background: var(--color-surface-secondary);
+  color: var(--color-text-primary);
+}
+
+.button:disabled {
+  opacity: 0.55;
+  transform: none;
 }
