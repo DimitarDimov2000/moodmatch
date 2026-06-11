@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { RouterLink, useRoute } from 'vue-router';
+import { RouterLink, useRoute, useRouter } from 'vue-router';
 
 import { ApiRequestError } from '@/api/client';
 import {
+  deleteMedia,
   getMediaById,
   replaceMediaTags,
   updateMedia,
@@ -29,14 +30,19 @@ import type {
 } from '@/types/api';
 
 const route = useRoute();
+const router = useRouter();
 const media = ref<MediaResponse | null>(null);
 const availableTags = ref<TagResponse[]>([]);
 const loading = ref(true);
 const saving = ref(false);
+const deleting = ref(false);
+const deleteConfirmationOpen = ref(false);
 const errorMessage = ref('');
+const deleteErrorMessage = ref('');
 const apiErrors = ref<Record<string, string>>({});
 
 const mediaId = computed(() => String(route.params.id));
+const busy = computed(() => saving.value || deleting.value);
 
 onMounted(async () => {
   await loadPage();
@@ -68,6 +74,7 @@ async function handleSubmit(payload: MediaFormSubmitPayload) {
 
   saving.value = true;
   errorMessage.value = '';
+  deleteErrorMessage.value = '';
   apiErrors.value = {};
 
   try {
@@ -101,6 +108,7 @@ async function handleStatusUpdate(request: UpdateMediaConsumptionStatusRequest) 
 
   saving.value = true;
   errorMessage.value = '';
+  deleteErrorMessage.value = '';
 
   try {
     media.value = await updateMediaStatus(media.value.id, request);
@@ -118,6 +126,7 @@ async function handleFavouriteUpdate(request: UpdateMediaFavouriteRequest) {
 
   saving.value = true;
   errorMessage.value = '';
+  deleteErrorMessage.value = '';
 
   try {
     media.value = await updateMediaFavourite(media.value.id, request);
@@ -128,12 +137,53 @@ async function handleFavouriteUpdate(request: UpdateMediaFavouriteRequest) {
   }
 }
 
+function openDeleteConfirmation() {
+  deleteConfirmationOpen.value = true;
+  deleteErrorMessage.value = '';
+}
+
+function cancelDeleteConfirmation() {
+  if (deleting.value) {
+    return;
+  }
+
+  deleteConfirmationOpen.value = false;
+  deleteErrorMessage.value = '';
+}
+
+async function confirmDelete() {
+  if (!media.value) {
+    return;
+  }
+
+  deleting.value = true;
+  errorMessage.value = '';
+  deleteErrorMessage.value = '';
+
+  try {
+    await deleteMedia(media.value.id);
+    await router.push({ name: 'media-list' });
+  } catch (error) {
+    deleteErrorMessage.value = toDeleteUserMessage(error);
+  } finally {
+    deleting.value = false;
+  }
+}
+
 function toUserMessage(error: unknown): string {
   if (error instanceof ApiRequestError) {
     return error.message;
   }
 
   return 'Die Daten konnten nicht verarbeitet werden.';
+}
+
+function toDeleteUserMessage(error: unknown): string {
+  if (error instanceof ApiRequestError) {
+    return error.message;
+  }
+
+  return 'Das Medium konnte nicht geloescht werden.';
 }
 </script>
 
@@ -253,7 +303,7 @@ function toUserMessage(error: unknown): string {
 
         <MediaStatusControls
           :media="media"
-          :pending="saving"
+          :pending="busy"
           @update-status="handleStatusUpdate"
           @update-favourite="handleFavouriteUpdate"
         />
@@ -265,11 +315,77 @@ function toUserMessage(error: unknown): string {
             mode="edit"
             :initial-media="media"
             :available-tags="availableTags"
-            :submitting="saving"
+            :submitting="busy"
             :api-errors="apiErrors"
             submit-label="Aenderungen speichern"
             @submit="handleSubmit"
           />
+
+          <section class="page-card media-detail__danger-zone">
+            <div class="media-detail__danger-copy">
+              <p class="eyebrow media-detail__danger-eyebrow">
+                Danger Zone
+              </p>
+              <h2 class="section-title">
+                Medium dauerhaft loeschen
+              </h2>
+              <p class="body-muted">
+                Diese Aktion ist bewusst von normalen Bearbeitungen getrennt und entfernt das Medium aus deiner lokalen Sammlung.
+              </p>
+            </div>
+
+            <AppMessage
+              v-if="deleteErrorMessage"
+              title="Loeschen fehlgeschlagen"
+              :description="deleteErrorMessage"
+              tone="error"
+            />
+
+            <div
+              v-if="deleteConfirmationOpen"
+              class="media-detail__danger-confirm"
+            >
+              <p class="media-detail__danger-question">
+                Wirklich <strong>{{ media.title }}</strong> loeschen?
+              </p>
+              <p class="body-muted">
+                Nach erfolgreichem Loeschen wechselst du zur Medienliste zurueck.
+              </p>
+
+              <div class="page-actions">
+                <button
+                  class="button button--secondary"
+                  type="button"
+                  :disabled="deleting"
+                  @click="cancelDeleteConfirmation"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  class="button button--danger"
+                  type="button"
+                  :disabled="deleting"
+                  @click="confirmDelete"
+                >
+                  {{ deleting ? 'Wird geloescht...' : 'Loeschen bestaetigen' }}
+                </button>
+              </div>
+            </div>
+
+            <div
+              v-else
+              class="media-detail__danger-actions"
+            >
+              <button
+                class="button button--danger"
+                type="button"
+                :disabled="busy"
+                @click="openDeleteConfirmation"
+              >
+                Medium loeschen
+              </button>
+            </div>
+          </section>
         </div>
 
         <div class="media-detail__side">
@@ -366,6 +482,34 @@ function toUserMessage(error: unknown): string {
 .media-detail__side {
   display: grid;
   gap: 1rem;
+}
+
+.media-detail__danger-zone {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-color: color-mix(in srgb, var(--color-error) 30%, var(--color-border));
+  background: color-mix(in srgb, var(--color-error-soft) 35%, var(--color-surface));
+}
+
+.media-detail__danger-copy p,
+.media-detail__danger-question {
+  margin: 0.45rem 0 0;
+}
+
+.media-detail__danger-eyebrow {
+  color: var(--color-error);
+}
+
+.media-detail__danger-actions,
+.media-detail__danger-confirm {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.media-detail__danger-question {
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 
 .media-detail__actions {
