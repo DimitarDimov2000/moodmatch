@@ -30,11 +30,11 @@ interface MediaFormModel {
   mediaType: CreateMediaRequest['mediaType'];
   consumptionStatus: CreateMediaRequest['consumptionStatus'];
   isFavourite: boolean;
-  rating: string;
+  rating: number | null;
   sourceType: CreateMediaRequest['sourceType'];
   sourceNote: string;
   commitmentLevel: CreateMediaRequest['commitmentLevel'];
-  releaseYear: string;
+  releaseYear: number | null;
   coverUrl: string;
   metadataOrigin: NonNullable<CreateMediaRequest['metadataOrigin']>;
   selectedTagIds: string[];
@@ -66,7 +66,7 @@ watch(
   () => model.consumptionStatus,
   (status) => {
     if (status !== 'CONSUMED') {
-      model.rating = '';
+      model.rating = null;
       model.isFavourite = false;
     }
   },
@@ -75,7 +75,7 @@ watch(
 watch(
   () => model.rating,
   (rating) => {
-    if (!canBeFavourite(model.consumptionStatus, parseNullableNumber(rating))) {
+    if (!canBeFavourite(model.consumptionStatus, rating)) {
       model.isFavourite = false;
     }
   },
@@ -88,27 +88,25 @@ const localErrors = computed<Record<string, string>>(() => {
     errors.title = 'Titel ist erforderlich.';
   }
 
-  if (model.consumptionStatus === 'CONSUMED' && !model.rating) {
+  if (model.consumptionStatus === 'CONSUMED' && model.rating === null) {
     errors.rating = 'Bei konsumierten Medien ist eine Bewertung erforderlich.';
   }
 
-  if (model.rating) {
-    const numericRating = Number(model.rating);
-
-    if (!Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5) {
-      errors.rating = 'Bewertung muss eine ganze Zahl von 1 bis 5 sein.';
-    }
+  if (
+    model.rating !== null &&
+    (!Number.isInteger(model.rating) || model.rating < 1 || model.rating > 5)
+  ) {
+    errors.rating = 'Bewertung muss eine ganze Zahl von 1 bis 5 sein.';
   }
 
-  if (model.releaseYear) {
-    const year = Number(model.releaseYear);
-
-    if (!Number.isInteger(year) || year < 1800 || year > 3000) {
-      errors.releaseYear = 'Bitte ein plausibles Erscheinungsjahr eingeben.';
-    }
+  if (
+    model.releaseYear !== null &&
+    (!Number.isInteger(model.releaseYear) || model.releaseYear < 1800 || model.releaseYear > 3000)
+  ) {
+    errors.releaseYear = 'Bitte ein plausibles Erscheinungsjahr eingeben.';
   }
 
-  if (model.isFavourite && !canBeFavourite(model.consumptionStatus, parseNullableNumber(model.rating))) {
+  if (model.isFavourite && !canBeFavourite(model.consumptionStatus, model.rating)) {
     errors.isFavourite = 'Favorit ist nur fuer konsumierte Medien mit Bewertung 4 oder 5 moeglich.';
   }
 
@@ -122,9 +120,7 @@ const mergedErrors = computed(() => ({
 
 const canSubmit = computed(() => Object.keys(localErrors.value).length === 0);
 const showRating = computed(() => model.consumptionStatus === 'CONSUMED');
-const favouriteEnabled = computed(() =>
-  canBeFavourite(model.consumptionStatus, parseNullableNumber(model.rating)),
-);
+const favouriteEnabled = computed(() => canBeFavourite(model.consumptionStatus, model.rating));
 
 function toggleTag(tagId: string) {
   if (model.selectedTagIds.includes(tagId)) {
@@ -148,11 +144,11 @@ function submitForm() {
       mediaType: model.mediaType,
       consumptionStatus: model.consumptionStatus,
       isFavourite: favouriteEnabled.value ? model.isFavourite : false,
-      rating: showRating.value ? parseNullableNumber(model.rating) : null,
+      rating: showRating.value ? model.rating : null,
       sourceType: model.sourceType,
       sourceNote: normalizeOptionalText(model.sourceNote),
       commitmentLevel: model.commitmentLevel,
-      releaseYear: parseNullableNumber(model.releaseYear),
+      releaseYear: model.releaseYear,
       coverUrl: normalizeOptionalText(model.coverUrl),
       metadataOrigin: model.metadataOrigin,
     },
@@ -168,12 +164,11 @@ function createModel(media: MediaResponse | null): MediaFormModel {
     mediaType: media?.mediaType ?? 'FILM',
     consumptionStatus: media?.consumptionStatus ?? 'WANT_TO_CONSUME',
     isFavourite: media?.isFavourite ?? false,
-    rating: media?.rating === null || media?.rating === undefined ? '' : String(media.rating),
+    rating: media?.rating ?? null,
     sourceType: media?.sourceType ?? 'MANUAL',
     sourceNote: media?.sourceNote ?? '',
     commitmentLevel: media?.commitmentLevel ?? 'MEDIUM',
-    releaseYear:
-      media?.releaseYear === null || media?.releaseYear === undefined ? '' : String(media.releaseYear),
+    releaseYear: media?.releaseYear ?? null,
     coverUrl: media?.coverUrl ?? '',
     metadataOrigin: media?.metadataOrigin ?? 'MANUAL',
     selectedTagIds: media?.tags.map((tag) => tag.id) ?? [],
@@ -185,12 +180,26 @@ function normalizeOptionalText(value: string): string | null {
   return trimmed ? trimmed : null;
 }
 
-function parseNullableNumber(value: string): number | null {
-  if (!value.trim()) {
+function parseNullableInteger(value: string): number | null {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
     return null;
   }
 
-  return Number(value);
+  const parsed = Number(trimmed);
+
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function handleRatingInput(event: Event) {
+  const input = event.target as HTMLInputElement;
+  model.rating = parseNullableInteger(input.value);
+}
+
+function handleReleaseYearInput(event: Event) {
+  const input = event.target as HTMLInputElement;
+  model.releaseYear = parseNullableInteger(input.value);
 }
 </script>
 
@@ -207,6 +216,7 @@ function parseNullableNumber(value: string): number | null {
       >
         <input
           v-model="model.title"
+          name="title"
           class="media-form__input"
           type="text"
           placeholder="z. B. Arrival"
@@ -219,6 +229,7 @@ function parseNullableNumber(value: string): number | null {
       >
         <input
           v-model="model.originalTitle"
+          name="originalTitle"
           class="media-form__input"
           type="text"
           placeholder="Optional"
@@ -232,6 +243,7 @@ function parseNullableNumber(value: string): number | null {
       >
         <select
           v-model="model.mediaType"
+          name="mediaType"
           class="media-form__input"
         >
           <option
@@ -252,6 +264,7 @@ function parseNullableNumber(value: string): number | null {
       >
         <select
           v-model="model.consumptionStatus"
+          name="consumptionStatus"
           class="media-form__input"
         >
           <option
@@ -270,7 +283,8 @@ function parseNullableNumber(value: string): number | null {
         :error="mergedErrors.rating"
       >
         <input
-          v-model="model.rating"
+          :value="model.rating ?? ''"
+          name="rating"
           class="media-form__input"
           type="number"
           min="1"
@@ -278,6 +292,7 @@ function parseNullableNumber(value: string): number | null {
           step="1"
           :disabled="!showRating"
           placeholder="1-5"
+          @input="handleRatingInput"
         >
       </FormField>
 
@@ -289,6 +304,7 @@ function parseNullableNumber(value: string): number | null {
         <label class="media-form__checkbox">
           <input
             v-model="model.isFavourite"
+            name="isFavourite"
             type="checkbox"
             :disabled="!favouriteEnabled"
           >
@@ -308,6 +324,7 @@ function parseNullableNumber(value: string): number | null {
       >
         <select
           v-model="model.sourceType"
+          name="sourceType"
           class="media-form__input"
         >
           <option
@@ -326,6 +343,7 @@ function parseNullableNumber(value: string): number | null {
       >
         <input
           v-model="model.sourceNote"
+          name="sourceNote"
           class="media-form__input"
           type="text"
           placeholder="Optional"
@@ -339,6 +357,7 @@ function parseNullableNumber(value: string): number | null {
       >
         <select
           v-model="model.commitmentLevel"
+          name="commitmentLevel"
           class="media-form__input"
         >
           <option
@@ -356,13 +375,15 @@ function parseNullableNumber(value: string): number | null {
         :error="mergedErrors.releaseYear"
       >
         <input
-          v-model="model.releaseYear"
+          :value="model.releaseYear ?? ''"
+          name="releaseYear"
           class="media-form__input"
           type="number"
           min="1800"
           max="3000"
           step="1"
           placeholder="Optional"
+          @input="handleReleaseYearInput"
         >
       </FormField>
 
@@ -372,6 +393,7 @@ function parseNullableNumber(value: string): number | null {
       >
         <input
           v-model="model.coverUrl"
+          name="coverUrl"
           class="media-form__input"
           type="url"
           placeholder="https://..."
@@ -385,6 +407,7 @@ function parseNullableNumber(value: string): number | null {
     >
       <textarea
         v-model="model.description"
+        name="description"
         class="media-form__input media-form__input--textarea"
         rows="5"
         placeholder="Kurz beschreiben, worum es geht oder warum das Medium fuer dich relevant ist."
@@ -422,7 +445,7 @@ function parseNullableNumber(value: string): number | null {
         v-else
         class="body-muted"
       >
-        Noch keine Tags verfuegbar.
+        Noch keine Tags verfuegbar. Du kannst das Medium trotzdem jetzt speichern und Tags spaeter hinzufuegen, sobald welche angelegt oder importiert wurden.
       </p>
     </section>
 
@@ -530,4 +553,3 @@ function parseNullableNumber(value: string): number | null {
   }
 }
 </style>
-
