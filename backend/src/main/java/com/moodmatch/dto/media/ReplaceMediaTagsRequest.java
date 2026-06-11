@@ -5,6 +5,9 @@ import java.util.UUID;
 
 import com.moodmatch.dto.tag.CreateTagRequest;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+
 public record ReplaceMediaTagsRequest(
-        List<UUID> tagIds,
-        List<CreateTagRequest> createTags) {}
+        List<@NotNull UUID> tagIds,
+        List<@NotNull @Valid CreateTagRequest> createTags) {}
