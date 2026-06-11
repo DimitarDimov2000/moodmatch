@@ -6,6 +6,7 @@ import { vi } from "vitest";
 import App from "@/App.vue";
 import CandidatesView from "@/views/CandidatesView.vue";
 import DashboardView from "@/views/DashboardView.vue";
+import ExternalSearchView from "@/views/ExternalSearchView.vue";
 import MediaCreateView from "@/views/MediaCreateView.vue";
 import MediaDetailView from "@/views/MediaDetailView.vue";
 import MediaLibraryView from "@/views/MediaLibraryView.vue";
@@ -58,6 +59,7 @@ async function mountApp() {
     routes: [
       { path: "/", name: "dashboard", component: DashboardView },
       { path: "/profile", name: "profile", component: ProfileView },
+      { path: "/external-search", name: "external-search", component: ExternalSearchView },
       { path: "/media", name: "media-list", component: MediaLibraryView },
       { path: "/media/new", name: "media-create", component: MediaCreateView },
       { path: "/media/:id", name: "media-detail", component: MediaDetailView },
@@ -85,6 +87,7 @@ describe("App", () => {
 
     expect(wrapper.text()).toContain("MoodMatch");
     expect(wrapper.text()).toContain("Profil");
+    expect(wrapper.text()).toContain("Suche");
     expect(wrapper.text()).toContain("Medien");
     expect(wrapper.text()).toContain("Kandidaten");
     expect(wrapper.text()).toContain("Matches");

@@ -25,6 +25,10 @@ export const useAppStore = defineStore('app', {
         to: { name: 'profile' },
       },
       {
+        label: 'Suche',
+        to: { name: 'external-search' },
+      },
+      {
         label: 'Medien',
         to: { name: 'media-list' },
       },
