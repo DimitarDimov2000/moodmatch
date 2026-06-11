@@ -12,6 +12,7 @@ import MediaLibraryView from "@/views/MediaLibraryView.vue";
 import MatchesView from "@/views/MatchesView.vue";
 import NotFoundView from "@/views/NotFoundView.vue";
 import ProfileView from "@/views/ProfileView.vue";
+import SwipeView from "@/views/SwipeView.vue";
 
 vi.mock("@/api/media", () => ({
   listMedia: vi.fn().mockResolvedValue([]),
@@ -62,6 +63,7 @@ async function mountApp() {
       { path: "/media/:id", name: "media-detail", component: MediaDetailView },
       { path: "/candidates", name: "candidates", component: CandidatesView },
       { path: "/matches", name: "matches", component: MatchesView },
+      { path: "/swipe", name: "swipe", component: SwipeView },
       { path: "/:pathMatch(.*)*", name: "not-found", component: NotFoundView },
     ],
   });
@@ -86,6 +88,7 @@ describe("App", () => {
     expect(wrapper.text()).toContain("Medien");
     expect(wrapper.text()).toContain("Kandidaten");
     expect(wrapper.text()).toContain("Matches");
+    expect(wrapper.text()).toContain("Swipe");
     expect(wrapper.text()).toContain("Dashboard");
   });
 });

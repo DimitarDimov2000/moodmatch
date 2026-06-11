@@ -33,6 +33,10 @@ export const useAppStore = defineStore('app', {
         to: { name: 'candidates' },
       },
       {
+        label: 'Swipe',
+        to: { name: 'swipe' },
+      },
+      {
         label: 'Matches',
         to: { name: 'matches' },
       },
@@ -40,6 +44,6 @@ export const useAppStore = defineStore('app', {
   }),
   getters: {
     bootstrapSummary: () =>
-      'Die erste echte UI ist bereit fuer Profil, Kandidaten, Matches und typed API-basierte Medienfluesse.',
+      'Die erste echte UI ist bereit fuer Profil, Kandidaten, Matches, Swipe-Entscheidungen und typed API-basierte Medienfluesse.',
   },
 });

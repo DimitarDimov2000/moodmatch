@@ -8,6 +8,7 @@ import MediaLibraryView from '@/views/MediaLibraryView.vue';
 import MatchesView from '@/views/MatchesView.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import ProfileView from '@/views/ProfileView.vue';
+import SwipeView from '@/views/SwipeView.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -66,6 +67,14 @@ const router = createRouter({
       component: MatchesView,
       meta: {
         title: 'Matches',
+      },
+    },
+    {
+      path: '/swipe',
+      name: 'swipe',
+      component: SwipeView,
+      meta: {
+        title: 'Swipe-Modus',
       },
     },
     {
