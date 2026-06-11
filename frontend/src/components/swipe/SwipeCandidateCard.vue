@@ -112,7 +112,7 @@ const gestureIntent = computed<SwipeGestureIntent>(() => {
       return 'reject';
     }
 
-    if (dragY.value > 0) {
+    if (dragY.value < 0) {
       return 'skip';
     }
 
@@ -207,12 +207,12 @@ function handlePointerUp(event: PointerEvent) {
     return;
   }
 
-  if (nextIntent === 'skip' && dragY.value >= VERTICAL_THRESHOLD) {
+  if (nextIntent === 'skip' && dragY.value <= -VERTICAL_THRESHOLD) {
     awaitDecision('skip');
     return;
   }
 
-  if (nextIntent === 'preview' && Math.abs(dragY.value) >= VERTICAL_THRESHOLD) {
+  if (nextIntent === 'preview' && dragY.value >= VERTICAL_THRESHOLD) {
     previewExpanded.value = true;
     resetGesturePosition();
     return;
@@ -261,7 +261,7 @@ async function playDecisionAnimation(action: SwipeDecisionAction): Promise<void>
     dragY.value = 0;
   } else {
     dragX.value = 0;
-    dragY.value = EXIT_DISTANCE_Y;
+    dragY.value = -EXIT_DISTANCE_Y;
   }
 
   await wait(prefersReducedMotion.value ? 40 : 180);
@@ -292,7 +292,7 @@ function getGestureIntent(x: number, y: number): SwipeGestureIntent {
     return x >= 0 ? 'like' : 'reject';
   }
 
-  return y >= 0 ? 'skip' : 'preview';
+  return y >= 0 ? 'preview' : 'skip';
 }
 
 function isVerticalIntent(intent: SwipeGestureIntent): boolean {
@@ -334,7 +334,7 @@ defineExpose({
         class="swipe-candidate-card__intent swipe-candidate-card__intent--preview"
         :class="{ 'swipe-candidate-card__intent--active': gestureIntent === 'preview' }"
       >
-        ↑ Vorschau
+        ↓ Vorschau
       </span>
       <span
         class="swipe-candidate-card__intent swipe-candidate-card__intent--reject"
@@ -352,7 +352,7 @@ defineExpose({
         class="swipe-candidate-card__intent swipe-candidate-card__intent--skip"
         :class="{ 'swipe-candidate-card__intent--active': gestureIntent === 'skip' }"
       >
-        ↓ Ueberspringen
+        ↑ Ueberspringen
       </span>
     </div>
 

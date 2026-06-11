@@ -248,7 +248,7 @@ describe('SwipeView', () => {
     expect(wrapper.text()).toContain('1');
   });
 
-  it('opens and collapses the in-card details preview on upward drag', async () => {
+  it('supports swipe-style upward drag for local skip', async () => {
     const wrapper = await mountView();
     const card = wrapper.get('.swipe-candidate-card');
 
@@ -264,13 +264,44 @@ describe('SwipeView', () => {
     });
 
     expect(
-      wrapper.find('.swipe-candidate-card__intent--preview.swipe-candidate-card__intent--active').exists(),
+      wrapper.find('.swipe-candidate-card__intent--skip.swipe-candidate-card__intent--active').exists(),
     ).toBe(true);
 
     await card.trigger('pointerup', {
       pointerId: 2,
       clientX: 0,
       clientY: -130,
+    });
+    await settleDecisionAnimation();
+
+    expect(wrapper.text()).toContain('Silo');
+    expect(wrapper.text()).toContain('Uebersprungen');
+    expect(wrapper.text()).toContain('1');
+  });
+
+  it('opens and collapses the in-card details preview on downward drag', async () => {
+    const wrapper = await mountView();
+    const card = wrapper.get('.swipe-candidate-card');
+
+    await card.trigger('pointerdown', {
+      pointerId: 3,
+      clientX: 0,
+      clientY: 0,
+    });
+    await card.trigger('pointermove', {
+      pointerId: 3,
+      clientX: 0,
+      clientY: 130,
+    });
+
+    expect(
+      wrapper.find('.swipe-candidate-card__intent--preview.swipe-candidate-card__intent--active').exists(),
+    ).toBe(true);
+
+    await card.trigger('pointerup', {
+      pointerId: 3,
+      clientX: 0,
+      clientY: 130,
     });
     await flushPromises();
 
