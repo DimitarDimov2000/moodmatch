@@ -17,6 +17,15 @@ public class MediaItemRepository implements PanacheRepositoryBase<MediaItem, UUI
         return list("consumptionStatus", consumptionStatus);
     }
 
+    public List<MediaItem> listAllWithAssociations() {
+        return list(
+                "select distinct mediaItem from MediaItem mediaItem "
+                        + "left join fetch mediaItem.mediaTags mediaTags "
+                        + "left join fetch mediaTags.tag "
+                        + "left join fetch mediaItem.externalReferences "
+                        + "order by mediaItem.title asc, mediaItem.id asc");
+    }
+
     public Optional<MediaItem> findByIdWithAssociations(UUID id) {
         return find(
                         "select distinct mediaItem from MediaItem mediaItem "
@@ -25,6 +34,8 @@ public class MediaItemRepository implements PanacheRepositoryBase<MediaItem, UUI
                                 + "left join fetch mediaItem.externalReferences "
                                 + "where mediaItem.id = ?1",
                         id)
-                .firstResultOptional();
+                .list()
+                .stream()
+                .findFirst();
     }
 }
