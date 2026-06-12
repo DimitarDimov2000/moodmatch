@@ -24,7 +24,19 @@ Optional local overrides:
 - `MOODMATCH_DB_USERNAME`
 - `MOODMATCH_DB_PASSWORD`
 
-If you do not set them, the backend keeps using the local defaults above.
+The current backend dev profile expects these variables to be present. For the same local database as this guide, set them to:
+
+- `MOODMATCH_DB_URL=jdbc:postgresql://localhost:5432/moodmatch`
+- `MOODMATCH_DB_USERNAME=moodmatch`
+- `MOODMATCH_DB_PASSWORD=moodmatch`
+
+Example terminal setup before starting the backend:
+
+```bash
+export MOODMATCH_DB_URL=jdbc:postgresql://localhost:5432/moodmatch
+export MOODMATCH_DB_USERNAME=moodmatch
+export MOODMATCH_DB_PASSWORD=moodmatch
+```
 
 Example `psql` setup:
 
@@ -51,6 +63,14 @@ Current migrations:
 ## Optional IntelliJ / PostgreSQL Inspection
 
 This is optional and not required to run the app.
+
+If you start the backend from IntelliJ IDEA instead of a terminal, you can set the same variables in the Run/Debug configuration environment:
+
+- `MOODMATCH_DB_URL`
+- `MOODMATCH_DB_USERNAME`
+- `MOODMATCH_DB_PASSWORD`
+
+For the local setup in this guide, use the same values shown above.
 
 If you want to inspect the local database in IntelliJ IDEA, the Database tool window can connect with:
 
