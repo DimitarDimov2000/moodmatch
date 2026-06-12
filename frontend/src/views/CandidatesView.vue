@@ -53,7 +53,7 @@ function toUserMessage(error: unknown): string {
           Kandidaten fuer spaeteres Matching
         </h1>
         <p class="page-copy">
-          Diese Liste zeigt nur vorhandene Kandidaten. Swipe- oder Entscheidungsmodi werden hier bewusst noch nicht umgesetzt.
+          Diese Liste zeigt vorhandene Kandidaten fuer spaeteres Matching. Der Swipe-Modus ist als eigene Ansicht getrennt und aendert diese Uebersicht nicht.
         </p>
       </div>
 
@@ -126,7 +126,7 @@ function toUserMessage(error: unknown): string {
     <AppMessage
       v-else-if="candidates.length === 0"
       title="Noch keine Medienvorschlaege vorhanden"
-      description="Lege zuerst Kandidaten mit WANT_TO_CONSUME Status an. Externe Suche oder Swipe-Modi sind in diesem Schritt noch nicht Teil der UI."
+      description="Lege zuerst Kandidaten mit WANT_TO_CONSUME Status an. Swipe und externe Suche sind eigene Ansichten und fuellen diese Liste nicht automatisch."
     >
       <div class="candidates-view__message-actions">
         <RouterLink

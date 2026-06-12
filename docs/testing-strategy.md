@@ -1,38 +1,94 @@
 # Testing Strategy
 
-MoodMatch will be considered complete only when deterministic scoring, filtering, edge cases, and status transitions are covered by tests.
+MoodMatch relies on deterministic, explainable behavior, so the current checkpoint keeps both backend and frontend checks in place.
 
-The quality strategy will focus on keeping rule-based behavior explicit, repeatable, and explainable before implementation is considered complete.
+## Current Automated Coverage
 
-## Planned Test Coverage
+### Backend
 
-### Unit Tests
+Current backend tests cover:
 
-Unit tests will cover profile calculation to verify that consumed and positively weighted media items produce the expected interest profile.
+- REST resources
+- media and tag services
+- interest profile calculation
+- deterministic matching
+- DTO/entity mappers
+- starter tag migration behavior
+- DEMO external search provider behavior
 
-Unit tests will cover matching score calculation to verify deterministic score output, tie handling, weighting behavior, and explanation details.
+The backend test suite uses Quarkus tests plus H2 in PostgreSQL compatibility mode and applies the committed Flyway migrations.
 
-Unit tests will cover Decision Mode to verify filtering rules, candidate narrowing, and edge cases where no candidate matches.
+### Frontend
 
-### Validation Tests
+Current frontend tests cover:
 
-Validation tests will cover status rules and status transitions, including valid transitions, invalid transitions, and field-level constraints.
+- API client/config helpers
+- dashboard view behavior
+- external search view and result card
+- media detail flow
+- media form behavior
+- match score display
+- swipe view behavior
+- tag utilities
+- top-level app shell routing
 
-### REST API Tests
+These tests focus on current rendered behavior and route/API integration boundaries without changing the backend contract.
 
-REST API tests will use RestAssured for backend endpoints. These tests will verify request and response shapes, validation behavior, status codes, and DTO boundaries.
+## Verification Commands
 
-### Frontend Tests
+### Backend
 
-Frontend tests with Vitest are optional for the initial architecture, but planned for UI behavior that contains meaningful conditional rendering, filtering controls, or data transformation.
+```bash
+cd backend
+./mvnw test
+```
 
-## Completion Expectations
+### Frontend
 
-Before implementation is considered complete, the project must include tests for:
+```bash
+cd frontend
+npm run lint
+npm run test
+npm run build
+```
 
-| Area | Required focus |
-| --- | --- |
-| Scoring | Deterministic scores, explainable outputs, weighting, and ties. |
-| Filtering | Decision Mode filters and candidate narrowing. |
-| Edge cases | Empty profiles, missing tags, unknown commitment levels, and no-match scenarios. |
-| Status transitions | Valid and invalid status changes. |
+Useful additional frontend check:
+
+```bash
+cd frontend
+npm run typecheck
+```
+
+## What The Current Checkpoint Verifies
+
+- Media CRUD remains stable
+- Tag replacement continues to work
+- Status and favourite rules stay enforced
+- Flyway migrations remain valid
+- Seeded starter tags stay deterministic
+- Profile readiness and weighted contributions stay deterministic
+- Match scoring and explanation states stay deterministic
+- External DEMO preview stays normalized and offline
+- Swipe mode semantics stay unchanged
+- Frontend route-level views still build and render against the typed API layer
+
+## Manual Checkpoint Smoke Test
+
+For a presentation or final checkpoint pass:
+
+1. Start PostgreSQL locally.
+2. Start the backend with `./mvnw quarkus:dev`.
+3. Start the frontend with `npm run dev`.
+4. Open the dashboard and confirm the summary cards load.
+5. Create or edit media, then confirm tags and status/favourite rules still behave as documented.
+6. Open profile and matches to confirm profile readiness and score explanations.
+7. Open swipe mode and verify local like/skip vs persistent reject.
+8. Open external search and confirm DEMO preview results render without import behavior.
+
+## Future Work
+
+Possible future test expansion, not required for this checkpoint:
+
+- dedicated end-to-end browser tests
+- external import flow tests once import exists
+- dedicated decision-mode filtering tests once a stable API/UI contract exists

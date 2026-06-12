@@ -48,6 +48,6 @@ export const useAppStore = defineStore('app', {
   }),
   getters: {
     bootstrapSummary: () =>
-      'Die erste echte UI ist bereit fuer Profil, Kandidaten, Matches, Swipe-Entscheidungen und typed API-basierte Medienfluesse.',
+      'MoodMatch verbindet bereits Profil, Kandidaten, Matches, Swipe-Entscheidungen und typed API-basierte Medienfluesse in einer lauffaehigen lokalen Anwendung.',
   },
 });

@@ -43,7 +43,7 @@ const router = createRouter({
       name: 'media-list',
       component: MediaLibraryView,
       meta: {
-        title: 'Media Library',
+        title: 'Mediathek',
       },
     },
     {
@@ -59,7 +59,7 @@ const router = createRouter({
       name: 'media-detail',
       component: MediaDetailView,
       meta: {
-        title: 'Medium Details',
+        title: 'Medien-Details',
       },
     },
     {
@@ -91,7 +91,7 @@ const router = createRouter({
       name: 'not-found',
       component: NotFoundView,
       meta: {
-        title: 'Not Found',
+        title: 'Nicht gefunden',
       },
     },
   ],

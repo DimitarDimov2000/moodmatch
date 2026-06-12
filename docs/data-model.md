@@ -1,89 +1,245 @@
 # Data Model
 
-This document describes the planned database model for MoodMatch. Database migrations are not implemented yet.
+This document describes the currently implemented MoodMatch persistence model. It matches the committed Flyway migrations in `backend/src/main/resources/db/migration/`.
 
-MoodMatch will use PostgreSQL to store a locally closed media dataset. The planned model keeps media items, tags, and their relationships explicit so deterministic, explainable, rule-based matching can be calculated from local data.
+## Database Setup
+
+Local development uses PostgreSQL. Flyway runs automatically on backend startup, validates migration naming, and applies the schema before the app serves requests.
+
+Implemented migrations:
+
+- `V1__init_schema.sql`
+- `V2__seed_starter_tags.sql`
 
 ## Tables
 
-### media_items
+### `media_items`
 
-Stores media entries that the user has consumed, wants to consume, rejected, abandoned, or is considering.
+Stores local media entries across films, series, books, and games.
 
-Planned fields include:
-
-| Field | Purpose |
+| Column | Notes |
 | --- | --- |
-| `id` | Stable identifier for the media item. |
-| `title` | Display title. |
-| `media_type` | Type of media, such as film, series, book, or game. |
-| `consumption_status` | User's current relationship to the item. |
-| `source_type` | Where the item came from or how it was discovered. |
-| `commitment_level` | Expected time or attention commitment. |
-| `favorite` | Whether the item is marked as a favorite. |
-| `rating` | Optional user rating or positive signal for profile calculation. |
-| `created_at` | Creation timestamp. |
-| `updated_at` | Last update timestamp. |
+| `id` | UUID primary key |
+| `title` | Required display title |
+| `original_title` | Optional original title |
+| `description` | Optional description |
+| `media_type` | Required enum-like string |
+| `consumption_status` | Required enum-like string |
+| `is_favourite` | Required boolean, default `false` |
+| `rating` | Optional integer 1-5 |
+| `source_type` | Required, default `UNKNOWN` |
+| `source_note` | Optional note |
+| `commitment_level` | Required, default `UNKNOWN` |
+| `release_year` | Optional year |
+| `cover_url` | Optional cover URL |
+| `external_source_name` | Optional convenience source name |
+| `external_source_id` | Optional convenience source id |
+| `external_source_url` | Optional convenience source URL |
+| `metadata_origin` | Required, default `MANUAL` |
+| `created_at` | Required timestamp |
+| `updated_at` | Required timestamp |
 
-### tags
+Important constraint:
 
-Stores the controlled tag vocabulary used for profile and matching calculations.
+- `is_favourite = true` is only valid when `consumption_status = CONSUMED` and `rating >= 4`
 
-Planned fields include:
+### `tags`
 
-| Field | Purpose |
+Stores the local MoodMatch tag vocabulary.
+
+| Column | Notes |
 | --- | --- |
-| `id` | Stable identifier for the tag. |
-| `name` | Human-readable tag name. |
-| `category` | Optional grouping for similar tags. |
+| `id` | UUID primary key |
+| `name` | Required |
+| `category` | Required enum-like string |
+| `created_at` | Required timestamp |
+| `updated_at` | Required timestamp |
 
-### media_tags
+Unique constraint:
 
-Stores the many-to-many relationship between media items and tags.
+```text
+(name, category)
+```
 
-Planned fields include:
+### `media_tags`
 
-| Field | Purpose |
+Stores confirmed media-to-tag assignments.
+
+| Column | Notes |
 | --- | --- |
-| `media_item_id` | Reference to a media item. |
-| `tag_id` | Reference to a tag. |
+| `media_id` | FK to `media_items` |
+| `tag_id` | FK to `tags` |
+| `created_at` | Required timestamp |
 
-## Enums
+Primary key:
 
-### media_type
+```text
+(media_id, tag_id)
+```
 
-| Value |
-| --- |
-| `FILM` |
-| `SERIES` |
-| `BOOK` |
-| `GAME` |
+### `media_external_refs`
 
-### consumption_status
+Stores external identities linked to local media.
 
-| Value |
-| --- |
-| `CONSUMED` |
-| `WANT_TO_CONSUME` |
-| `NOT_INTERESTED` |
-| `ABANDONED` |
+| Column | Notes |
+| --- | --- |
+| `id` | UUID primary key |
+| `media_id` | FK to `media_items` |
+| `source_name` | Required enum-like string |
+| `external_id` | Required external id |
+| `external_url` | Optional provider URL |
+| `attribution_text` | Optional attribution |
+| `source_payload_hash` | Optional hash/debug field |
+| `created_at` | Required timestamp |
+| `updated_at` | Required timestamp |
 
-### source_type
+Unique constraint:
 
-| Value |
-| --- |
-| `FRIEND` |
-| `SOCIAL_MEDIA` |
-| `ARTICLE` |
-| `PLATFORM` |
-| `MANUAL` |
-| `UNKNOWN` |
+```text
+(source_name, external_id)
+```
 
-### commitment_level
+### `external_tag_mappings`
 
-| Value |
-| --- |
-| `SHORT` |
-| `MEDIUM` |
-| `LONG` |
-| `UNKNOWN` |
+Stores provider-value to local-tag mappings for the external preview foundation.
+
+| Column | Notes |
+| --- | --- |
+| `id` | UUID primary key |
+| `source_name` | Required enum-like string |
+| `external_field` | Required field label like `genre` or `subject` |
+| `external_value` | Required provider value |
+| `tag_id` | FK to `tags` |
+| `confidence` | Required confidence enum-like string |
+| `created_at` | Required timestamp |
+| `updated_at` | Required timestamp |
+
+## Enums And Allowed Values
+
+### `media_type`
+
+```text
+FILM
+SERIES
+BOOK
+GAME
+```
+
+### `consumption_status`
+
+```text
+CONSUMED
+WANT_TO_CONSUME
+NOT_INTERESTED
+ABANDONED
+```
+
+### `source_type`
+
+```text
+FRIEND
+SOCIAL_MEDIA
+ARTICLE
+PLATFORM
+MANUAL
+EXTERNAL_SEARCH
+UNKNOWN
+```
+
+### `commitment_level`
+
+```text
+SHORT
+MEDIUM
+LONG
+UNKNOWN
+```
+
+### `metadata_origin`
+
+```text
+MANUAL
+IMPORTED
+IMPORTED_AND_EDITED
+```
+
+### `external_source_name`
+
+```text
+TMDB
+OPEN_LIBRARY
+RAWG
+WIKIDATA
+IGDB
+GOOGLE_BOOKS
+TVMAZE
+```
+
+### `tag_category`
+
+```text
+GENRE
+THEME
+SETTING
+TONE
+EXPERIENCE
+```
+
+### `tag_mapping_confidence`
+
+```text
+HIGH
+MEDIUM
+LOW
+```
+
+## Seeded Starter Tags
+
+The committed starter migration seeds these tags:
+
+### `GENRE`
+
+- `Sci-Fi`
+- `Drama`
+- `Fantasy`
+- `Mystery`
+- `Romance`
+
+### `THEME`
+
+- `Space`
+- `Survival`
+- `Family`
+- `Identity`
+- `Politics`
+
+### `TONE`
+
+- `Thoughtful`
+- `Emotional`
+- `Dark`
+- `Light`
+- `Epic`
+
+### `SETTING`
+
+- `Future`
+- `Historical`
+- `Urban`
+- `Nature`
+
+### `EXPERIENCE`
+
+- `Relaxing`
+- `Intense`
+- `Challenging`
+- `Comfort`
+
+## Current Behavioral Rules Reflected In The Model
+
+- Media title, media type, and consumption status are required.
+- Ratings must stay in the 1-5 range when present.
+- Ratings are only valid for consumed media.
+- Favourite requires consumed media with rating 4 or 5.
+- Confirmed local tags are the tags used for profile calculation and matching.
+- External suggested tags remain preview data until a future import flow exists.

@@ -1,55 +1,140 @@
 # Architecture
 
-MoodMatch is planned as a small monorepo application with a three-layer architecture:
+MoodMatch is a small monorepo application with three active layers:
 
-1. A Vue 3 and TypeScript frontend.
-2. A Quarkus and Java backend.
-3. A PostgreSQL database.
+1. A Vue 3 + TypeScript frontend
+2. A Quarkus + Java backend
+3. A PostgreSQL database for local development
 
-The frontend will communicate with the backend through REST endpoints using JSON request and response bodies. The backend will expose DTOs for API communication instead of exposing database entities directly.
+The app is deterministic, explainable, locally grounded, and rule-based. External preview data may help users discover metadata, but it does not drive MoodMatch scoring.
 
-MoodMatch is deterministic, explainable, locally closed, and rule-based. Matching will be calculated from the user's own stored media data and tags. The system will not use artificial intelligence, machine learning, collaborative filtering, or external recommendation APIs.
+## Current Repository Structure
 
-## Layers
+| Path | Purpose |
+| --- | --- |
+| `frontend/` | Route-based UI for dashboard, media management, profile, candidates, matches, swipe mode, and external search preview |
+| `backend/` | REST API, validation, persistence, deterministic profile/matching logic, external search provider abstraction, and Flyway migrations |
+| `docs/` | Setup notes, API contract, data model, testing notes, checkpoint docs, and ADRs |
 
-### Frontend
+## Frontend
 
-The Vue 3 frontend will provide the user interface for managing media, tags, profile insights, candidates, matching results, decision mode, and dashboard summaries. It will call the backend REST API and render explanations returned by the backend.
+The frontend is a Vite-powered Vue 3 app with typed API modules and route-level views.
 
-### Backend
+Current user-facing areas:
 
-The Quarkus backend will own validation, persistence boundaries, DTO mapping, profile calculation, matching score calculation, filtering rules, status transitions, and explanation generation. It will keep business rules explicit and testable.
+- Dashboard
+- Media library
+- Media create/edit/detail flows
+- Profile view
+- Candidate view
+- Matches view
+- Swipe mode
+- External search preview
 
-### Database
+The frontend talks to the backend through `/api`. In local development, Vite proxies `/api` to `http://localhost:8080`. The API base can also be overridden through `VITE_API_BASE_URL`.
 
-PostgreSQL will store media items, tags, and media-to-tag relationships. The schema will support a locally closed dataset owned by the user.
+The dashboard is currently assembled in the frontend from existing media, profile, candidates, and matches endpoints. There is no dedicated `/api/dashboard` backend endpoint yet.
 
-## Planned Components
+## Backend
 
-### Media Component
+The backend exposes REST endpoints under `/api` and owns:
 
-Manages media item lifecycle, including creation, updates, deletion, status changes, favorites, and retrieval.
+- request validation
+- structured error responses
+- entity persistence
+- Flyway-based schema setup
+- starter tag seeding
+- media CRUD rules
+- status and favourite validation
+- interest profile calculation
+- candidate listing
+- deterministic match scoring and explanations
+- preview-only external search normalization
 
-### Tag Component
+The external search path is backend-only. The frontend never calls external providers directly.
 
-Manages available tags and their relationship to media items.
+## Database
 
-### Profile Component
+Local development uses PostgreSQL. The backend dev profile expects:
 
-Calculates an interest profile from consumed and positively weighted media items.
+- database: `moodmatch`
+- user: `moodmatch`
+- password: `moodmatch`
+- port: `5432`
 
-### Matching Component
+Flyway runs automatically on startup and applies the committed migrations before the backend serves requests.
 
-Calculates deterministic match scores between the user's profile and candidate media.
+Backend tests use H2 in PostgreSQL compatibility mode together with the same Flyway migrations.
 
-### Candidate Component
+## Current Data Flow
 
-Provides candidate media items that can be considered for matching and decision mode.
+### Media Management
 
-### Decision Component
+```text
+Frontend view/form
+→ frontend API module
+→ /api/media
+→ MediaResource
+→ MediaService
+→ repositories/entities
+→ PostgreSQL
+```
 
-Applies explicit filtering rules to help the user narrow choices according to mood, time, commitment, status, and other planned criteria.
+### Profile And Matching
 
-### Dashboard Component
+```text
+Frontend profile/matches/dashboard views
+→ /api/profile, /api/candidates, /api/matches
+→ backend services
+→ confirmed local media + tags
+→ deterministic weights and scores
+→ explanation-focused DTOs
+```
 
-Provides aggregate summaries of the user's collection, profile, candidates, and matching state.
+### External Search Preview
+
+```text
+ExternalSearchView
+→ /api/external/search
+→ ExternalSearchService
+→ DemoExternalSearchProvider
+→ normalized preview DTOs
+→ read-only frontend cards
+```
+
+### Swipe Mode
+
+```text
+SwipeView
+→ /api/candidates and /api/matches for queue context
+→ local like/skip round state in the frontend
+→ reject persists via PATCH /api/media/{id}/status to NOT_INTERESTED
+```
+
+## Important Semantics
+
+- Favourite is a persisted domain field, not a swipe action.
+- Swipe like and skip are local to the active swipe round.
+- Swipe reject persists as `NOT_INTERESTED`.
+- Matching uses confirmed local tags only.
+- External preview results do not import automatically and do not affect scores automatically.
+
+## Current Boundaries
+
+Implemented now:
+
+- media CRUD and tag replacement
+- seeded tags and schema migrations
+- profile calculation
+- candidate listing
+- deterministic matches
+- swipe UI over existing APIs
+- offline DEMO external search preview
+
+Not implemented yet:
+
+- external import into the local library
+- real provider integrations
+- dedicated dashboard endpoint
+- dedicated decision-mode filter API
+- persistent swipe-like/save behavior

@@ -1,70 +1,110 @@
 # API Contract
 
-This document describes the REST API shape for MoodMatch. Some endpoints are already implemented, while others remain planned.
+This document describes the currently implemented REST API for MoodMatch. It reflects the current code and tests, not future aspirations.
 
-The API will use REST endpoints with JSON request and response bodies. Backend responses will use DTOs instead of exposing persistence entities directly.
+Base path: `/api`
 
-## Media
+## Implemented Endpoints
 
-| Method | Endpoint | Planned purpose |
-| --- | --- | --- |
-| GET | `/api/media` | List media items. |
-| GET | `/api/media/{id}` | Get one media item by id. |
-| POST | `/api/media` | Create a media item. |
-| PUT | `/api/media/{id}` | Replace a full media item resource. |
-| DELETE | `/api/media/{id}` | Delete a media item. |
-| PUT | `/api/media/{id}/tags` | Replace the full tag list for a media item. |
-| PATCH | `/api/media/{id}/status` | Change only the consumption status field. |
-| PATCH | `/api/media/{id}/favorite` | Change only the favorite field. |
-
-## Tags
-
-| Method | Endpoint | Planned purpose |
-| --- | --- | --- |
-| GET | `/api/tags` | List available tags. |
-
-## Profile
-
-| Method | Endpoint | Planned purpose |
-| --- | --- | --- |
-| GET | `/api/profile` | Return the calculated user interest profile. |
-
-## Candidates
-
-| Method | Endpoint | Planned purpose |
-| --- | --- | --- |
-| GET | `/api/candidates` | Return candidate media items for matching or decision mode. |
-
-## Matches
-
-| Method | Endpoint | Planned purpose |
-| --- | --- | --- |
-| GET | `/api/matches` | Return deterministic match results with explainable scoring details. |
-
-## Dashboard
-
-| Method | Endpoint | Planned purpose |
-| --- | --- | --- |
-| GET | `/api/dashboard` | Return dashboard summary data. |
-
-## External Search
-
-Phase 18 adds a preview-only external search endpoint. It uses a deterministic offline demo provider and does not import or update local media yet.
+### Health
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| GET | `/api/external/search` | Search normalized external preview results from the demo provider. |
+| GET | `/health` | Basic backend health response |
 
-### Query Parameters
+Example response:
+
+```json
+{
+  "status": "UP"
+}
+```
+
+### Media
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/media` | List all media items |
+| GET | `/media/{id}` | Get one media item by id |
+| POST | `/media` | Create a media item |
+| PUT | `/media/{id}` | Replace a media item |
+| DELETE | `/media/{id}` | Delete a media item |
+| PATCH | `/media/{id}/status` | Update only consumption status and status-related fields |
+| PATCH | `/media/{id}/favorite` | Update only the favourite flag |
+| PUT | `/media/{id}/tags` | Replace the full confirmed tag list |
+
+Notes:
+
+- `PUT /media/{id}` replaces the full editable media resource.
+- `PUT /media/{id}/tags` replaces the full confirmed tag set for the item.
+- `PATCH /media/{id}/status` may also clear rating and favourite when leaving `CONSUMED`.
+- `PATCH /media/{id}/favorite` updates only `isFavourite`.
+
+### Tags
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/tags` | List the available starter and user-created tags |
+
+### Profile
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/profile` | Return the calculated interest profile |
+
+Profile behavior:
+
+- Uses only consumed media with rating 4 or 5 and at least one confirmed local tag.
+- Returns readiness information and explanation text.
+- Suppresses meaningful matching until enough profile-relevant media exist.
+
+### Candidates
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/candidates` | Return `WANT_TO_CONSUME` media plus matching completeness |
+
+Candidate behavior:
+
+- Candidates are items with `consumptionStatus = WANT_TO_CONSUME`.
+- Each candidate includes `isCompleteForMatching`.
+
+### Matches
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/matches` | Return deterministic match results with explanation details |
+
+Match behavior:
+
+- Scores are based on deterministic weighted tag overlap plus precision adjustment.
+- `relativeScore` may be `null` when comparisons are not meaningful yet.
+- `scoresSuppressed` may be `true` when the profile is not ready.
+- Explanations distinguish incomplete candidates from no-overlap candidates.
+
+### External Search Preview
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/external/search` | Search normalized preview results from the offline DEMO provider |
+
+Query parameters:
 
 | Name | Required | Type | Notes |
 | --- | --- | --- | --- |
-| `query` | yes | string | Search term, trimmed server-side. |
-| `mediaType` | yes | enum | One of `FILM`, `SERIES`, `BOOK`, `GAME`. |
-| `source` | no | enum | Phase 18 supports `DEMO` only. Defaults to `DEMO`. |
-| `limit` | no | integer | Optional positive limit. Backend applies a safe default and maximum. |
+| `query` | yes | string | Trimmed server-side |
+| `mediaType` | yes | enum | `FILM`, `SERIES`, `BOOK`, `GAME` |
+| `source` | no | enum | Only `DEMO` is currently supported |
+| `limit` | no | integer | Positive integer, capped by backend safety rules |
 
-### Response Shape
+Preview behavior:
+
+- Uses an offline deterministic DEMO provider only.
+- Does not call real external APIs yet.
+- Does not import anything into the local media library.
+- Suggested tags are suggestions only and do not become local media tags automatically.
+
+Example response shape:
 
 ```json
 {
@@ -93,14 +133,43 @@ Phase 18 adds a preview-only external search endpoint. It uses a deterministic o
 }
 ```
 
-Notes:
+## Validation And Error Shape
 
-- `source=DEMO` is the only supported source in Phase 18.
-- Results are normalized and deterministic so the provider architecture can be tested offline.
-- This endpoint is preview-only. No external search result can be imported into the local media library yet.
+Handled errors return structured JSON:
 
-## Update Semantics
+```json
+{
+  "code": "VALIDATION_ERROR",
+  "message": "Validation failed.",
+  "details": [
+    {
+      "field": "query",
+      "message": "must not be blank"
+    }
+  ]
+}
+```
 
-`PUT` replaces full resources or full collections addressed by the endpoint. For example, `PUT /api/media/{id}` replaces the media item resource, and `PUT /api/media/{id}/tags` replaces the full tag list for the media item.
+Current error codes include:
 
-`PATCH` changes only the addressed field or partial state. For example, `PATCH /api/media/{id}/status` changes only the status field, and `PATCH /api/media/{id}/favorite` changes only the favorite field.
+- `VALIDATION_ERROR`
+- `BUSINESS_RULE_VIOLATION`
+- `RESOURCE_NOT_FOUND`
+- `REQUEST_ERROR`
+- `INTERNAL_SERVER_ERROR`
+
+## Important Domain Semantics
+
+- Favourite is a persisted domain flag, not a swipe/save action.
+- Favourite is only valid for consumed media with rating 4 or 5.
+- Candidate matching uses confirmed local tags only.
+- External preview results never affect scoring by themselves.
+
+## Future Work Outside The Current Contract
+
+The following are not part of the implemented API contract yet:
+
+- `/api/dashboard`
+- External import endpoints
+- Dedicated decision-mode filter endpoints
+- Persistent swipe-like/save endpoints

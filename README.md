@@ -2,94 +2,57 @@
 
 MoodMatch is a deterministic, explainable media decision assistant for choosing what to watch, read, or play next.
 
-## Overview
+## Phase 19 Checkpoint
 
-MoodMatch helps users manage a personal collection of movies, series, books, and games, then compares candidate media against an interest profile built from consumed and positively rated items.
+This repository is frozen as a project checkpoint after Phase 18. The current app is already runnable and testable with a Vue 3 frontend, a Quarkus backend, PostgreSQL in local development, Flyway migrations, and automated frontend/backend tests.
 
-Unlike traditional recommendation systems, MoodMatch does not use artificial intelligence, machine learning, collaborative filtering, or external recommendation APIs. Its matching process is rule-based, deterministic, and transparent, so users can understand why each item was ranked.
+MoodMatch manages a local media library, calculates an interest profile from consumed and positively rated items, scores `WANT_TO_CONSUME` candidates with deterministic tag-based matching, and shows the reasoning behind each result. It also includes a preview-only external search flow backed by an offline DEMO provider and a swipe mode with explicit local-vs-persistent decision semantics.
 
-## Key Features
+## What Works Now
 
-* Personal media collection management
-* Interest profile generation
-* Cross-media matching (movies, series, books, games)
-* Explainable recommendations
-* Decision Mode filtering
-* Rule-based scoring
+- Media CRUD through the backend and frontend
+- Tag replacement for media items
+- Consumption-status and favourite validation rules
+- Seeded starter tag taxonomy via Flyway
+- Interest profile calculation from local consumed media
+- Candidate listing for `WANT_TO_CONSUME` items
+- Deterministic match scoring with explanations
+- Dashboard assembled from existing APIs
+- Swipe mode for local round-based decisions
+- External search preview through an offline DEMO provider
 
-## Tech Stack
+## Current Limitations
 
-* Vue 3
-* TypeScript
-* Quarkus
-* Java
-* PostgreSQL
-* REST/JSON
+- No real external API calls yet
+- No external import into the media library yet
+- No dedicated `/api/dashboard` endpoint
+- No persistent swipe-like/save action yet
+- Swipe reject persists as `NOT_INTERESTED`
+- Swipe like and skip remain local to the current swipe round
+- Favourite is separate from swipe semantics and only valid for consumed media rated 4 or 5
 
-## Architecture
-
-MoodMatch uses a monorepo structure:
+## Monorepo Structure
 
 | Path | Purpose |
 | --- | --- |
-| `frontend/` | Planned Vue 3 and TypeScript frontend. |
-| `backend/` | Planned Quarkus and Java backend. |
-| `docs/` | Shared architecture, API, data model, testing, and ADR documentation. |
+| `frontend/` | Vue 3 + TypeScript app for dashboard, media management, profile, candidates, matches, swipe mode, and external search preview |
+| `backend/` | Quarkus REST API with validation, persistence, Flyway migrations, deterministic profile/matching logic, and the DEMO external search provider |
+| `docs/` | Project documentation, API contract, setup notes, checkpoint summary, testing notes, and ADRs |
 
-The frontend will be a Vue 3 and TypeScript application responsible for collection management, candidate browsing, filtering, and explanation-focused result views.
+## Quick Start
 
-The backend will be a Quarkus and Java REST API that owns media data, interest profile generation, deterministic scoring rules, and recommendation explanations.
+Project setup and verification:
 
-The database will be PostgreSQL, storing the locally closed media dataset, user collection state, predefined tags, ratings, and matching metadata.
+- [Local Setup](docs/local-setup.md)
+- [Phase 19 Checkpoint](docs/checkpoint-phase-19.md)
 
-## Documentation
+Core reference docs:
 
-* [Architecture](docs/architecture.md)
-* [API Contract](docs/api-contract.md)
-* [Data Model](docs/data-model.md)
-* [Testing Strategy](docs/testing-strategy.md)
-* [ADR 0001: Use a Monorepo](docs/adr/0001-monorepo.md)
-
-## Project Status
-
-Initial monorepo architecture setup. The backend has an initial Quarkus scaffold. Vue, database migrations, and matching logic have not been scaffolded yet.
-
-## Backend Setup
-
-The backend is a Quarkus Maven project located in `backend/`.
-
-Requirements:
-
-* Java 21 or newer
-* Maven Wrapper from the backend project
-
-Start the backend locally:
-
-```powershell
-cd backend
-.\mvnw.cmd quarkus:dev
-```
-
-The minimal startup verification endpoint is available at:
-
-```text
-GET http://localhost:8080/api/health
-```
-
-Expected response:
-
-```json
-{
-  "status": "UP"
-}
-```
-
-Run backend tests:
-
-```powershell
-cd backend
-.\mvnw.cmd test
-```
+- [Architecture](docs/architecture.md)
+- [API Contract](docs/api-contract.md)
+- [Data Model](docs/data-model.md)
+- [Testing Strategy](docs/testing-strategy.md)
+- [ADR 0001: Use a Monorepo](docs/adr/0001-monorepo.md)
 
 ## License
 

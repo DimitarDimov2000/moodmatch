@@ -4,10 +4,10 @@
       Navigation
     </p>
     <h1 class="section-title">
-      Page not found
+      Seite nicht gefunden
     </h1>
     <p class="body-muted">
-      This route has not been added to the first frontend scaffold yet.
+      Diese Route existiert in der aktuellen MoodMatch-Anwendung nicht.
     </p>
   </section>
 </template>
