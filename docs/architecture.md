@@ -91,6 +91,8 @@ Frontend profile/matches/dashboard views
 → explanation-focused DTOs
 ```
 
+The exact scoring rules and edge cases are documented in [Scoring And Matching](scoring-and-matching.md).
+
 ### External Search Preview
 
 ```text
@@ -138,3 +140,5 @@ Not implemented yet:
 - dedicated dashboard endpoint
 - dedicated decision-mode filter API
 - persistent swipe-like/save behavior
+
+See [Future Roadmap](future-roadmap.md) for deferred work that is intentionally outside the current checkpoint.

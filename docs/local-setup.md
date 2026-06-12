@@ -18,6 +18,14 @@ The backend development profile expects PostgreSQL on:
 - user: `moodmatch`
 - password: `moodmatch`
 
+Optional local overrides:
+
+- `MOODMATCH_DB_URL`
+- `MOODMATCH_DB_USERNAME`
+- `MOODMATCH_DB_PASSWORD`
+
+If you do not set them, the backend keeps using the local defaults above.
+
 Example `psql` setup:
 
 ```sql
@@ -39,6 +47,29 @@ Current migrations:
 
 - `V1__init_schema.sql`
 - `V2__seed_starter_tags.sql`
+
+## Optional IntelliJ / PostgreSQL Inspection
+
+This is optional and not required to run the app.
+
+If you want to inspect the local database in IntelliJ IDEA, the Database tool window can connect with:
+
+- host: `localhost`
+- port: `5432`
+- database: `moodmatch`
+- user: `moodmatch`
+- password: `moodmatch`
+
+Useful tables to inspect:
+
+- `media_items`
+- `tags`
+- `media_tags`
+- `media_external_refs`
+- `external_tag_mappings`
+- `flyway_schema_history`
+
+If IntelliJ shows an SQL warning because no data source is configured yet, that only means IntelliJ is not connected to a database for SQL assistance. It does not mean Flyway is broken or that the app failed to apply migrations.
 
 ## Start The Backend
 

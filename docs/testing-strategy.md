@@ -2,6 +2,8 @@
 
 MoodMatch relies on deterministic, explainable behavior, so the current checkpoint keeps both backend and frontend checks in place.
 
+The current suite is appropriate for the project checkpoint, but it should not be described as full production-grade coverage.
+
 ## Current Automated Coverage
 
 ### Backend
@@ -92,3 +94,5 @@ Possible future test expansion, not required for this checkpoint:
 - dedicated end-to-end browser tests
 - external import flow tests once import exists
 - dedicated decision-mode filtering tests once a stable API/UI contract exists
+
+End-to-end/browser coverage remains future work and is tracked as deferred roadmap work rather than current test coverage.

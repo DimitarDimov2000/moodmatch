@@ -51,7 +51,9 @@ Core reference docs:
 - [Architecture](docs/architecture.md)
 - [API Contract](docs/api-contract.md)
 - [Data Model](docs/data-model.md)
+- [Scoring And Matching](docs/scoring-and-matching.md)
 - [Testing Strategy](docs/testing-strategy.md)
+- [Future Roadmap](docs/future-roadmap.md)
 - [ADR 0001: Use a Monorepo](docs/adr/0001-monorepo.md)
 
 ## License
