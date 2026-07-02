@@ -170,6 +170,7 @@ Ownership note:
 - imported RAWG games store `RAWG` in both `media_items.external_source_name` and `media_external_refs.source_name`
 - imported AniList anime/manga store `ANILIST` in both `media_items.external_source_name` and `media_external_refs.source_name`, while `media_items.media_type` remains `FILM`, `SERIES`, or `BOOK`
 - imported Podcast Index podcast shows store `PODCAST_INDEX` in both `media_items.external_source_name` and `media_external_refs.source_name`, while `media_items.media_type` remains `PODCAST`
+- imported YouTube videos store `YOUTUBE` in both `media_items.external_source_name` and `media_external_refs.source_name`, while `media_items.media_type` remains `VIDEO`
 
 ### `external_tag_mappings`
 
@@ -262,6 +263,7 @@ Transport-level note:
 - The same `creatorNames` transport field is also reused for podcast author/owner metadata from Podcast Index.
 - RAWG game imports also reuse `creatorNames` for developer and publisher summaries; no dedicated developer or publisher columns are persisted.
 - AniList demonstrates the source/provider versus media-type distinction: the source can be `ANILIST`, but the core media type is still one of the existing values. Anime movies are `FILM`, anime series-style formats are `SERIES`, and manga/light novels are `BOOK`; there are no core `ANIME` or `MANGA` enum values.
+- YouTube imports reuse `creatorNames` for the channel title. There is no dedicated persisted channel column on `media_items`.
 
 ### `tag_category`
 

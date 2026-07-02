@@ -11,14 +11,12 @@ import java.util.Optional;
 
 import com.moodmatch.dto.external.ExternalSearchResponse;
 import com.moodmatch.dto.external.ExternalSearchResultResponse;
-import com.moodmatch.dto.external.ExternalSuggestedTagResponse;
 import com.moodmatch.entity.MediaType;
 import com.moodmatch.exception.BusinessRuleViolationException;
 import com.moodmatch.external.adapter.ExternalSearchProvider;
 import com.moodmatch.external.adapter.ExternalSearchRequest;
 import com.moodmatch.external.adapter.ExternalSearchResult;
 import com.moodmatch.external.adapter.ExternalSearchSourceName;
-import com.moodmatch.external.adapter.ExternalSuggestedTag;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
@@ -36,7 +34,7 @@ public class ExternalSearchService {
     Instance<ExternalSearchProvider> externalSearchProviders;
 
     @Inject
-    ExternalTagSuggestionService externalTagSuggestionService;
+    ExternalResultMapper externalResultMapper;
 
     @Transactional(TxType.SUPPORTS)
     public ExternalSearchResponse search(String query, String mediaTypeRaw, String sourceRaw, Integer limit) {
@@ -58,8 +56,8 @@ public class ExternalSearchService {
         ExternalSearchRequest request =
                 new ExternalSearchRequest(normalizedQuery, mediaType, provider.sourceName(), safeLimit);
         List<ExternalSearchResultResponse> results = provider.search(request).stream()
-                .map(this::enrichSuggestions)
-                .map(this::toResponse)
+                .map(externalResultMapper::enrichSuggestions)
+                .map(externalResultMapper::toResponse)
                 .toList();
 
         return new ExternalSearchResponse(
@@ -144,8 +142,8 @@ public class ExternalSearchService {
         }
 
         List<ExternalSearchResultResponse> responseResults = deduplicate(results).stream()
-                .map(this::enrichSuggestions)
-                .map(this::toResponse)
+                .map(externalResultMapper::enrichSuggestions)
+                .map(externalResultMapper::toResponse)
                 .toList();
 
         return new ExternalSearchResponse(
@@ -210,55 +208,4 @@ public class ExternalSearchService {
             throw new BusinessRuleViolationException(provider.configurationErrorMessage());
         }
     }
-
-    private ExternalSearchResult enrichSuggestions(ExternalSearchResult result) {
-        List<ExternalSuggestedTag> suggestions = externalTagSuggestionService.buildSuggestions(result);
-        return new ExternalSearchResult(
-                result.source(),
-                result.mappingSource(),
-                result.externalId(),
-                result.mediaType(),
-                result.title(),
-                result.originalTitle(),
-                result.creatorNames(),
-                result.description(),
-                result.releaseYear(),
-                result.coverUrl(),
-                result.sourceUrl(),
-                result.externalGenres(),
-                result.externalSubjects(),
-                suggestions,
-                result.attribution(),
-                result.warnings());
-    }
-
-    private ExternalSearchResultResponse toResponse(ExternalSearchResult result) {
-        return new ExternalSearchResultResponse(
-                result.source(),
-                result.externalId(),
-                result.mediaType(),
-                result.title(),
-                result.originalTitle(),
-                List.copyOf(result.creatorNames()),
-                result.description(),
-                result.releaseYear(),
-                result.coverUrl(),
-                result.sourceUrl(),
-                List.copyOf(result.externalGenres()),
-                List.copyOf(result.externalSubjects()),
-                result.suggestedTags().stream().map(this::toResponse).toList(),
-                result.attribution(),
-                List.copyOf(result.warnings()));
-    }
-
-    private ExternalSuggestedTagResponse toResponse(ExternalSuggestedTag suggestedTag) {
-        return new ExternalSuggestedTagResponse(
-                suggestedTag.tagId(),
-                suggestedTag.tagName(),
-                suggestedTag.tagCategory(),
-                suggestedTag.sourceValue(),
-                suggestedTag.reason(),
-                suggestedTag.confidence());
-    }
-
 }

@@ -4,8 +4,11 @@ import java.net.URI;
 
 import com.moodmatch.dto.external.ExternalImportRequest;
 import com.moodmatch.dto.external.ExternalImportResponse;
+import com.moodmatch.dto.external.ExternalResolveUrlRequest;
 import com.moodmatch.dto.external.ExternalSearchResponse;
+import com.moodmatch.dto.external.ExternalSearchResultResponse;
 import com.moodmatch.service.ExternalImportService;
+import com.moodmatch.service.ExternalResolveUrlService;
 import com.moodmatch.service.ExternalSearchService;
 
 import jakarta.validation.Valid;
@@ -37,6 +40,9 @@ public class ExternalSearchResource {
     @Inject
     ExternalImportService externalImportService;
 
+    @Inject
+    ExternalResolveUrlService externalResolveUrlService;
+
     @GET
     @Path("/search")
     public ExternalSearchResponse search(
@@ -60,5 +66,11 @@ public class ExternalSearchResource {
                 .path(response.media().id().toString())
                 .build();
         return Response.created(location).entity(response).build();
+    }
+
+    @POST
+    @Path("/resolve-url")
+    public ExternalSearchResultResponse resolveUrl(@NotNull @Valid ExternalResolveUrlRequest request) {
+        return externalResolveUrlService.resolve(request);
     }
 }

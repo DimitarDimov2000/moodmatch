@@ -1,9 +1,11 @@
 import { getJson, postJson } from './client';
 import type {
+  ExternalResolveUrlRequest,
   ExternalImportRequest,
   ExternalImportResponse,
   ExternalSearchQuery,
   ExternalSearchResponse,
+  ExternalSearchResultResponse,
 } from '@/types/api';
 
 export function searchExternal(query: ExternalSearchQuery): Promise<ExternalSearchResponse> {
@@ -19,4 +21,8 @@ export function searchExternal(query: ExternalSearchQuery): Promise<ExternalSear
 
 export function importExternalMedia(request: ExternalImportRequest): Promise<ExternalImportResponse> {
   return postJson<ExternalImportResponse, ExternalImportRequest>('/external/import', request);
+}
+
+export function resolveExternalUrl(request: ExternalResolveUrlRequest): Promise<ExternalSearchResultResponse> {
+  return postJson<ExternalSearchResultResponse, ExternalResolveUrlRequest>('/external/resolve-url', request);
 }

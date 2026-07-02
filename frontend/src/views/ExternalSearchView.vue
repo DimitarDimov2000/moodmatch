@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 
-import { importExternalMedia, searchExternal } from '@/api/external';
+import { importExternalMedia, resolveExternalUrl, searchExternal } from '@/api/external';
 import { ApiRequestError } from '@/api/client';
 import {
   externalSourceLabels,
@@ -11,6 +11,7 @@ import {
 } from '@/components/external/external-options';
 import ExternalSearchForm from '@/components/external/ExternalSearchForm.vue';
 import ExternalSearchResultCard from '@/components/external/ExternalSearchResultCard.vue';
+import YouTubeUrlImportForm from '@/components/external/YouTubeUrlImportForm.vue';
 import AppMessage from '@/components/common/AppMessage.vue';
 import type {
   ExternalImportRequest,
@@ -27,6 +28,10 @@ const hasSearched = ref(false);
 const errorMessage = ref('');
 const searchResponse = ref<ExternalSearchResponse | null>(null);
 const importStates = ref<Record<string, ImportState>>({});
+const youTubeUrl = ref('');
+const youTubeResolveLoading = ref(false);
+const youTubeResolveError = ref('');
+const resolvedYouTubeResult = ref<ExternalSearchResultResponse | null>(null);
 
 const warningMessage = computed(() => {
   if (!searchResponse.value || searchResponse.value.warnings.length === 0) {
@@ -119,6 +124,30 @@ async function importResult(result: ExternalSearchResultResponse) {
   }
 }
 
+async function resolveYouTube() {
+  const trimmedValue = youTubeUrl.value.trim();
+  youTubeResolveError.value = '';
+  resolvedYouTubeResult.value = null;
+
+  if (!trimmedValue) {
+    youTubeResolveError.value = 'Bitte gib zuerst eine YouTube-URL oder Video-ID ein.';
+    return;
+  }
+
+  youTubeResolveLoading.value = true;
+
+  try {
+    resolvedYouTubeResult.value = await resolveExternalUrl({
+      source: 'YOUTUBE',
+      url: trimmedValue,
+    });
+  } catch (error) {
+    youTubeResolveError.value = toResolveUserMessage(error);
+  } finally {
+    youTubeResolveLoading.value = false;
+  }
+}
+
 function toUserMessage(error: unknown): string {
   if (error instanceof ApiRequestError) {
     return error.message;
@@ -133,6 +162,14 @@ function toImportUserMessage(error: unknown): string {
   }
 
   return 'Der Import konnte gerade nicht abgeschlossen werden.';
+}
+
+function toResolveUserMessage(error: unknown): string {
+  if (error instanceof ApiRequestError) {
+    return error.message;
+  }
+
+  return 'Die YouTube-URL konnte gerade nicht aufgeloest werden.';
 }
 
 function resultKey(result: ExternalSearchResultResponse) {
@@ -204,7 +241,7 @@ interface ImportState {
 
     <AppMessage
       title="Provider-Verhalten"
-      description="TMDB, Open Library, LibriVox, RAWG und AniList sind aktiv. Podcast Index ist fuer Podcast-Shows verfuegbar, sobald Backend-Key und Backend-Secret gesetzt sind. AniList bleibt eine Quelle fuer Anime/Manga; importierte Anime-Filme, Anime-Serien und Manga landen als Film, Serie oder Buch in deiner Mediathek."
+      description="TMDB, Open Library, LibriVox, RAWG und AniList sind aktiv. Podcast Index ist fuer Podcast-Shows verfuegbar, sobald Backend-Key und Backend-Secret gesetzt sind. AniList bleibt eine Quelle fuer Anime/Manga; importierte Anime-Filme, Anime-Serien und Manga landen als Film, Serie oder Buch in deiner Mediathek. YouTube ist in diesem Paket nur als URL-Import fuer Videos verfuegbar, nicht als normale Textsuche."
       tone="info"
     />
 
@@ -223,6 +260,51 @@ interface ImportState {
       @update:media-type="updateMediaType"
       @search="runSearch"
     />
+
+    <section class="external-search-view__youtube-stack">
+      <header class="page-card external-search-view__youtube-header">
+        <div>
+          <p class="eyebrow">
+            YouTube URL Import
+          </p>
+          <h2>YouTube-Video per URL oder ID importieren</h2>
+          <p class="body-muted">
+            Fuege eine YouTube-URL oder Video-ID ein, pruefe die Vorschau und importiere das Video
+            als normales VIDEO-Medium in deine Mediathek.
+          </p>
+        </div>
+      </header>
+
+      <YouTubeUrlImportForm
+        v-model:value="youTubeUrl"
+        :submitting="youTubeResolveLoading"
+        @resolve="resolveYouTube"
+      />
+
+      <AppMessage
+        v-if="youTubeResolveLoading"
+        title="YouTube-Vorschau wird geladen"
+        description="MoodMatch laedt die offiziellen YouTube-Metadaten fuer diese URL oder Video-ID."
+        tone="info"
+      />
+
+      <AppMessage
+        v-else-if="youTubeResolveError"
+        title="YouTube-Import konnte nicht vorbereitet werden"
+        :description="youTubeResolveError"
+        tone="error"
+      />
+
+      <ExternalSearchResultCard
+        v-else-if="resolvedYouTubeResult"
+        :result="resolvedYouTubeResult"
+        :is-importing="getImportState(resolvedYouTubeResult).importing"
+        :import-error="getImportState(resolvedYouTubeResult).error"
+        :import-message="getImportState(resolvedYouTubeResult).message"
+        :imported-media-id="getImportState(resolvedYouTubeResult).mediaId"
+        @import="importResult"
+      />
+    </section>
 
     <AppMessage
       v-if="loading"
@@ -298,6 +380,20 @@ interface ImportState {
 .external-search-view__results {
   display: grid;
   gap: 1rem;
+}
+
+.external-search-view__youtube-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.external-search-view__youtube-header {
+  padding: 1.25rem;
+}
+
+.external-search-view__youtube-header h2,
+.external-search-view__youtube-header p {
+  margin: 0.35rem 0 0;
 }
 
 .external-search-view__results-header {

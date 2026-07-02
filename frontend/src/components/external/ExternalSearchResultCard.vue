@@ -56,6 +56,9 @@ const creatorLabel = computed(() => {
   if (props.result.mediaType === 'GAME') {
     return 'Entwicklung / Publisher';
   }
+  if (props.result.mediaType === 'VIDEO') {
+    return 'Channel';
+  }
   return 'Mitwirkende';
 });
 const subjectsLabel = computed(() => {
@@ -67,6 +70,9 @@ const subjectsLabel = computed(() => {
   }
   if (props.result.mediaType === 'PODCAST') {
     return 'Sprache / Hinweise';
+  }
+  if (props.result.mediaType === 'VIDEO') {
+    return 'Tags / Kategorie';
   }
   return 'Externe Subjects';
 });

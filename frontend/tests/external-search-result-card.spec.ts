@@ -267,4 +267,44 @@ describe('ExternalSearchResultCard', () => {
       'https://image.simplecastcdn.com/images/lex-fridman.jpg',
     );
   });
+
+  it('renders YouTube video metadata clearly', () => {
+    const wrapper = mount(ExternalSearchResultCard, {
+      global: {
+        stubs: {
+          RouterLink: {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+      props: {
+        result: {
+          source: 'YOUTUBE',
+          externalId: 'abc123XYZ_0',
+          mediaType: 'VIDEO',
+          title: 'VueConf 2024 Keynote',
+          originalTitle: null,
+          creatorNames: ['MoodMatch Dev'],
+          description: 'A practical keynote about resilient frontend systems.',
+          releaseYear: 2024,
+          coverUrl: 'https://img.youtube.test/maxres.jpg',
+          sourceUrl: 'https://www.youtube.com/watch?v=abc123XYZ_0',
+          externalGenres: ['Education'],
+          externalSubjects: ['Vue 3', 'Tutorial', 'Channel: MoodMatch Dev', 'Category: Education'],
+          suggestedTags: [],
+          attribution: 'Metadata from YouTube',
+          warnings: [],
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain('VueConf 2024 Keynote');
+    expect(wrapper.text()).toContain('YouTube');
+    expect(wrapper.text()).toContain('Video • 2024');
+    expect(wrapper.text()).toContain('Channel');
+    expect(wrapper.text()).toContain('MoodMatch Dev');
+    expect(wrapper.text()).toContain('Education');
+    expect(wrapper.text()).toContain('Tags / Kategorie');
+    expect(wrapper.get('img').attributes('src')).toBe('https://img.youtube.test/maxres.jpg');
+  });
 });

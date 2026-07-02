@@ -135,6 +135,16 @@ class LocalPasswordAuthResourceTest {
         given()
                 .contentType(ContentType.JSON)
                 .body(Map.of(
+                        "source", "YOUTUBE",
+                        "url", "https://www.youtube.com/watch?v=abc123XYZ_0"))
+                .when()
+                .post("/api/external/resolve-url")
+                .then()
+                .statusCode(401);
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of(
                         "source", "DEMO",
                         "externalId", "demo-film-arrival",
                         "mediaType", "FILM",

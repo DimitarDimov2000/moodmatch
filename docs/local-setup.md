@@ -164,16 +164,31 @@ Notes:
 - Anime movies import as `FILM`, anime TV/OVA/ONA/special/short formats import as `SERIES`, and manga/light novel/novel/one-shot formats import as `BOOK`.
 - MoodMatch does not add core `ANIME` or `MANGA` media types.
 
+## YouTube Provider Setup
+
+YouTube URL import is active in Package 2.10.
+
+Required local variable for the backend only:
+
+- `MOODMATCH_YOUTUBE_API_KEY=replace-with-your-key`
+
+Notes:
+
+- Keep this key in the backend environment only. Do not expose it in the frontend and do not commit real keys.
+- MoodMatch uses the official YouTube Data API metadata flow for URL/video-id resolution.
+- Supported inputs are normal watch URLs, `youtu.be` links, Shorts URLs, and raw video ids.
+- YouTube is scoped to `VIDEO` URL import only in this package. There is no YouTube text search UI.
+- Thumbnail metadata is mapped into the normalized `coverUrl` field and then reused as the local media cover on import.
+- Music remains out of scope.
+
 ## Future Provider Configuration
 
-These names are reserved for later provider packages. They are not required for the current app and should only be set once the matching provider is implemented:
+Reserved or optional names that are not part of the current YouTube import flow:
 
-- `MOODMATCH_YOUTUBE_API_KEY`
-- `MOODMATCH_YOUTUBE_BASE_URL`
+- `MOODMATCH_ANILIST_BASE_URL`
 
 Provider scope notes:
 
-- YouTube is planned for `VIDEO` URL import only, not search.
 - IGDB is a backup/future game provider and is not active.
 - Music is out of scope.
 

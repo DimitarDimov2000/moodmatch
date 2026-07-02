@@ -20,6 +20,11 @@ export interface ExternalSearchQuery {
   limit?: number;
 }
 
+export interface ExternalResolveUrlRequest {
+  source: ExternalSearchSourceName;
+  url: string;
+}
+
 export interface ExternalSuggestedTagResponse {
   tagId: string;
   tagName: string;

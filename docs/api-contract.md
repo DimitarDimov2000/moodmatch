@@ -142,6 +142,7 @@ Match behavior:
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
 | GET | `/external/search` | Search normalized external results |
+| POST | `/external/resolve-url` | Resolve a provider URL or id into one normalized preview result |
 | POST | `/external/import` | Save one normalized external result into the current user's media library |
 
 Query parameters:
@@ -166,13 +167,13 @@ Search behavior:
 - Automatic `PODCAST` searches query `PODCAST_INDEX` when `MOODMATCH_PODCASTINDEX_KEY` and `MOODMATCH_PODCASTINDEX_SECRET` are configured.
 - If Podcast Index is not configured, automatic podcast search returns an empty result set plus a warning. Explicit `source=PODCAST_INDEX` returns `Podcast Index provider is not configured. Set MOODMATCH_PODCASTINDEX_KEY and MOODMATCH_PODCASTINDEX_SECRET.`
 - Podcast Index imports podcast shows/feeds only, never episode rows.
-- `VIDEO` has no active automatic search provider in this package and returns a clear empty response.
+- `VIDEO` has no active automatic text-search provider in this package and returns a clear empty response.
 - Anime movie results from AniList map to `FILM`; anime TV/OVA/ONA/special/short results map to `SERIES`; manga/light novel/novel/one-shot results map to `BOOK`.
 - Automatic responses use response-level `"source": "AUTOMATIC"` and preserve the real provider on every result in `results[*].source`.
 - In automatic mode, the capped `limit` is applied per provider before merging so one provider cannot hide another provider's results.
 - Response-level `warnings` are non-blocking partial-result notices for skipped or unavailable providers.
 - Future provider names are accepted by the enum contract, but requests fail with `Source is not available` until a provider bean exists.
-- YouTube is planned only for later URL import, not search.
+- YouTube is available only through `/external/resolve-url` in this package, not through text search.
 - Suggested tags are derived from `external_tag_mappings`.
 - Requires bearer authentication in `local-password` mode.
 
@@ -217,6 +218,45 @@ Example response shape:
   ]
 }
 ```
+
+Resolve-by-URL request shape:
+
+```json
+{
+  "source": "YOUTUBE",
+  "url": "https://www.youtube.com/watch?v=abc123XYZ_0"
+}
+```
+
+Resolve-by-URL response shape:
+
+```json
+{
+  "source": "YOUTUBE",
+  "externalId": "abc123XYZ_0",
+  "mediaType": "VIDEO",
+  "title": "VueConf 2024 Keynote",
+  "originalTitle": null,
+  "creatorNames": ["MoodMatch Dev"],
+  "description": "A normalized preview description.",
+  "releaseYear": 2024,
+  "coverUrl": "https://i.ytimg.com/vi/abc123XYZ_0/maxresdefault.jpg",
+  "sourceUrl": "https://www.youtube.com/watch?v=abc123XYZ_0",
+  "externalGenres": ["Education"],
+  "externalSubjects": ["Vue 3", "Tutorial", "Channel: MoodMatch Dev", "Category: Education"],
+  "suggestedTags": [],
+  "attribution": "Metadata from YouTube",
+  "warnings": []
+}
+```
+
+Resolve-by-URL notes:
+
+- Current supported source: `YOUTUBE`
+- Current supported inputs: standard watch URLs, `youtu.be` short URLs, Shorts URLs, and raw video ids
+- Uses the official YouTube Data API videos metadata flow with a backend-only API key
+- Missing `MOODMATCH_YOUTUBE_API_KEY` returns a clear provider configuration error instead of crashing
+- Requires bearer authentication in `local-password` mode
 
 Import request shape:
 

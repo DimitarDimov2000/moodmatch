@@ -8,6 +8,7 @@
 - `RAWG` is the active real provider for `GAME`.
 - `PODCAST_INDEX` is the active real provider for `PODCAST` podcast-show search and import.
 - `ANILIST` is the active real provider for anime and manga metadata mapped into existing media types.
+- `YOUTUBE` is the active real provider for `VIDEO` URL import through the official YouTube Data API.
 - `DEMO` remains available as an offline fallback and local test source.
 
 Provider notes:
@@ -18,6 +19,7 @@ Provider notes:
 - `RAWG` requires backend-only configuration through `MOODMATCH_RAWG_API_KEY`.
 - `PODCAST_INDEX` requires backend-only configuration through `MOODMATCH_PODCASTINDEX_KEY` and `MOODMATCH_PODCASTINDEX_SECRET`.
 - `ANILIST` uses AniList GraphQL and does not require an API key.
+- `YOUTUBE` requires backend-only configuration through `MOODMATCH_YOUTUBE_API_KEY`.
 - LibriVox search is intentionally limited to public-domain audiobooks in the catalog.
 - RAWG is used only for this non-commercial university prototype. Keep provider attribution/backlinks visible and review RAWG terms before any production or commercial deployment.
 - The frontend never stores or sends provider secrets.
@@ -33,7 +35,7 @@ Provider notes:
 | `RAWG` | `GAME` | Active |
 | `PODCAST_INDEX` | `PODCAST` show/feed import only | Active |
 | `ANILIST` | Anime and manga mapped into `FILM`, `SERIES`, or `BOOK` | Active |
-| `YOUTUBE` | `VIDEO` URL import only | Planned, no YouTube search |
+| `YOUTUBE` | `VIDEO` URL import only | Active, no YouTube search |
 | `IGDB` | Backup/future game provider | Not active |
 | Music providers | Music | Out of scope |
 
@@ -53,7 +55,7 @@ AniList does not introduce core `ANIME` or `MANGA` media types. Anime movies map
 - When the RAWG key is missing, automatic `GAME` searches fall back to the offline `DEMO` provider and return a clear warning. Explicit `source=RAWG` searches return a provider configuration error instead of silently falling back.
 - When all compatible real providers for `FILM`, `SERIES`, `BOOK`, `AUDIOBOOK`, or `GAME` are unavailable and `DEMO` can cover the media type, MoodMatch uses `DEMO` as the fallback.
 - When Podcast Index credentials are missing, automatic `PODCAST` searches return an empty result set plus a clear warning instead of crashing or silently falling back.
-- `VIDEO` currently has no active automatic search provider and returns an empty response until its real provider is implemented.
+- `VIDEO` still has no active automatic text-search provider. Use the dedicated YouTube URL resolver for official video imports.
 - `DEMO` remains available for local development and tests.
 
 ## Search And Import Mapping
@@ -76,7 +78,7 @@ Automatic provider matrix:
 | `AUDIOBOOK` | `LIBRIVOX`, then `DEMO` only if all compatible real providers are unavailable |
 | `GAME` | `RAWG`, then `DEMO` only if all compatible real providers are unavailable |
 | `PODCAST` | `PODCAST_INDEX` only; no automatic `DEMO` fallback |
-| `VIDEO` | no active automatic search provider; YouTube URL resolver is future work |
+| `VIDEO` | no active automatic search provider; use the dedicated `YOUTUBE` URL resolver/import flow |
 
 Open Library book mapping decisions:
 
@@ -146,6 +148,22 @@ AniList anime/manga mapping decisions:
 - `externalSubjects`: capped list containing format, status, season/year when available, then non-spoiler AniList tags
 - `attribution`: `Metadata from AniList`
 
+YouTube video URL import mapping decisions:
+
+- `externalId`: resolved YouTube video id from a supported watch URL, short URL, Shorts URL, or raw id
+- `mediaType`: always `VIDEO`
+- `title`: YouTube `snippet.title`
+- `originalTitle`: `null`
+- `creatorNames`: YouTube `snippet.channelTitle` when available
+- `description`: sanitized YouTube `snippet.description`
+- `releaseYear`: parsed from `snippet.publishedAt`
+- `coverUrl`: best available official YouTube thumbnail URL, preferring maxres down to default
+- `sourceUrl`: canonical watch URL, for example `https://www.youtube.com/watch?v=abc123XYZ_0`
+- `externalGenres`: the resolved YouTube category label when available
+- `externalSubjects`: YouTube tags plus compact channel/category context when useful
+- `attribution`: `Metadata from YouTube`
+- only official YouTube Data API metadata is used; there is no scraping
+
 Imports create a normal user-owned `media_items` row with:
 
 - `source_type = EXTERNAL_SEARCH`
@@ -162,6 +180,7 @@ Imports create a normal user-owned `media_items` row with:
 - `RAWG` search results map directly to `external_source_name = RAWG`.
 - `PODCAST_INDEX` search results map directly to `external_source_name = PODCAST_INDEX`.
 - `ANILIST` search results map directly to `external_source_name = ANILIST`.
+- `YOUTUBE` URL imports map directly to `external_source_name = YOUTUBE`.
 - `DEMO` imports preserve `external_source_name = DEMO`.
 - `DEMO` tag suggestions reuse provider-specific mapping sources:
   - `FILM` and `SERIES` -> `TMDB`
@@ -175,7 +194,7 @@ Imports create a normal user-owned `media_items` row with:
 
 - Do not implement music providers.
 - Do not implement IGDB unless the provider plan changes later.
-- Do not implement YouTube search; keep YouTube scoped to future URL import.
+- Do not implement YouTube search; keep YouTube scoped to URL import only.
 - Do not import podcast episodes in the current provider plan.
 - Do not build RSS crawling from Podcast Index feed URLs in this prototype.
 - Do not add `ANIME` or `MANGA` as core media types.

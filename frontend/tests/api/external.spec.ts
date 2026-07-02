@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { API_BASE_URL } from '@/api/config';
-import { importExternalMedia, searchExternal } from '@/api/external';
+import { importExternalMedia, resolveExternalUrl, searchExternal } from '@/api/external';
 
 describe('external api', () => {
   afterEach(() => {
@@ -96,6 +96,52 @@ describe('external api', () => {
           externalGenres: [],
           externalSubjects: ['Politics'],
           attribution: 'Metadata from Open Library',
+        }),
+      }),
+    );
+  });
+
+  it('posts youtube resolve requests onto the shared JSON client', async () => {
+    const fetchSpy = vi.spyOn(window, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          source: 'YOUTUBE',
+          externalId: 'abc123XYZ_0',
+          mediaType: 'VIDEO',
+          title: 'VueConf 2024 Keynote',
+          originalTitle: null,
+          creatorNames: ['MoodMatch Dev'],
+          description: 'A practical keynote.',
+          releaseYear: 2024,
+          coverUrl: 'https://img.youtube.test/maxres.jpg',
+          sourceUrl: 'https://www.youtube.com/watch?v=abc123XYZ_0',
+          externalGenres: ['Education'],
+          externalSubjects: ['Vue 3', 'Tutorial'],
+          suggestedTags: [],
+          attribution: 'Metadata from YouTube',
+          warnings: [],
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      ),
+    );
+
+    await resolveExternalUrl({
+      source: 'YOUTUBE',
+      url: 'https://youtu.be/abc123XYZ_0',
+    });
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      new URL(`${API_BASE_URL}/external/resolve-url`, window.location.origin).toString(),
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          source: 'YOUTUBE',
+          url: 'https://youtu.be/abc123XYZ_0',
         }),
       }),
     );

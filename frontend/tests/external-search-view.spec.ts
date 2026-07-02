@@ -4,20 +4,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiRequestError } from '@/api/client';
 import ExternalSearchView from '@/views/ExternalSearchView.vue';
 
-const { searchExternalMock, importExternalMediaMock } = vi.hoisted(() => ({
+const { searchExternalMock, importExternalMediaMock, resolveExternalUrlMock } = vi.hoisted(() => ({
   searchExternalMock: vi.fn(),
   importExternalMediaMock: vi.fn(),
+  resolveExternalUrlMock: vi.fn(),
 }));
 
 vi.mock('@/api/external', () => ({
   searchExternal: searchExternalMock,
   importExternalMedia: importExternalMediaMock,
+  resolveExternalUrl: resolveExternalUrlMock,
 }));
 
 describe('ExternalSearchView', () => {
   beforeEach(() => {
     searchExternalMock.mockReset();
     importExternalMediaMock.mockReset();
+    resolveExternalUrlMock.mockReset();
   });
 
   function mountView() {
@@ -76,6 +79,152 @@ describe('ExternalSearchView', () => {
     expect(wrapper.get('option[value="PODCAST_INDEX"]').attributes('disabled')).toBeUndefined();
     expect(wrapper.text()).not.toContain('Spotify');
     expect(wrapper.text()).not.toContain('Music');
+  });
+
+  it('renders a dedicated youtube url field without exposing youtube in normal search source options', async () => {
+    const wrapper = mountView();
+
+    expect(wrapper.text()).toContain('YouTube-Video per URL oder ID importieren');
+    expect(wrapper.get('input[name="youtubeUrl"]').attributes('placeholder')).toContain('youtube.com/watch');
+
+    await wrapper.get('select[name="mediaType"]').setValue('VIDEO');
+
+    expect(wrapper.find('option[value="YOUTUBE"]').exists()).toBe(false);
+    expect(wrapper.text()).toContain('separaten URL-Import');
+  });
+
+  it('resolves a valid youtube url into a preview card with thumbnail metadata', async () => {
+    resolveExternalUrlMock.mockResolvedValue({
+      source: 'YOUTUBE',
+      externalId: 'abc123XYZ_0',
+      mediaType: 'VIDEO',
+      title: 'VueConf 2024 Keynote',
+      originalTitle: null,
+      creatorNames: ['MoodMatch Dev'],
+      description: 'A practical keynote about resilient frontend systems.',
+      releaseYear: 2024,
+      coverUrl: 'https://img.youtube.test/maxres.jpg',
+      sourceUrl: 'https://www.youtube.com/watch?v=abc123XYZ_0',
+      externalGenres: ['Education'],
+      externalSubjects: ['Vue 3', 'Tutorial', 'Channel: MoodMatch Dev'],
+      suggestedTags: [],
+      attribution: 'Metadata from YouTube',
+      warnings: [],
+    });
+
+    const wrapper = mountView();
+
+    await wrapper.get('input[name="youtubeUrl"]').setValue('https://youtu.be/abc123XYZ_0');
+    await wrapper.get('form.youtube-url-import-form').trigger('submit');
+    await flushPromises();
+
+    expect(resolveExternalUrlMock).toHaveBeenCalledWith({
+      source: 'YOUTUBE',
+      url: 'https://youtu.be/abc123XYZ_0',
+    });
+    expect(wrapper.text()).toContain('VueConf 2024 Keynote');
+    expect(wrapper.text()).toContain('YouTube');
+    expect(wrapper.text()).toContain('Video • 2024');
+    expect(wrapper.text()).toContain('Channel');
+    expect(wrapper.text()).toContain('MoodMatch Dev');
+    expect(wrapper.get('img').attributes('src')).toBe('https://img.youtube.test/maxres.jpg');
+  });
+
+  it('shows a clear backend configuration message when the youtube api key is missing', async () => {
+    resolveExternalUrlMock.mockRejectedValue(
+      new ApiRequestError(
+        'YouTube provider is not configured. Set MOODMATCH_YOUTUBE_API_KEY in the backend environment.',
+        {
+          status: 400,
+          code: 'BUSINESS_RULE_VIOLATION',
+        },
+      ),
+    );
+
+    const wrapper = mountView();
+
+    await wrapper.get('input[name="youtubeUrl"]').setValue('https://www.youtube.com/watch?v=abc123XYZ_0');
+    await wrapper.get('form.youtube-url-import-form').trigger('submit');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('YouTube-Import konnte nicht vorbereitet werden');
+    expect(wrapper.text()).toContain('MOODMATCH_YOUTUBE_API_KEY');
+  });
+
+  it('shows invalid youtube url errors without calling the import flow', async () => {
+    resolveExternalUrlMock.mockRejectedValue(
+      new ApiRequestError('Enter a valid YouTube URL or video ID.', {
+        status: 400,
+        code: 'BUSINESS_RULE_VIOLATION',
+      }),
+    );
+
+    const wrapper = mountView();
+
+    await wrapper.get('input[name="youtubeUrl"]').setValue('https://example.com/watch?v=abc123XYZ_0');
+    await wrapper.get('form.youtube-url-import-form').trigger('submit');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Enter a valid YouTube URL or video ID.');
+    expect(importExternalMediaMock).not.toHaveBeenCalled();
+  });
+
+  it('imports a resolved youtube preview through the existing import flow', async () => {
+    resolveExternalUrlMock.mockResolvedValue({
+      source: 'YOUTUBE',
+      externalId: 'abc123XYZ_0',
+      mediaType: 'VIDEO',
+      title: 'VueConf 2024 Keynote',
+      originalTitle: null,
+      creatorNames: ['MoodMatch Dev'],
+      description: 'A practical keynote about resilient frontend systems.',
+      releaseYear: 2024,
+      coverUrl: 'https://img.youtube.test/maxres.jpg',
+      sourceUrl: 'https://www.youtube.com/watch?v=abc123XYZ_0',
+      externalGenres: ['Education'],
+      externalSubjects: ['Vue 3', 'Tutorial', 'Channel: MoodMatch Dev'],
+      suggestedTags: [],
+      attribution: 'Metadata from YouTube',
+      warnings: [],
+    });
+    importExternalMediaMock.mockResolvedValue({
+      created: true,
+      message: 'Imported into your media library.',
+      media: {
+        id: 'media-youtube-1',
+        title: 'VueConf 2024 Keynote',
+        sourceNote: 'Imported from YOUTUBE',
+      },
+    });
+
+    const wrapper = mountView();
+
+    await wrapper.get('input[name="youtubeUrl"]').setValue('abc123XYZ_0');
+    await wrapper.get('form.youtube-url-import-form').trigger('submit');
+    await flushPromises();
+
+    const importButton = getImportButton(wrapper);
+    expect(importButton).toBeDefined();
+
+    await importButton?.trigger('click');
+    await flushPromises();
+
+    expect(importExternalMediaMock).toHaveBeenCalledWith({
+      source: 'YOUTUBE',
+      externalId: 'abc123XYZ_0',
+      mediaType: 'VIDEO',
+      title: 'VueConf 2024 Keynote',
+      originalTitle: null,
+      creatorNames: ['MoodMatch Dev'],
+      description: 'A practical keynote about resilient frontend systems.',
+      releaseYear: 2024,
+      coverUrl: 'https://img.youtube.test/maxres.jpg',
+      sourceUrl: 'https://www.youtube.com/watch?v=abc123XYZ_0',
+      externalGenres: ['Education'],
+      externalSubjects: ['Vue 3', 'Tutorial', 'Channel: MoodMatch Dev'],
+      attribution: 'Metadata from YouTube',
+    });
+    expect(wrapper.text()).toContain('Imported into your media library.');
   });
 
   it('enables AniList for anime and manga without exposing anime or manga core media types', async () => {

@@ -20,6 +20,7 @@ import com.moodmatch.external.librivox.TestLibriVoxGateway;
 import com.moodmatch.external.openlibrary.TestOpenLibraryGateway;
 import com.moodmatch.external.podcastindex.TestPodcastIndexGateway;
 import com.moodmatch.external.rawg.TestRawgGateway;
+import com.moodmatch.external.youtube.TestYouTubeGateway;
 import com.moodmatch.repository.ExternalTagMappingRepository;
 import com.moodmatch.repository.TagRepository;
 import jakarta.inject.Inject;
@@ -63,6 +64,7 @@ class ExternalSearchResourceTest {
         TestRawgGateway.reset();
         TestAniListGateway.reset();
         TestPodcastIndexGateway.reset();
+        TestYouTubeGateway.reset();
         QuarkusTransaction.requiringNew().run(() -> {
             entityManager.createNativeQuery("DELETE FROM media_tags").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM media_external_refs").executeUpdate();
@@ -258,6 +260,45 @@ class ExternalSearchResourceTest {
                 .body(
                         "message",
                         is("Podcast Index provider is not configured. Set MOODMATCH_PODCASTINDEX_KEY and MOODMATCH_PODCASTINDEX_SECRET."));
+    }
+
+    @Test
+    void shouldResolveYoutubeUrlsIntoNormalizedPreviewResults() {
+        given()
+                .contentType(io.restassured.http.ContentType.JSON)
+                .body(Map.of(
+                        "source", "YOUTUBE",
+                        "url", "https://youtu.be/abc123XYZ_0"))
+                .when()
+                .post("/api/external/resolve-url")
+                .then()
+                .statusCode(200)
+                .body("source", is("YOUTUBE"))
+                .body("externalId", is("abc123XYZ_0"))
+                .body("mediaType", is("VIDEO"))
+                .body("title", is("VueConf 2024 Keynote"))
+                .body("creatorNames[0]", is("MoodMatch Dev"))
+                .body("releaseYear", is(2024))
+                .body("coverUrl", is("https://img.youtube.test/maxres.jpg"))
+                .body("sourceUrl", is("https://www.youtube.com/watch?v=abc123XYZ_0"))
+                .body("externalGenres[0]", is("Education"))
+                .body("externalSubjects[0]", is("Vue 3"))
+                .body("attribution", is("Metadata from YouTube"));
+    }
+
+    @Test
+    void shouldRejectInvalidYoutubeUrlsClearly() {
+        given()
+                .contentType(io.restassured.http.ContentType.JSON)
+                .body(Map.of(
+                        "source", "YOUTUBE",
+                        "url", "https://example.com/watch?v=abc123XYZ_0"))
+                .when()
+                .post("/api/external/resolve-url")
+                .then()
+                .statusCode(400)
+                .body("code", is("BUSINESS_RULE_VIOLATION"))
+                .body("message", is("Enter a valid YouTube URL or video ID."));
     }
 
     @Test
@@ -501,6 +542,45 @@ class ExternalSearchResourceTest {
                 .body("media.tags[0].name", is("Technologie"));
     }
 
+    @Test
+    void shouldImportYoutubeResultsAsVideosAndPreserveExternalMetadata() {
+        QuarkusTransaction.requiringNew().run(() -> {
+            Tag tag = new Tag();
+            tag.setId(UUID.fromString("10000000-0000-0000-0000-000000000070"));
+            tag.setName("Bildung");
+            tag.setCategory(TagCategory.GENRE);
+            tagRepository.persist(tag);
+
+            ExternalTagMapping mapping = new ExternalTagMapping();
+            mapping.setSourceName(ExternalSourceName.YOUTUBE);
+            mapping.setExternalField("genre");
+            mapping.setExternalValue("Education");
+            mapping.setTag(tag);
+            mapping.setConfidence(TagMappingConfidence.HIGH);
+            externalTagMappingRepository.persist(mapping);
+        });
+
+        TestCurrentUserProvider.useUserA();
+        given()
+                .contentType(io.restassured.http.ContentType.JSON)
+                .body(buildYouTubeImportPayload())
+                .when()
+                .post("/api/external/import")
+                .then()
+                .statusCode(201)
+                .body("created", is(true))
+                .body("media.title", is("VueConf 2024 Keynote"))
+                .body("media.mediaType", is("VIDEO"))
+                .body("media.commitmentLevel", is("LONG"))
+                .body("media.coverUrl", is("https://img.youtube.test/maxres.jpg"))
+                .body("media.externalSourceName", is("YOUTUBE"))
+                .body("media.externalSourceId", is("abc123XYZ_0"))
+                .body("media.externalReferences[0].sourceName", is("YOUTUBE"))
+                .body("media.externalReferences[0].externalId", is("abc123XYZ_0"))
+                .body("media.externalReferences[0].attributionText", is("Metadata from YouTube"))
+                .body("media.tags[0].name", is("Bildung"));
+    }
+
     private Map<String, Object> buildImportPayload() {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("source", "DEMO");
@@ -608,6 +688,29 @@ class ExternalSearchResourceTest {
         payload.put("externalGenres", java.util.List.of("Technology", "Science"));
         payload.put("externalSubjects", java.util.List.of("Language: en", "Explicit: No", "Feed type: podcast"));
         payload.put("attribution", "Metadata from Podcast Index");
+        return payload;
+    }
+
+    private Map<String, Object> buildYouTubeImportPayload() {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("source", "YOUTUBE");
+        payload.put("externalId", "abc123XYZ_0");
+        payload.put("mediaType", "VIDEO");
+        payload.put("title", "VueConf 2024 Keynote");
+        payload.put("originalTitle", null);
+        payload.put("creatorNames", java.util.List.of("MoodMatch Dev"));
+        payload.put("description", "A practical keynote about building resilient frontend systems.");
+        payload.put("releaseYear", 2024);
+        payload.put("coverUrl", "https://img.youtube.test/maxres.jpg");
+        payload.put("sourceUrl", "https://www.youtube.com/watch?v=abc123XYZ_0");
+        payload.put("externalGenres", java.util.List.of("Education"));
+        payload.put("externalSubjects", java.util.List.of(
+                "Vue 3",
+                "Tutorial",
+                "Frontend",
+                "Channel: MoodMatch Dev",
+                "Category: Education"));
+        payload.put("attribution", "Metadata from YouTube");
         return payload;
     }
 }

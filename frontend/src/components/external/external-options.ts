@@ -67,7 +67,6 @@ export function sourceOptionsForMediaType(
     case 'VIDEO':
       return [
         { value: 'AUTO', label: 'Automatisch (noch keine aktive Suche)' },
-        { value: 'YOUTUBE', label: 'YouTube (URL-Import geplant)', disabled: true },
         { value: 'DEMO', label: 'DEMO-Fallback' },
       ];
   }
@@ -94,6 +93,6 @@ export function sourceHintForMediaType(mediaType: MediaType): string {
     case 'PODCAST':
       return 'Automatisch durchsucht Podcast Index fuer Podcast-Shows, wenn der Backend-Key und das Backend-Secret gesetzt sind. Einzelne Episoden werden nicht importiert.';
     case 'VIDEO':
-      return 'YouTube ist nur fuer spaeteren URL-Import vorgesehen. Automatische Videosuche bleibt ausserhalb des Scopes.';
+      return 'Normale Videosuche bleibt ausserhalb des Scopes. Fuer YouTube-Videos nutze den separaten URL-Import unten.';
   }
 }
