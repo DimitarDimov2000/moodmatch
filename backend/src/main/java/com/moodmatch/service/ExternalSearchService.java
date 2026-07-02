@@ -29,6 +29,7 @@ public class ExternalSearchService {
 
     static final int DEFAULT_LIMIT = 5;
     static final int MAX_LIMIT = 10;
+    static final int AUTOMATIC_PROVIDER_LIMIT = DEFAULT_LIMIT;
 
     @Inject
     Instance<ExternalSearchProvider> externalSearchProviders;
@@ -118,8 +119,9 @@ public class ExternalSearchService {
             }
 
             try {
+                int automaticProviderLimit = Math.min(safeLimit, AUTOMATIC_PROVIDER_LIMIT);
                 ExternalSearchRequest request =
-                        new ExternalSearchRequest(normalizedQuery, mediaType, provider.sourceName(), safeLimit);
+                        new ExternalSearchRequest(normalizedQuery, mediaType, provider.sourceName(), automaticProviderLimit);
                 results.addAll(provider.search(request));
                 successfulRealProviderCount++;
             } catch (RuntimeException exception) {
@@ -132,8 +134,9 @@ public class ExternalSearchService {
             Optional<ExternalSearchProvider> demoProvider = findProvider(ExternalSearchSourceName.DEMO);
             if (demoProvider.isPresent()) {
                 ExternalSearchProvider provider = demoProvider.get();
+                int automaticProviderLimit = Math.min(safeLimit, AUTOMATIC_PROVIDER_LIMIT);
                 ExternalSearchRequest request =
-                        new ExternalSearchRequest(normalizedQuery, mediaType, provider.sourceName(), safeLimit);
+                        new ExternalSearchRequest(normalizedQuery, mediaType, provider.sourceName(), automaticProviderLimit);
                 results.addAll(provider.search(request));
                 if (!warnings.isEmpty()) {
                     warnings.add("Using DEMO fallback.");

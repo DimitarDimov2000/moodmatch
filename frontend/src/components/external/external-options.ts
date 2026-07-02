@@ -83,15 +83,15 @@ export function sourceHintForMediaType(mediaType: MediaType): string {
   switch (mediaType) {
     case 'FILM':
     case 'SERIES':
-      return 'Automatisch durchsucht alle passenden Quellen: TMDB und AniList. Anime-Filme bleiben Film, Anime-Serien bleiben Serie.';
+      return 'Automatisch durchsucht alle passenden Provider fuer den gewaehlten Medientyp: TMDB und AniList. Anime-Filme bleiben Film, Anime-Serien bleiben Serie.';
     case 'BOOK':
-      return 'Automatisch durchsucht Open Library und AniList. Manga und Light Novels bleiben beim Import normale Buecher.';
+      return 'Automatisch durchsucht alle passenden Provider fuer den gewaehlten Medientyp: Open Library und AniList. Manga und Light Novels bleiben beim Import normale Buecher.';
     case 'GAME':
-      return 'Automatisch durchsucht RAWG, wenn das Backend mit einem API-Key konfiguriert ist. Sonst faellt MoodMatch auf DEMO zurueck.';
+      return 'Automatisch durchsucht alle passenden Provider fuer den gewaehlten Medientyp: RAWG. Wenn kein API-Key gesetzt ist, faellt MoodMatch auf DEMO zurueck.';
     case 'AUDIOBOOK':
-      return 'Automatisch durchsucht LibriVox. Der Katalog ist auf gemeinfreie Audiobooks begrenzt und benoetigt keinen geheimen API-Key.';
+      return 'Automatisch durchsucht alle passenden Provider fuer den gewaehlten Medientyp: LibriVox. Der Katalog ist auf gemeinfreie Audiobooks begrenzt.';
     case 'PODCAST':
-      return 'Automatisch durchsucht Podcast Index fuer Podcast-Shows, wenn der Backend-Key und das Backend-Secret gesetzt sind. Einzelne Episoden werden nicht importiert.';
+      return 'Automatisch durchsucht alle passenden Provider fuer den gewaehlten Medientyp: Podcast Index. Einzelne Episoden werden nicht importiert.';
     case 'VIDEO':
       return 'Normale Videosuche bleibt ausserhalb des Scopes. Fuer YouTube-Videos nutze den separaten URL-Import unten.';
   }

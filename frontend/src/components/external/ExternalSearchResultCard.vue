@@ -6,6 +6,8 @@ import { externalSourceLabels } from '@/components/external/external-options';
 import { mediaTypeLabels } from '@/components/media/media-options';
 import type { ExternalSearchResultResponse } from '@/types/api';
 
+const DESCRIPTION_PREVIEW_LIMIT = 280;
+
 const props = defineProps<{
   result: ExternalSearchResultResponse;
   isImporting?: boolean;
@@ -22,6 +24,15 @@ const sourceLabel = computed(() => externalSourceLabels[props.result.source]);
 const mediaTypeLabel = computed(() => mediaTypeLabels[props.result.mediaType]);
 const subtypeLabel = computed(() => {
   const format = props.result.externalSubjects.find((subject) => subject.startsWith('Format: '))?.replace('Format: ', '');
+  if (props.result.source === 'OPEN_LIBRARY') {
+    return 'Book';
+  }
+  if (props.result.source === 'LIBRIVOX') {
+    return 'Audiobook';
+  }
+  if (props.result.source === 'PODCAST_INDEX') {
+    return 'Podcast show';
+  }
   if (props.result.source !== 'ANILIST' || !format) {
     return format ?? '';
   }
@@ -76,13 +87,60 @@ const subjectsLabel = computed(() => {
   }
   return 'Externe Subjects';
 });
-const subtitle = computed(() => {
-  const parts = [mediaTypeLabel.value];
+const primarySummary = computed(() => {
+  const parts = [mediaTypeLabel.value, sourceLabel.value];
+  if (subtypeLabel.value) {
+    parts.push(subtypeLabel.value);
+  }
+  return parts.join(' · ');
+});
+const secondarySummary = computed(() => {
+  const parts: string[] = [];
   if (props.result.releaseYear) {
     parts.push(String(props.result.releaseYear));
   }
   return parts.join(' • ');
 });
+const descriptionPreview = computed(() => trimText(props.result.description, DESCRIPTION_PREVIEW_LIMIT));
+const hasTrimmedDescription = computed(
+  () =>
+    Boolean(props.result.description)
+    && descriptionPreview.value.length < (props.result.description?.trim().length ?? 0),
+);
+const visibleGenres = computed(() => props.result.externalGenres.slice(0, 8));
+const visibleSubjects = computed(() => props.result.externalSubjects.slice(0, 10));
+const coverFallback = computed(() => fallbackForMediaType(props.result.mediaType));
+
+function trimText(value: string | null, maxLength: number): string {
+  const normalized = value?.trim();
+  if (!normalized) {
+    return '';
+  }
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function fallbackForMediaType(mediaType: ExternalSearchResultResponse['mediaType']) {
+  switch (mediaType) {
+    case 'FILM':
+      return { code: 'FILM', label: 'Film', hint: 'Kein Poster' };
+    case 'SERIES':
+      return { code: 'SERIES', label: 'Serie', hint: 'Kein Serien-Cover' };
+    case 'BOOK':
+      return { code: 'BOOK', label: 'Buch', hint: 'Kein Buchcover' };
+    case 'AUDIOBOOK':
+      return { code: 'AUDIO', label: 'Hoerbuch', hint: 'Kein Audiobook-Cover' };
+    case 'GAME':
+      return { code: 'GAME', label: 'Spiel', hint: 'Kein Key Art' };
+    case 'PODCAST':
+      return { code: 'POD', label: 'Podcast', hint: 'Kein Podcast-Cover' };
+    case 'VIDEO':
+      return { code: 'VIDEO', label: 'Video', hint: 'Kein Thumbnail' };
+  }
+}
 </script>
 
 <template>
@@ -105,8 +163,15 @@ const subtitle = computed(() => {
           {{ result.title }}
         </h2>
 
-        <p class="body-muted">
-          {{ subtitle }}
+        <p class="body-muted external-result-card__summary">
+          {{ primarySummary }}
+        </p>
+
+        <p
+          v-if="secondarySummary"
+          class="body-muted"
+        >
+          {{ secondarySummary }}
         </p>
 
         <p
@@ -153,14 +218,15 @@ const subtitle = computed(() => {
         </div>
 
         <p
-          v-if="result.description"
+          v-if="descriptionPreview"
           class="external-result-card__description"
+          :title="hasTrimmedDescription ? result.description ?? undefined : undefined"
         >
-          {{ result.description }}
+          {{ descriptionPreview }}
         </p>
 
         <div
-          v-if="result.externalGenres.length > 0"
+          v-if="visibleGenres.length > 0"
           class="external-result-card__section"
         >
           <p class="external-result-card__section-label">
@@ -168,7 +234,7 @@ const subtitle = computed(() => {
           </p>
           <div class="external-result-card__chip-row">
             <span
-              v-for="genre in result.externalGenres"
+              v-for="genre in visibleGenres"
               :key="genre"
               class="external-result-card__chip external-result-card__chip--genre"
             >
@@ -178,7 +244,7 @@ const subtitle = computed(() => {
         </div>
 
         <div
-          v-if="result.externalSubjects.length > 0"
+          v-if="visibleSubjects.length > 0"
           class="external-result-card__section"
         >
           <p class="external-result-card__section-label">
@@ -186,7 +252,7 @@ const subtitle = computed(() => {
           </p>
           <div class="external-result-card__chip-row">
             <span
-              v-for="subject in result.externalSubjects"
+              v-for="subject in visibleSubjects"
               :key="subject"
               class="external-result-card__chip external-result-card__chip--subject"
             >
@@ -292,12 +358,20 @@ const subtitle = computed(() => {
           :src="result.coverUrl"
           :alt="`Cover von ${result.title}`"
           class="external-result-card__cover"
+          loading="lazy"
+          decoding="async"
+          width="160"
+          height="200"
         >
         <div
           v-else
           class="external-result-card__cover external-result-card__cover--fallback"
+          :class="`external-result-card__cover--${result.mediaType.toLowerCase()}`"
+          :aria-label="`${coverFallback.label} Placeholder`"
         >
-          Kein Cover
+          <span class="external-result-card__cover-code">{{ coverFallback.code }}</span>
+          <span class="external-result-card__cover-label">{{ coverFallback.label }}</span>
+          <span class="external-result-card__cover-hint">{{ coverFallback.hint }}</span>
         </div>
       </div>
     </div>
@@ -359,6 +433,10 @@ const subtitle = computed(() => {
 .external-result-card__description,
 .external-result-card__section-label {
   margin: 0;
+}
+
+.external-result-card__summary {
+  font-weight: 600;
 }
 
 .external-result-card__description {
@@ -459,8 +537,8 @@ const subtitle = computed(() => {
 }
 
 .external-result-card__cover {
-  width: 100%;
-  max-width: 10rem;
+  width: 10rem;
+  min-width: 10rem;
   aspect-ratio: 4 / 5;
   object-fit: cover;
   border-radius: var(--radius-lg);
@@ -469,10 +547,57 @@ const subtitle = computed(() => {
 }
 
 .external-result-card__cover--fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.35rem;
+  padding: 1rem;
   color: var(--color-text-muted);
+  text-align: center;
+}
+
+.external-result-card__cover-code {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.external-result-card__cover-label,
+.external-result-card__cover-hint {
+  font-size: 0.9rem;
+}
+
+.external-result-card__cover-label {
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.external-result-card__cover--film {
+  background: color-mix(in srgb, #f59e0b 16%, var(--color-surface-secondary));
+}
+
+.external-result-card__cover--series {
+  background: color-mix(in srgb, #2563eb 14%, var(--color-surface-secondary));
+}
+
+.external-result-card__cover--book {
+  background: color-mix(in srgb, #16a34a 14%, var(--color-surface-secondary));
+}
+
+.external-result-card__cover--audiobook {
+  background: color-mix(in srgb, #ef4444 12%, var(--color-surface-secondary));
+}
+
+.external-result-card__cover--game {
+  background: color-mix(in srgb, #0f766e 14%, var(--color-surface-secondary));
+}
+
+.external-result-card__cover--podcast {
+  background: color-mix(in srgb, #d97706 14%, var(--color-surface-secondary));
+}
+
+.external-result-card__cover--video {
+  background: color-mix(in srgb, #9333ea 12%, var(--color-surface-secondary));
 }
 
 @media (max-width: 820px) {

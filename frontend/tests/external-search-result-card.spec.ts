@@ -48,6 +48,7 @@ describe('ExternalSearchResultCard', () => {
     expect(wrapper.text()).toContain('Pride and Prejudice');
     expect(wrapper.text()).toContain('LibriVox');
     expect(wrapper.text()).toContain('Hoerbuch');
+    expect(wrapper.text()).toContain('Hoerbuch · LibriVox · Audiobook');
     expect(wrapper.text()).toContain('Autor:in / Sprecher:in');
     expect(wrapper.text()).toContain('Author: Jane Austen');
     expect(wrapper.text()).toContain('Reader: Annie Coleman Rothenberg');
@@ -62,6 +63,8 @@ describe('ExternalSearchResultCard', () => {
     expect(wrapper.get('a').attributes('href')).toBe(
       'https://librivox.org/pride-and-prejudice-by-jane-austen/',
     );
+    expect(wrapper.get('img').attributes('loading')).toBe('lazy');
+    expect(wrapper.get('img').attributes('decoding')).toBe('async');
   });
 
   it('emits an import event when the import button is clicked', async () => {
@@ -131,7 +134,8 @@ describe('ExternalSearchResultCard', () => {
 
     expect(wrapper.text()).toContain('Elden Ring');
     expect(wrapper.text()).toContain('RAWG');
-    expect(wrapper.text()).toContain('Spiel • 2022');
+    expect(wrapper.text()).toContain('Spiel · RAWG');
+    expect(wrapper.text()).toContain('2022');
     expect(wrapper.text()).toContain('Spiel');
     expect(wrapper.text()).toContain('Entwicklung / Publisher');
     expect(wrapper.text()).toContain('Developer: FromSoftware');
@@ -173,7 +177,8 @@ describe('ExternalSearchResultCard', () => {
 
     expect(wrapper.text()).toContain('Sen to Chihiro no Kamikakushi');
     expect(wrapper.text()).toContain('AniList');
-    expect(wrapper.text()).toContain('Film • 2001');
+    expect(wrapper.text()).toContain('Film · AniList · Anime movie');
+    expect(wrapper.text()).toContain('2001');
     expect(wrapper.text()).toContain('Anime movie');
     expect(wrapper.text()).toContain('Originaltitel: 千と千尋の神隠し');
     expect(wrapper.text()).toContain('Studios');
@@ -213,7 +218,8 @@ describe('ExternalSearchResultCard', () => {
     });
 
     expect(wrapper.text()).toContain('Berserk');
-    expect(wrapper.text()).toContain('Buch • 1989');
+    expect(wrapper.text()).toContain('Buch · AniList · Manga');
+    expect(wrapper.text()).toContain('1989');
     expect(wrapper.text()).toContain('Manga');
     expect(wrapper.text()).toContain('Autor:innen');
     expect(wrapper.text()).toContain('Kentaro Miura');
@@ -253,7 +259,8 @@ describe('ExternalSearchResultCard', () => {
 
     expect(wrapper.text()).toContain('Lex Fridman Podcast');
     expect(wrapper.text()).toContain('Podcast Index');
-    expect(wrapper.text()).toContain('Podcast • 2024');
+    expect(wrapper.text()).toContain('Podcast · Podcast Index · Podcast show');
+    expect(wrapper.text()).toContain('2024');
     expect(wrapper.text()).toContain('Host / Autor:in');
     expect(wrapper.text()).toContain('Lex Fridman');
     expect(wrapper.text()).toContain('Technology');
@@ -300,11 +307,53 @@ describe('ExternalSearchResultCard', () => {
 
     expect(wrapper.text()).toContain('VueConf 2024 Keynote');
     expect(wrapper.text()).toContain('YouTube');
-    expect(wrapper.text()).toContain('Video • 2024');
+    expect(wrapper.text()).toContain('Video · YouTube');
+    expect(wrapper.text()).toContain('2024');
     expect(wrapper.text()).toContain('Channel');
     expect(wrapper.text()).toContain('MoodMatch Dev');
     expect(wrapper.text()).toContain('Education');
     expect(wrapper.text()).toContain('Tags / Kategorie');
     expect(wrapper.get('img').attributes('src')).toBe('https://img.youtube.test/maxres.jpg');
+  });
+
+  it('renders media-specific cover fallbacks, trimmed descriptions, and warnings', () => {
+    const wrapper = mount(ExternalSearchResultCard, {
+      global: {
+        stubs: {
+          RouterLink: {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+      props: {
+        result: {
+          source: 'OPEN_LIBRARY',
+          externalId: 'OL12345W',
+          mediaType: 'BOOK',
+          title: 'Very Long Book',
+          originalTitle: null,
+          creatorNames: ['Author'],
+          description: 'A'.repeat(320),
+          releaseYear: 2020,
+          coverUrl: null,
+          sourceUrl: 'https://openlibrary.org/works/OL12345W',
+          externalGenres: ['Fantasy'],
+          externalSubjects: ['Dark fantasy'],
+          suggestedTags: [],
+          attribution: 'Metadata from Open Library',
+          warnings: ['Cover unavailable from provider.'],
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain('Buch');
+    expect(wrapper.text()).toContain('Book');
+    expect(wrapper.text()).toContain('Kein Buchcover');
+    expect(wrapper.get('.external-result-card__cover--fallback').attributes('aria-label')).toBe(
+      'Buch Placeholder',
+    );
+    expect(wrapper.get('.external-result-card__description').text()).toContain('…');
+    expect(wrapper.text()).toContain('Hinweise');
+    expect(wrapper.text()).toContain('Cover unavailable from provider.');
   });
 });

@@ -75,7 +75,7 @@ describe('ExternalSearchView', () => {
 
     expect(wrapper.text()).toContain('Automatisch (Podcast Index)');
     expect(wrapper.text()).toContain('Podcast Index (Podcast-Shows)');
-    expect(wrapper.text()).toContain('Automatisch durchsucht Podcast Index fuer Podcast-Shows');
+    expect(wrapper.text()).toContain('Automatisch durchsucht alle passenden Provider fuer den gewaehlten Medientyp: Podcast Index');
     expect(wrapper.get('option[value="PODCAST_INDEX"]').attributes('disabled')).toBeUndefined();
     expect(wrapper.text()).not.toContain('Spotify');
     expect(wrapper.text()).not.toContain('Music');
@@ -124,7 +124,8 @@ describe('ExternalSearchView', () => {
     });
     expect(wrapper.text()).toContain('VueConf 2024 Keynote');
     expect(wrapper.text()).toContain('YouTube');
-    expect(wrapper.text()).toContain('Video • 2024');
+    expect(wrapper.text()).toContain('Video · YouTube');
+    expect(wrapper.text()).toContain('2024');
     expect(wrapper.text()).toContain('Channel');
     expect(wrapper.text()).toContain('MoodMatch Dev');
     expect(wrapper.get('img').attributes('src')).toBe('https://img.youtube.test/maxres.jpg');
@@ -231,7 +232,7 @@ describe('ExternalSearchView', () => {
     const wrapper = mountView();
 
     expect(wrapper.text()).toContain('Automatisch (TMDB + AniList)');
-    expect(wrapper.text()).toContain('Automatisch durchsucht alle passenden Quellen');
+    expect(wrapper.text()).toContain('Automatisch durchsucht alle passenden Provider fuer den gewaehlten Medientyp');
     expect(wrapper.text()).toContain('Anime movie / AniList');
     expect(wrapper.get('option[value="ANILIST"]').attributes('disabled')).toBeUndefined();
 
@@ -294,6 +295,7 @@ describe('ExternalSearchView', () => {
     expect(wrapper.text()).toContain('AniList');
     expect(wrapper.text()).toContain('Film');
     expect(wrapper.text()).toContain('Anime movie');
+    expect(wrapper.text()).toContain('Automatic searches all suitable providers for the selected media type.');
     expect(wrapper.text()).toContain('Provider-Hinweis');
     expect(wrapper.text()).toContain('TMDB provider is not configured');
   });
@@ -354,6 +356,64 @@ describe('ExternalSearchView', () => {
     expect(wrapper.text()).toContain('AniList');
     expect(wrapper.text()).toContain('Buch');
     expect(wrapper.text()).toContain('Manga');
+  });
+
+  it('filters mixed automatic results by provider', async () => {
+    searchExternalMock.mockResolvedValue({
+      query: 'berserk',
+      mediaType: 'BOOK',
+      source: 'AUTOMATIC',
+      warnings: [],
+      results: [
+        {
+          source: 'OPEN_LIBRARY',
+          externalId: 'OL12345W',
+          mediaType: 'BOOK',
+          title: 'Berserk Deluxe',
+          originalTitle: null,
+          creatorNames: ['Kentaro Miura'],
+          description: 'Book metadata from Open Library.',
+          releaseYear: 2019,
+          coverUrl: null,
+          sourceUrl: 'https://openlibrary.org/works/OL12345W',
+          externalGenres: ['Fantasy'],
+          externalSubjects: ['Dark fantasy'],
+          suggestedTags: [],
+          attribution: 'Metadata from Open Library',
+          warnings: [],
+        },
+        {
+          source: 'ANILIST',
+          externalId: '30002',
+          mediaType: 'BOOK',
+          title: 'Berserk',
+          originalTitle: 'ベルセルク',
+          creatorNames: ['Kentaro Miura'],
+          description: 'A dark fantasy manga.',
+          releaseYear: 1989,
+          coverUrl: 'https://img.anilist.co/berserk.jpg',
+          sourceUrl: 'https://anilist.co/manga/30002',
+          externalGenres: ['Action'],
+          externalSubjects: ['Format: MANGA', 'Status: RELEASING'],
+          suggestedTags: [],
+          attribution: 'Metadata from AniList',
+          warnings: [],
+        },
+      ],
+    });
+
+    const wrapper = mountView();
+
+    await wrapper.get('input[name="query"]').setValue('berserk');
+    await wrapper.get('select[name="mediaType"]').setValue('BOOK');
+    await wrapper.get('form').trigger('submit');
+    await flushPromises();
+
+    await wrapper.get('select[name="resultProviderFilter"]').setValue('ANILIST');
+
+    expect(wrapper.text()).toContain('1 Treffer aus passenden Quellen');
+    expect(wrapper.text()).toContain('Berserk');
+    expect(wrapper.text()).not.toContain('Berserk Deluxe');
   });
 
   it('passes the selected book source through the search request', async () => {
@@ -747,7 +807,8 @@ describe('ExternalSearchView', () => {
     });
     expect(wrapper.text()).toContain('1 Treffer aus AniList');
     expect(wrapper.text()).toContain('Shingeki no Kyojin');
-    expect(wrapper.text()).toContain('Serie • 2013');
+    expect(wrapper.text()).toContain('Serie · AniList · Anime series');
+    expect(wrapper.text()).toContain('2013');
     expect(wrapper.text()).toContain('Originaltitel: 進撃の巨人');
     expect(wrapper.text()).toContain('Format / Status / Tags');
 
@@ -836,7 +897,8 @@ describe('ExternalSearchView', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain('Sen to Chihiro no Kamikakushi');
-    expect(wrapper.text()).toContain('Film • 2001');
+    expect(wrapper.text()).toContain('Film · AniList · Anime movie');
+    expect(wrapper.text()).toContain('2001');
 
     const importButton = getImportButton(wrapper);
     expect(importButton).toBeTruthy();
@@ -893,7 +955,8 @@ describe('ExternalSearchView', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain('Berserk');
-    expect(wrapper.text()).toContain('Buch • 1989');
+    expect(wrapper.text()).toContain('Buch · AniList · Manga');
+    expect(wrapper.text()).toContain('1989');
     expect(wrapper.text()).toContain('Format: MANGA');
   });
 

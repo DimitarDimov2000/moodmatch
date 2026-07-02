@@ -3,6 +3,7 @@ package com.moodmatch.service;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import com.moodmatch.entity.ExternalTagMapping;
@@ -21,6 +22,9 @@ public class ExternalTagSuggestionService {
     @Inject
     ExternalTagMappingRepository externalTagMappingRepository;
 
+    @Inject
+    ExternalMetadataTagNormalizer externalMetadataTagNormalizer;
+
     @Transactional(TxType.SUPPORTS)
     public List<ExternalSuggestedTag> buildSuggestions(ExternalSearchResult result) {
         if (result.mappingSource() == null) {
@@ -29,8 +33,16 @@ public class ExternalTagSuggestionService {
 
         Map<String, ExternalSuggestedTag> suggestions = new LinkedHashMap<>();
 
-        collectSuggestions(suggestions, result.mappingSource(), "genre", result.externalGenres());
-        collectSuggestions(suggestions, result.mappingSource(), "subject", result.externalSubjects());
+        collectSuggestions(
+                suggestions,
+                result.mappingSource(),
+                "genre",
+                externalMetadataTagNormalizer.normalizeGenres(result.externalGenres()));
+        collectSuggestions(
+                suggestions,
+                result.mappingSource(),
+                "subject",
+                externalMetadataTagNormalizer.normalizeSubjects(result.externalSubjects()));
 
         return suggestions.values().stream()
                 .sorted(Comparator.comparing(ExternalSuggestedTag::tagCategory)
@@ -44,21 +56,36 @@ public class ExternalTagSuggestionService {
             Map<String, ExternalSuggestedTag> suggestions,
             com.moodmatch.entity.ExternalSourceName source,
             String externalField,
-            List<String> values) {
-        for (String value : values) {
+            List<ExternalMetadataTagNormalizer.NormalizedExternalValue> values) {
+        List<ExternalTagMapping> mappings = externalTagMappingRepository.findBySourceAndFieldAndLowercaseValues(
+                source,
+                externalField,
+                values.stream().flatMap(value -> value.lookupValues().stream()).distinct().toList());
+
+        for (ExternalMetadataTagNormalizer.NormalizedExternalValue value : values) {
             for (ExternalTagMapping mapping :
-                    externalTagMappingRepository.findBySourceAndFieldAndValue(source, externalField, value)) {
-                String key = mapping.getTag().getId() + "::" + externalField + "::" + value;
+                    mappings.stream()
+                            .filter(candidate -> value.lookupValues().contains(normalizeLookupValue(candidate.getExternalValue())))
+                            .toList()) {
+                String key = mapping.getTag().getId().toString();
                 suggestions.putIfAbsent(
                         key,
                         new ExternalSuggestedTag(
                                 mapping.getTag().getId(),
                                 mapping.getTag().getName(),
                                 mapping.getTag().getCategory(),
-                                value,
+                                value.originalValue(),
                                 "Mapped from external " + externalField + " value.",
                                 mapping.getConfidence()));
             }
         }
+    }
+
+    private String normalizeLookupValue(String value) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.trim();
+        return normalized.isEmpty() ? null : normalized.toLowerCase(Locale.ROOT);
     }
 }

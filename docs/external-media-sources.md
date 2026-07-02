@@ -49,6 +49,7 @@ AniList does not introduce core `ANIME` or `MANGA` media types. Anime movies map
 - Automatic `AUDIOBOOK` searches query `LIBRIVOX`.
 - Automatic `GAME` searches query `RAWG` when `MOODMATCH_RAWG_API_KEY` is configured.
 - Automatic `PODCAST` searches query `PODCAST_INDEX` when `MOODMATCH_PODCASTINDEX_KEY` and `MOODMATCH_PODCASTINDEX_SECRET` are configured.
+- Automatic mode keeps explicit provider behavior unchanged, but applies the backend limit per provider before merging so one source does not dominate the mixed result set.
 - Explicit provider search, such as `source=TMDB`, `source=OPEN_LIBRARY`, or `source=ANILIST`, searches only that provider and keeps the existing provider-specific error behavior.
 - Explicit `source=PODCAST_INDEX` searches only Podcast Index podcast shows/feeds.
 - When a compatible provider is unconfigured in automatic mode, MoodMatch skips it, records a non-blocking warning, and returns partial results from other compatible providers when possible.
@@ -67,6 +68,14 @@ Search responses are normalized before they reach the frontend:
 - `title`, `originalTitle`, `creatorNames`, `description`, `releaseYear`, `coverUrl`, `sourceUrl`
 - `externalGenres`, `externalSubjects`
 - `suggestedTags`: local tag suggestions derived from `external_tag_mappings`
+
+Provider overlap is expected in automatic mode. The UI should therefore rely on three separate ideas at once:
+
+- `mediaType`: MoodMatch core type such as `FILM`, `SERIES`, `BOOK`, `GAME`, `AUDIOBOOK`, `PODCAST`, or `VIDEO`
+- `source`: the actual provider that produced the row, such as `TMDB`, `OPEN_LIBRARY`, `ANILIST`, or `RAWG`
+- subtype/display hint: provider-specific context like `Anime movie`, `Anime series`, `Manga`, or `Book`
+
+These display hints help mixed result sets stay understandable without introducing new core media types.
 
 Automatic provider matrix:
 
@@ -171,6 +180,17 @@ Imports create a normal user-owned `media_items` row with:
 - `external_source_name`, `external_source_id`, `external_source_url`
 - one `media_external_refs` row storing the provider id, URL, attribution, and payload hash
 - mapped local tags when provider values match `external_tag_mappings`
+
+Tag mapping uses light normalization before matching provider metadata against `external_tag_mappings`:
+
+- trims whitespace
+- lowercases the internal comparison key
+- collapses duplicates
+- normalizes common punctuation and hyphen variants
+- maps a small set of obvious synonyms such as `sci-fi` -> `science fiction`, `kids` -> `children`, and `tv` -> `television`
+- drops obviously noisy subject labels such as provider status/format markers from tag matching
+
+This normalization affects tag matching and import cleanup only. Original provider text still remains the display/source text returned by the provider, and MoodMatch does not automatically translate provider metadata. Full i18n and metadata translation remain future polish.
 
 ## Current Source Mapping
 

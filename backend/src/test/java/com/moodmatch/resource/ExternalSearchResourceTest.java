@@ -581,6 +581,68 @@ class ExternalSearchResourceTest {
                 .body("media.tags[0].name", is("Bildung"));
     }
 
+    @Test
+    void shouldNormalizeImportedMetadataForTagMappingAndAvoidDuplicateTags() {
+        QuarkusTransaction.requiringNew().run(() -> {
+            Tag scienceFiction = new Tag();
+            scienceFiction.setId(UUID.fromString("10000000-0000-0000-0000-000000000080"));
+            scienceFiction.setName("Science-Fiction");
+            scienceFiction.setCategory(TagCategory.GENRE);
+            tagRepository.persist(scienceFiction);
+
+            ExternalTagMapping scienceFictionGenre = new ExternalTagMapping();
+            scienceFictionGenre.setSourceName(ExternalSourceName.TMDB);
+            scienceFictionGenre.setExternalField("genre");
+            scienceFictionGenre.setExternalValue("Science-Fiction");
+            scienceFictionGenre.setTag(scienceFiction);
+            scienceFictionGenre.setConfidence(TagMappingConfidence.HIGH);
+            externalTagMappingRepository.persist(scienceFictionGenre);
+
+            ExternalTagMapping scienceFictionSubject = new ExternalTagMapping();
+            scienceFictionSubject.setSourceName(ExternalSourceName.TMDB);
+            scienceFictionSubject.setExternalField("subject");
+            scienceFictionSubject.setExternalValue("Sci-Fi");
+            scienceFictionSubject.setTag(scienceFiction);
+            scienceFictionSubject.setConfidence(TagMappingConfidence.MEDIUM);
+            externalTagMappingRepository.persist(scienceFictionSubject);
+
+            Tag children = new Tag();
+            children.setId(UUID.fromString("10000000-0000-0000-0000-000000000081"));
+            children.setName("Children");
+            children.setCategory(TagCategory.THEME);
+            tagRepository.persist(children);
+
+            ExternalTagMapping childrenMapping = new ExternalTagMapping();
+            childrenMapping.setSourceName(ExternalSourceName.TMDB);
+            childrenMapping.setExternalField("subject");
+            childrenMapping.setExternalValue("children");
+            childrenMapping.setTag(children);
+            childrenMapping.setConfidence(TagMappingConfidence.HIGH);
+            externalTagMappingRepository.persist(childrenMapping);
+        });
+
+        Map<String, Object> payload = buildImportPayload();
+        payload.put("externalGenres", java.util.List.of(" Science Fiction ", "science-fiction", "Drama"));
+        payload.put("externalSubjects", java.util.List.of(
+                "Sci-Fi",
+                "kids",
+                "Format: TV",
+                "Status: FINISHED",
+                "Children"));
+
+        TestCurrentUserProvider.useUserA();
+        given()
+                .contentType(io.restassured.http.ContentType.JSON)
+                .body(payload)
+                .when()
+                .post("/api/external/import")
+                .then()
+                .statusCode(201)
+                .body("media.tags.size()", is(2))
+                .body("media.tags.name", hasItem("Science-Fiction"))
+                .body("media.tags.name", hasItem("Children"));
+    }
+
     private Map<String, Object> buildImportPayload() {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("source", "DEMO");

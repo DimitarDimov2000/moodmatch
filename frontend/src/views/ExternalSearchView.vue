@@ -9,6 +9,7 @@ import {
   isSourceSelectionValid,
   type ExternalSourceSelection,
 } from '@/components/external/external-options';
+import { mediaTypeLabels } from '@/components/media/media-options';
 import ExternalSearchForm from '@/components/external/ExternalSearchForm.vue';
 import ExternalSearchResultCard from '@/components/external/ExternalSearchResultCard.vue';
 import YouTubeUrlImportForm from '@/components/external/YouTubeUrlImportForm.vue';
@@ -32,6 +33,8 @@ const youTubeUrl = ref('');
 const youTubeResolveLoading = ref(false);
 const youTubeResolveError = ref('');
 const resolvedYouTubeResult = ref<ExternalSearchResultResponse | null>(null);
+const providerFilter = ref<'ALL' | ExternalSearchResultResponse['source']>('ALL');
+const resultMediaTypeFilter = ref<'ALL' | MediaType>('ALL');
 
 const warningMessage = computed(() => {
   if (!searchResponse.value || searchResponse.value.warnings.length === 0) {
@@ -52,12 +55,56 @@ const resolvedSourceLabel = computed(() => {
 
   return externalSourceLabels[searchResponse.value.source];
 });
+const providerFilterOptions = computed(() => {
+  if (!searchResponse.value) {
+    return [];
+  }
+
+  return Array.from(new Set(searchResponse.value.results.map((result) => result.source))).map((value) => ({
+    value,
+    label: externalSourceLabels[value],
+  }));
+});
+const mediaTypeFilterOptions = computed(() => {
+  if (!searchResponse.value) {
+    return [];
+  }
+
+  return Array.from(new Set(searchResponse.value.results.map((result) => result.mediaType))).map((value) => ({
+    value,
+    label: mediaTypeLabels[value],
+  }));
+});
+const filteredResults = computed(() => {
+  if (!searchResponse.value) {
+    return [];
+  }
+
+  return searchResponse.value.results.filter((result) => {
+    if (providerFilter.value !== 'ALL' && result.source !== providerFilter.value) {
+      return false;
+    }
+    if (resultMediaTypeFilter.value !== 'ALL' && result.mediaType !== resultMediaTypeFilter.value) {
+      return false;
+    }
+    return true;
+  });
+});
+const automaticSearchExplanation = computed(() => {
+  if (searchResponse.value?.source !== 'AUTOMATIC') {
+    return 'Importiere einen Treffer, um ihn sofort als eigenes Medium weiterzuverwenden.';
+  }
+
+  return 'Automatic searches all suitable providers for the selected media type.';
+});
 
 async function runSearch() {
   const trimmedQuery = query.value.trim();
   hasSearched.value = true;
   errorMessage.value = '';
   importStates.value = {};
+  providerFilter.value = 'ALL';
+  resultMediaTypeFilter.value = 'ALL';
 
   if (!trimmedQuery) {
     searchResponse.value = null;
@@ -351,15 +398,73 @@ interface ImportState {
           <p class="eyebrow">
             Resultate
           </p>
-          <h2>{{ searchResponse.results.length }} Treffer aus {{ resolvedSourceLabel }}</h2>
+          <h2>{{ filteredResults.length }} Treffer aus {{ resolvedSourceLabel }}</h2>
           <p class="body-muted">
-            Importiere einen Treffer, um ihn sofort als eigenes Medium weiterzuverwenden.
+            {{ automaticSearchExplanation }}
           </p>
+        </div>
+
+        <div
+          v-if="providerFilterOptions.length > 1 || mediaTypeFilterOptions.length > 1"
+          class="external-search-view__filter-grid"
+        >
+          <label
+            v-if="providerFilterOptions.length > 1"
+            class="external-search-view__filter"
+          >
+            <span>Provider</span>
+            <select
+              v-model="providerFilter"
+              class="input"
+              name="resultProviderFilter"
+            >
+              <option value="ALL">
+                Alle
+              </option>
+              <option
+                v-for="option in providerFilterOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
+          </label>
+
+          <label
+            v-if="mediaTypeFilterOptions.length > 1"
+            class="external-search-view__filter"
+          >
+            <span>Medientyp</span>
+            <select
+              v-model="resultMediaTypeFilter"
+              class="input"
+              name="resultMediaTypeFilter"
+            >
+              <option value="ALL">
+                Alle
+              </option>
+              <option
+                v-for="option in mediaTypeFilterOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
+          </label>
         </div>
       </header>
 
+      <AppMessage
+        v-if="filteredResults.length === 0"
+        title="Keine Treffer fuer die aktuellen Filter"
+        description="Passe den Provider- oder Medientyp-Filter an, um weitere Ergebnisse anzuzeigen."
+        tone="info"
+      />
+
       <ExternalSearchResultCard
-        v-for="result in searchResponse.results"
+        v-for="result in filteredResults"
         :key="resultKey(result)"
         :result="result"
         :is-importing="getImportState(result).importing"
@@ -403,5 +508,20 @@ interface ImportState {
 .external-search-view__results-header h2,
 .external-search-view__results-header p {
   margin: 0.35rem 0 0;
+}
+
+.external-search-view__filter-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end;
+}
+
+.external-search-view__filter {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
 }
 </style>

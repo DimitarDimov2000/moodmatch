@@ -118,6 +118,12 @@ Unique constraint:
 (name, category)
 ```
 
+Usage note:
+
+- `tags` are MoodMatch's cleaned internal vocabulary used for matching and scoring.
+- Provider genres/subjects are not copied into `tags` automatically as raw text.
+- External metadata may suggest existing tags through `external_tag_mappings`, but provider metadata remains a separate concern from the internal tag model.
+
 ### `media_tags`
 
 Stores confirmed media-to-tag assignments.
@@ -172,6 +178,12 @@ Ownership note:
 - imported Podcast Index podcast shows store `PODCAST_INDEX` in both `media_items.external_source_name` and `media_external_refs.source_name`, while `media_items.media_type` remains `PODCAST`
 - imported YouTube videos store `YOUTUBE` in both `media_items.external_source_name` and `media_external_refs.source_name`, while `media_items.media_type` remains `VIDEO`
 
+Display-model note:
+
+- `media_items.media_type` is the core MoodMatch type used for matching and filtering.
+- `media_items.external_source_name` is the provider/source identity.
+- provider-specific subtype hints such as `Anime movie`, `Anime series`, `Manga`, or `Book` are display concerns derived from provider metadata and are not stored as separate core enums.
+
 ### `external_tag_mappings`
 
 Stores provider-value to local-tag mappings for the external search and import foundation.
@@ -186,6 +198,12 @@ Stores provider-value to local-tag mappings for the external search and import f
 | `confidence` | Required confidence enum-like string |
 | `created_at` | Required timestamp |
 | `updated_at` | Required timestamp |
+
+Usage note:
+
+- `external_tag_mappings.external_value` stores the provider value that should map to a local tag.
+- Import/search matching now applies light normalization before lookup so near-equivalent values such as `Science Fiction`, `Science-Fiction`, and `sci-fi` can resolve to the same mapping when appropriate.
+- This normalization is intentionally lightweight and does not attempt full translation of provider metadata.
 
 ## Enums And Allowed Values
 

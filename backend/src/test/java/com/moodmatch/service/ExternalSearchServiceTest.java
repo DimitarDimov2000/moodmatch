@@ -159,6 +159,57 @@ class ExternalSearchServiceTest {
     }
 
     @Test
+    void shouldLimitAutomaticSearchFanoutPerProvider() {
+        TestOpenLibraryGateway.useResults(java.util.stream.IntStream.rangeClosed(1, 7)
+                .mapToObj(index -> new com.moodmatch.external.openlibrary.OpenLibraryGateway.OpenLibrarySearchItem(
+                        "/works/OL" + index + "W",
+                        List.of("OL" + index + "M"),
+                        "Open Library Result " + index,
+                        List.of("Author " + index),
+                        2000 + index,
+                        1000 + index,
+                        List.of("Science Fiction"),
+                        null))
+                .toList());
+        TestAniListGateway.useResults(java.util.stream.IntStream.rangeClosed(1, 7)
+                .mapToObj(index -> new com.moodmatch.external.anilist.AniListGateway.AniListMedia(
+                        30000 + index,
+                        "MANGA",
+                        "MANGA",
+                        "RELEASING",
+                        null,
+                        null,
+                        1990 + index,
+                        new com.moodmatch.external.anilist.AniListGateway.AniListTitle(
+                                "AniList Result " + index,
+                                null,
+                                null),
+                        "<p>Result " + index + "</p>",
+                        null,
+                        "https://anilist.co/manga/" + (30000 + index),
+                        List.of("Fantasy"),
+                        List.of("Adventure"),
+                        List.of(),
+                        List.of("Creator " + index)))
+                .toList());
+
+        ExternalSearchResponse response = externalSearchService.search("result", "BOOK", null, 10);
+
+        assertEquals(10, response.results().size());
+        assertEquals(List.of(
+                "Open Library Result 1",
+                "Open Library Result 2",
+                "Open Library Result 3",
+                "Open Library Result 4",
+                "Open Library Result 5",
+                "AniList Result 1",
+                "AniList Result 2",
+                "AniList Result 3",
+                "AniList Result 4",
+                "AniList Result 5"), response.results().stream().map(result -> result.title()).toList());
+    }
+
+    @Test
     void shouldSearchAniListMovieResultsForAutomaticFilmWhenTmdbConfigIsMissing() {
         ExternalSearchResponse response = externalSearchService.search("spirited away", "FILM", "AUTOMATIC", 5);
 
