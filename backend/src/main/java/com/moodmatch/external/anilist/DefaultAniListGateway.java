@@ -25,7 +25,7 @@ public class DefaultAniListGateway implements AniListGateway {
     private static final String SEARCH_QUERY = """
             query MoodMatchAniListSearch($search: String!, $type: MediaType!, $perPage: Int!) {
               Page(page: 1, perPage: $perPage) {
-                media(search: $search, type: $type) {
+                media(search: $search, type: $type, sort: SEARCH_MATCH) {
                   id
                   type
                   format

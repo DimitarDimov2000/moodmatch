@@ -9,6 +9,7 @@ public final class ExternalSourceMappings {
 
     public static ExternalSourceName toEntitySource(ExternalSearchSourceName source) {
         return switch (source) {
+            case AUTOMATIC -> throw new IllegalArgumentException("AUTOMATIC is not an importable external source.");
             case DEMO -> ExternalSourceName.DEMO;
             case TMDB -> ExternalSourceName.TMDB;
             case OPEN_LIBRARY -> ExternalSourceName.OPEN_LIBRARY;
@@ -22,6 +23,7 @@ public final class ExternalSourceMappings {
 
     public static ExternalSourceName toMappingSource(ExternalSearchSourceName source, MediaType mediaType) {
         return switch (source) {
+            case AUTOMATIC -> throw new IllegalArgumentException("AUTOMATIC is not an importable external source.");
             case TMDB -> ExternalSourceName.TMDB;
             case OPEN_LIBRARY -> ExternalSourceName.OPEN_LIBRARY;
             case RAWG -> ExternalSourceName.RAWG;

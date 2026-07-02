@@ -150,21 +150,24 @@ Query parameters:
 | --- | --- | --- | --- |
 | `query` | yes | string | Trimmed server-side |
 | `mediaType` | yes | enum | `FILM`, `SERIES`, `BOOK`, `GAME`, `AUDIOBOOK`, `PODCAST`, `VIDEO` |
-| `source` | no | enum | `DEMO`, `TMDB`, `OPEN_LIBRARY`, `RAWG`, `LIBRIVOX`, `PODCAST_INDEX`, `ANILIST`, or `YOUTUBE`; omit to let the backend choose the best active provider |
+| `source` | no | enum | `AUTOMATIC`, `DEMO`, `TMDB`, `OPEN_LIBRARY`, `RAWG`, `LIBRIVOX`, `PODCAST_INDEX`, `ANILIST`, or `YOUTUBE`; omit or pass `AUTOMATIC` to search all compatible active providers |
 | `limit` | no | integer | Positive integer, capped by backend safety rules |
 
 Search behavior:
 
-- `FILM` and `SERIES` prefer `TMDB` when `MOODMATCH_TMDB_API_KEY` is configured.
-- If TMDB is not configured, the backend falls back to `DEMO` and returns a warning message.
-- `BOOK` prefers `OPEN_LIBRARY` and does not require a secret.
-- `ANILIST` can be selected explicitly for `FILM`, `SERIES`, and `BOOK`; it uses AniList GraphQL and does not require an API key.
-- `AUDIOBOOK` prefers `LIBRIVOX` and does not require a secret in the current implementation.
+- Automatic `FILM` and `SERIES` searches query all compatible real providers in order: `TMDB`, then `ANILIST`.
+- If TMDB is not configured during automatic search, the backend skips it, returns a warning, and still returns AniList results when available.
+- Automatic `BOOK` searches query `OPEN_LIBRARY`, then `ANILIST`.
+- Explicit `source=ANILIST` searches only AniList for `FILM`, `SERIES`, and `BOOK`; it uses AniList GraphQL and does not require an API key.
+- Automatic `AUDIOBOOK` searches query `LIBRIVOX`, which does not require a secret in the current implementation.
 - LibriVox results are limited to public-domain audiobooks in the LibriVox catalog.
-- `GAME` prefers `RAWG` when `MOODMATCH_RAWG_API_KEY` is configured.
-- If RAWG is not configured, automatic game search falls back to `DEMO` with a warning. Explicit `source=RAWG` returns `RAWG provider is not configured. Set MOODMATCH_RAWG_API_KEY.`
-- `PODCAST` and `VIDEO` remain on `DEMO` until their real providers are implemented.
+- Automatic `GAME` searches query `RAWG` when `MOODMATCH_RAWG_API_KEY` is configured.
+- If RAWG is not configured, automatic game search falls back to `DEMO` with warnings. Explicit `source=RAWG` returns `RAWG provider is not configured. Set MOODMATCH_RAWG_API_KEY.`
+- `PODCAST` and `VIDEO` have no active automatic search provider in this package and return a clear empty response.
 - Anime movie results from AniList map to `FILM`; anime TV/OVA/ONA/special/short results map to `SERIES`; manga/light novel/novel/one-shot results map to `BOOK`.
+- Automatic responses use response-level `"source": "AUTOMATIC"` and preserve the real provider on every result in `results[*].source`.
+- In automatic mode, the capped `limit` is applied per provider before merging so one provider cannot hide another provider's results.
+- Response-level `warnings` are non-blocking partial-result notices for skipped or unavailable providers.
 - Future provider names are accepted by the enum contract, but requests fail with `Source is not available` until a provider bean exists.
 - YouTube is planned only for later URL import, not search.
 - Suggested tags are derived from `external_tag_mappings`.
@@ -183,28 +186,28 @@ Example response shape:
 
 ```json
 {
-  "query": "arrival",
+  "query": "spirited away",
   "mediaType": "FILM",
-  "source": "DEMO",
+  "source": "AUTOMATIC",
   "warnings": [
-    "TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Using DEMO fallback."
+    "TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Provider skipped in automatic search."
   ],
   "results": [
     {
-      "source": "DEMO",
-      "externalId": "demo-film-arrival",
+      "source": "ANILIST",
+      "externalId": "199",
       "mediaType": "FILM",
-      "title": "Arrival",
-      "originalTitle": null,
+      "title": "Sen to Chihiro no Kamikakushi",
+      "originalTitle": "千と千尋の神隠し",
       "creatorNames": [],
       "description": "A normalized preview description.",
-      "releaseYear": 2016,
-      "coverUrl": "https://demo.moodmatch.local/covers/arrival.jpg",
-      "sourceUrl": "https://demo.moodmatch.local/items/demo-film-arrival",
-      "externalGenres": ["Science-Fiction", "Drama"],
-      "externalSubjects": ["Zeit", "Entdeckung"],
+      "releaseYear": 2001,
+      "coverUrl": "https://img.anilist.co/spirited-away-large.jpg",
+      "sourceUrl": "https://anilist.co/anime/199",
+      "externalGenres": ["Adventure", "Fantasy"],
+      "externalSubjects": ["Format: MOVIE", "Status: FINISHED"],
       "suggestedTags": [],
-      "attribution": "MoodMatch Demo Provider (offline)",
+      "attribution": "Metadata from AniList",
       "warnings": []
     }
   ]

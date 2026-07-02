@@ -39,14 +39,16 @@ AniList does not introduce core `ANIME` or `MANGA` media types. Anime movies map
 
 ## Fallback Behavior
 
-- When `MOODMATCH_TMDB_API_KEY` is configured, film and series searches default to `TMDB`.
-- When the key is missing, MoodMatch falls back to the offline `DEMO` provider and returns a clear warning in the search response.
-- `BOOK` searches default to `OPEN_LIBRARY`.
-- Explicit `source=ANILIST` searches are available for `FILM`, `SERIES`, and `BOOK`.
-- `AUDIOBOOK` searches default to `LIBRIVOX`.
-- `GAME` searches prefer `RAWG` when `MOODMATCH_RAWG_API_KEY` is configured.
+- Automatic search means the `source` query parameter is omitted or set to `AUTOMATIC`. The response-level source is then `AUTOMATIC`, while each result keeps its real provider in `results[*].source`.
+- Automatic `FILM` and `SERIES` searches query `TMDB` and `ANILIST` in that order. This allows regular film/series results and anime film/series results to appear together without adding `ANIME` as a core media type.
+- Automatic `BOOK` searches query `OPEN_LIBRARY` and `ANILIST` in that order. This allows book results and manga/light novel results to appear together without adding `MANGA` as a core media type.
+- Automatic `AUDIOBOOK` searches query `LIBRIVOX`.
+- Automatic `GAME` searches query `RAWG` when `MOODMATCH_RAWG_API_KEY` is configured.
+- Explicit provider search, such as `source=TMDB`, `source=OPEN_LIBRARY`, or `source=ANILIST`, searches only that provider and keeps the existing provider-specific error behavior.
+- When a compatible provider is unconfigured in automatic mode, MoodMatch skips it, records a non-blocking warning, and returns partial results from other compatible providers when possible.
 - When the RAWG key is missing, automatic `GAME` searches fall back to the offline `DEMO` provider and return a clear warning. Explicit `source=RAWG` searches return a provider configuration error instead of silently falling back.
-- `PODCAST` and `VIDEO` currently default to `DEMO` until their real providers are implemented.
+- When all compatible real providers for `FILM`, `SERIES`, `BOOK`, `AUDIOBOOK`, or `GAME` are unavailable and `DEMO` can cover the media type, MoodMatch uses `DEMO` as the fallback.
+- `PODCAST` and `VIDEO` currently have no active automatic search provider and return an empty response until their real providers are implemented.
 - `DEMO` remains available for local development and tests.
 
 ## Search And Import Mapping
@@ -58,6 +60,18 @@ Search responses are normalized before they reach the frontend:
 - `title`, `originalTitle`, `creatorNames`, `description`, `releaseYear`, `coverUrl`, `sourceUrl`
 - `externalGenres`, `externalSubjects`
 - `suggestedTags`: local tag suggestions derived from `external_tag_mappings`
+
+Automatic provider matrix:
+
+| Media type | Automatic providers |
+| --- | --- |
+| `FILM` | `TMDB`, `ANILIST`, then `DEMO` only if all compatible real providers are unavailable |
+| `SERIES` | `TMDB`, `ANILIST`, then `DEMO` only if all compatible real providers are unavailable |
+| `BOOK` | `OPEN_LIBRARY`, `ANILIST`, then `DEMO` only if all compatible real providers are unavailable |
+| `AUDIOBOOK` | `LIBRIVOX`, then `DEMO` only if all compatible real providers are unavailable |
+| `GAME` | `RAWG`, then `DEMO` only if all compatible real providers are unavailable |
+| `PODCAST` | no active automatic provider yet |
+| `VIDEO` | no active automatic search provider; YouTube URL resolver is future work |
 
 Open Library book mapping decisions:
 

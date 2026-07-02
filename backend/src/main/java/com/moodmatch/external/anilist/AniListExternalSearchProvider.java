@@ -22,8 +22,10 @@ public class AniListExternalSearchProvider implements ExternalSearchProvider {
     private static final String ATTRIBUTION = "Metadata from AniList";
     private static final Set<MediaType> SUPPORTED_MEDIA_TYPES = Set.of(MediaType.FILM, MediaType.SERIES, MediaType.BOOK);
     private static final Set<String> ANIME_SERIES_FORMATS =
-            Set.of("TV", "TV_SHORT", "OVA", "ONA", "SPECIAL", "SHORT");
+            Set.of("TV", "TV_SHORT", "OVA", "ONA", "SPECIAL", "SHORT", "MUSIC");
     private static final Set<String> BOOK_FORMATS = Set.of("MANGA", "NOVEL", "ONE_SHOT");
+    private static final int FETCH_MULTIPLIER = 4;
+    private static final int MIN_FETCH_LIMIT = 20;
     private static final int MAX_SUBJECT_VALUES = 10;
     private static final Pattern HTML_TAG_PATTERN = Pattern.compile("<[^>]+>");
 
@@ -42,13 +44,26 @@ public class AniListExternalSearchProvider implements ExternalSearchProvider {
 
     @Override
     public List<ExternalSearchResult> search(ExternalSearchRequest request) {
-        return aniListGateway.searchMedia(request.mediaType(), request.query(), request.limit()).stream()
+        return aniListGateway.searchMedia(request.mediaType(), request.query(), fetchLimit(request.limit())).stream()
                 .filter(item -> item.id() > 0)
                 .map(this::toResult)
                 .filter(Objects::nonNull)
+                .filter(result -> result.mediaType() == request.mediaType())
                 .filter(result -> result.title() != null && !result.title().isBlank())
+                .sorted((first, second) -> Integer.compare(seriesResultPriority(first), seriesResultPriority(second)))
                 .limit(request.limit())
                 .toList();
+    }
+
+    private int fetchLimit(int requestedLimit) {
+        return Math.max(MIN_FETCH_LIMIT, requestedLimit * FETCH_MULTIPLIER);
+    }
+
+    private int seriesResultPriority(ExternalSearchResult result) {
+        if (result.mediaType() != MediaType.SERIES) {
+            return 0;
+        }
+        return result.externalSubjects().contains("Format: MUSIC") ? 1 : 0;
     }
 
     private ExternalSearchResult toResult(AniListGateway.AniListMedia item) {

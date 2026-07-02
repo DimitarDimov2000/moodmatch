@@ -28,8 +28,8 @@ const errorMessage = ref('');
 const searchResponse = ref<ExternalSearchResponse | null>(null);
 const importStates = ref<Record<string, ImportState>>({});
 
-const fallbackMessage = computed(() => {
-  if (!searchResponse.value || searchResponse.value.source !== 'DEMO' || searchResponse.value.warnings.length === 0) {
+const warningMessage = computed(() => {
+  if (!searchResponse.value || searchResponse.value.warnings.length === 0) {
     return '';
   }
 
@@ -39,6 +39,10 @@ const fallbackMessage = computed(() => {
 const resolvedSourceLabel = computed(() => {
   if (!searchResponse.value) {
     return '';
+  }
+
+  if (searchResponse.value.source === 'AUTOMATIC') {
+    return 'passenden Quellen';
   }
 
   return externalSourceLabels[searchResponse.value.source];
@@ -205,9 +209,9 @@ interface ImportState {
     />
 
     <AppMessage
-      v-if="fallbackMessage"
-      title="DEMO-Fallback aktiv"
-      :description="fallbackMessage"
+      v-if="warningMessage"
+      title="Provider-Hinweis"
+      :description="warningMessage"
       tone="info"
     />
 
@@ -274,7 +278,7 @@ interface ImportState {
 
       <ExternalSearchResultCard
         v-for="result in searchResponse.results"
-        :key="result.externalId"
+        :key="resultKey(result)"
         :result="result"
         :is-importing="getImportState(result).importing"
         :import-error="getImportState(result).error"

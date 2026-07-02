@@ -57,6 +57,45 @@ class AniListExternalSearchProviderTest {
     }
 
     @Test
+    void shouldFetchExtraAniListResultsAndFilterToRequestedAnimeSeries() {
+        CapturingAniListGateway gateway = new CapturingAniListGateway(List.of(animeMovie(), animeMusicVideo(), animeSeries()));
+        AniListExternalSearchProvider provider = new AniListExternalSearchProvider();
+        provider.aniListGateway = gateway;
+
+        List<ExternalSearchResult> results = provider.search(
+                new ExternalSearchRequest("demon slayer", MediaType.SERIES, ExternalSearchSourceName.ANILIST, 1));
+
+        assertTrue(gateway.lastLimit() > 1);
+        assertEquals(1, results.size());
+        assertEquals(MediaType.SERIES, results.getFirst().mediaType());
+        assertEquals("Shingeki no Kyojin", results.getFirst().title());
+    }
+
+    @Test
+    void shouldFilterAnimeMovieSearchResultsToFilm() {
+        AniListExternalSearchProvider provider = providerWith(List.of(animeSeries(), animeMovie()));
+
+        List<ExternalSearchResult> results = provider.search(
+                new ExternalSearchRequest("spirited away", MediaType.FILM, ExternalSearchSourceName.ANILIST, 5));
+
+        assertEquals(1, results.size());
+        assertEquals(MediaType.FILM, results.getFirst().mediaType());
+        assertEquals("Sen to Chihiro no Kamikakushi", results.getFirst().title());
+    }
+
+    @Test
+    void shouldMapAniListMusicFormatAsSeriesWhenReturnedByAnimeSearch() {
+        AniListExternalSearchProvider provider = providerWith(List.of(animeMusicVideo()));
+
+        List<ExternalSearchResult> results = provider.search(
+                new ExternalSearchRequest("anime music clip", MediaType.SERIES, ExternalSearchSourceName.ANILIST, 5));
+
+        assertEquals(1, results.size());
+        assertEquals(MediaType.SERIES, results.getFirst().mediaType());
+        assertEquals("Anime Music Clip", results.getFirst().title());
+    }
+
+    @Test
     void shouldMapMangaAndLightNovelFormatsIntoBookResults() {
         AniListExternalSearchProvider provider = providerWith(List.of(manga(), novel()));
 
@@ -81,11 +120,11 @@ class AniListExternalSearchProviderTest {
     }
 
     @Test
-    void shouldIgnoreUnsupportedAniListFormatsAndReturnEmptyResults() {
+    void shouldIgnoreUnsupportedAniListTypesAndReturnEmptyResults() {
         AniListExternalSearchProvider provider = providerWith(List.of(new AniListGateway.AniListMedia(
                 1,
-                "ANIME",
-                "MUSIC",
+                "UNKNOWN",
+                "TV",
                 "FINISHED",
                 null,
                 null,
@@ -100,7 +139,7 @@ class AniListExternalSearchProviderTest {
                 List.of())));
 
         List<ExternalSearchResult> results = provider.search(
-                new ExternalSearchRequest("music", MediaType.SERIES, ExternalSearchSourceName.ANILIST, 5));
+                new ExternalSearchRequest("unknown", MediaType.SERIES, ExternalSearchSourceName.ANILIST, 5));
 
         assertTrue(results.isEmpty());
     }
@@ -149,6 +188,25 @@ class AniListExternalSearchProviderTest {
                 List.of());
     }
 
+    private AniListGateway.AniListMedia animeMusicVideo() {
+        return new AniListGateway.AniListMedia(
+                999,
+                "ANIME",
+                "MUSIC",
+                "FINISHED",
+                null,
+                null,
+                2020,
+                new AniListGateway.AniListTitle("Anime Music Clip", null, null),
+                "A short anime music format item.",
+                null,
+                "https://anilist.co/anime/999",
+                List.of("Music"),
+                List.of(),
+                List.of("Animation Studio"),
+                List.of());
+    }
+
     private AniListGateway.AniListMedia manga() {
         return new AniListGateway.AniListMedia(
                 30002,
@@ -185,5 +243,25 @@ class AniListExternalSearchProviderTest {
                 List.of("Economics"),
                 List.of(),
                 List.of("Isuna Hasekura"));
+    }
+
+    private static final class CapturingAniListGateway implements AniListGateway {
+
+        private final List<AniListMedia> results;
+        private int lastLimit;
+
+        private CapturingAniListGateway(List<AniListMedia> results) {
+            this.results = results;
+        }
+
+        @Override
+        public List<AniListMedia> searchMedia(MediaType mediaType, String query, int limit) {
+            lastLimit = limit;
+            return results.stream().limit(limit).toList();
+        }
+
+        private int lastLimit() {
+            return lastLimit;
+        }
     }
 }

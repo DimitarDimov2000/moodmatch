@@ -11,10 +11,12 @@ export type ExternalSearchSourceName =
   | 'ANILIST'
   | 'YOUTUBE';
 
+export type ExternalSearchResponseSourceName = ExternalSearchSourceName | 'AUTOMATIC';
+
 export interface ExternalSearchQuery {
   query: string;
   mediaType: MediaType;
-  source?: ExternalSearchSourceName;
+  source?: ExternalSearchSourceName | 'AUTOMATIC';
   limit?: number;
 }
 
@@ -48,7 +50,7 @@ export interface ExternalSearchResultResponse {
 export interface ExternalSearchResponse {
   query: string;
   mediaType: MediaType;
-  source: ExternalSearchSourceName;
+  source: ExternalSearchResponseSourceName;
   results: ExternalSearchResultResponse[];
   warnings: string[];
 }

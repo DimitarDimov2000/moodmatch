@@ -75,14 +75,12 @@ class ExternalSearchServiceTest {
 
     @Test
     void shouldReturnEmptySuggestedTagsWhenNoMappingsExist() {
-        ExternalSearchResponse response = externalSearchService.search("arrival", "FILM", null, null);
+        ExternalSearchResponse response = externalSearchService.search("arrival", "FILM", "DEMO", null);
 
         assertEquals(1, response.results().size());
         assertTrue(response.results().getFirst().suggestedTags().isEmpty());
         assertEquals("DEMO", response.source().name());
-        assertEquals(
-                List.of("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Using DEMO fallback."),
-                response.warnings());
+        assertTrue(response.warnings().isEmpty());
     }
 
     @Test
@@ -131,15 +129,89 @@ class ExternalSearchServiceTest {
     }
 
     @Test
-    void shouldPreferOpenLibraryForBookSearchesWhenNoSourceIsSpecified() {
+    void shouldSearchOpenLibraryAndAniListForBookSearchesWhenNoSourceIsSpecified() {
         ExternalSearchResponse response = externalSearchService.search("dune", "BOOK", null, 5);
 
-        assertEquals("OPEN_LIBRARY", response.source().name());
-        assertEquals(1, response.results().size());
+        assertEquals("AUTOMATIC", response.source().name());
+        assertEquals(2, response.results().size());
         assertEquals("Dune", response.results().getFirst().title());
         assertEquals(List.of("Frank Herbert"), response.results().getFirst().creatorNames());
         assertEquals("OL12345W", response.results().getFirst().externalId());
+        assertEquals("OPEN_LIBRARY", response.results().getFirst().source().name());
+        assertEquals("Berserk", response.results().get(1).title());
+        assertEquals("ANILIST", response.results().get(1).source().name());
         assertTrue(response.warnings().isEmpty());
+    }
+
+    @Test
+    void shouldSearchAniListForAutomaticSeriesWhenTmdbConfigIsMissing() {
+        ExternalSearchResponse response = externalSearchService.search("attack on titan", "SERIES", null, 5);
+
+        assertEquals("AUTOMATIC", response.source().name());
+        assertEquals("Shingeki no Kyojin", response.results().getFirst().title());
+        assertEquals("ANILIST", response.results().getFirst().source().name());
+        assertEquals("SERIES", response.results().getFirst().mediaType().name());
+        assertEquals(
+                List.of("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Provider skipped in automatic search."),
+                response.warnings());
+    }
+
+    @Test
+    void shouldSearchAniListMovieResultsForAutomaticFilmWhenTmdbConfigIsMissing() {
+        ExternalSearchResponse response = externalSearchService.search("spirited away", "FILM", "AUTOMATIC", 5);
+
+        assertEquals("AUTOMATIC", response.source().name());
+        assertEquals("Sen to Chihiro no Kamikakushi", response.results().getFirst().title());
+        assertEquals("ANILIST", response.results().getFirst().source().name());
+        assertEquals("FILM", response.results().getFirst().mediaType().name());
+        assertEquals(
+                List.of("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Provider skipped in automatic search."),
+                response.warnings());
+    }
+
+    @Test
+    void shouldDeduplicateAutomaticResultsBySourceAndExternalIdOnly() {
+        TestAniListGateway.useResults(List.of(
+                new com.moodmatch.external.anilist.AniListGateway.AniListMedia(
+                        16498,
+                        "ANIME",
+                        "TV",
+                        "FINISHED",
+                        "SPRING",
+                        2013,
+                        2013,
+                        new com.moodmatch.external.anilist.AniListGateway.AniListTitle(
+                                "Shingeki no Kyojin", "Attack on Titan", "進撃の巨人"),
+                        "<p>Humanity fights titans beyond the walls.</p>",
+                        new com.moodmatch.external.anilist.AniListGateway.AniListCoverImage(
+                                "https://img.anilist.co/aot-large.jpg", null),
+                        "https://anilist.co/anime/16498",
+                        List.of("Action"),
+                        List.of("Survival"),
+                        List.of("Wit Studio"),
+                        List.of()),
+                new com.moodmatch.external.anilist.AniListGateway.AniListMedia(
+                        16498,
+                        "ANIME",
+                        "TV",
+                        "FINISHED",
+                        "SPRING",
+                        2013,
+                        2013,
+                        new com.moodmatch.external.anilist.AniListGateway.AniListTitle(
+                                "Attack on Titan Duplicate", null, null),
+                        "<p>Duplicate.</p>",
+                        null,
+                        "https://anilist.co/anime/16498",
+                        List.of("Action"),
+                        List.of("Survival"),
+                        List.of("Wit Studio"),
+                        List.of())));
+
+        ExternalSearchResponse response = externalSearchService.search("attack on titan", "SERIES", null, 5);
+
+        assertEquals(1, response.results().size());
+        assertEquals("Shingeki no Kyojin", response.results().getFirst().title());
     }
 
     @Test
@@ -153,12 +225,16 @@ class ExternalSearchServiceTest {
     @Test
     void shouldAcceptExplicitAniListSourceNamesForAnimeAndManga() {
         ExternalSearchResponse animeResponse = externalSearchService.search("attack on titan", "SERIES", "ANILIST", 5);
+        ExternalSearchResponse animeMovieResponse = externalSearchService.search("spirited away", "FILM", "ANILIST", 5);
         ExternalSearchResponse mangaResponse = externalSearchService.search("berserk", "BOOK", "ANILIST", 5);
 
         assertEquals("ANILIST", animeResponse.source().name());
         assertEquals("ANILIST", animeResponse.results().getFirst().source().name());
         assertEquals("SERIES", animeResponse.results().getFirst().mediaType().name());
         assertEquals("Shingeki no Kyojin", animeResponse.results().getFirst().title());
+        assertEquals("ANILIST", animeMovieResponse.source().name());
+        assertEquals("FILM", animeMovieResponse.results().getFirst().mediaType().name());
+        assertEquals("Sen to Chihiro no Kamikakushi", animeMovieResponse.results().getFirst().title());
         assertEquals("ANILIST", mangaResponse.source().name());
         assertEquals("BOOK", mangaResponse.results().getFirst().mediaType().name());
         assertEquals("Berserk", mangaResponse.results().getFirst().title());
@@ -169,7 +245,7 @@ class ExternalSearchServiceTest {
         ExternalSearchResponse response = externalSearchService.search("pride", "AUDIOBOOK", null, 5);
 
         assertEquals("AUDIOBOOK", response.mediaType().name());
-        assertEquals("LIBRIVOX", response.source().name());
+        assertEquals("AUTOMATIC", response.source().name());
         assertEquals(1, response.results().size());
         assertEquals("Pride and Prejudice", response.results().getFirst().title());
         assertEquals("LIBRIVOX", response.results().getFirst().source().name());
@@ -189,7 +265,7 @@ class ExternalSearchServiceTest {
         ExternalSearchResponse response = externalSearchService.search("episode", "PODCAST", null, 5);
 
         assertEquals("PODCAST", response.mediaType().name());
-        assertEquals("DEMO", response.source().name());
+        assertEquals("AUTOMATIC", response.source().name());
         assertTrue(response.results().isEmpty());
         assertTrue(response.warnings().isEmpty());
     }
@@ -199,9 +275,11 @@ class ExternalSearchServiceTest {
         ExternalSearchResponse response = externalSearchService.search("zelda", "GAME", null, 5);
 
         assertEquals("GAME", response.mediaType().name());
-        assertEquals("DEMO", response.source().name());
+        assertEquals("AUTOMATIC", response.source().name());
         assertEquals(
-                List.of("RAWG provider is not configured. Set MOODMATCH_RAWG_API_KEY. Using DEMO fallback."),
+                List.of(
+                        "RAWG provider is not configured. Set MOODMATCH_RAWG_API_KEY. Provider skipped in automatic search.",
+                        "Using DEMO fallback."),
                 response.warnings());
     }
 

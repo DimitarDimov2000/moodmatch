@@ -92,7 +92,7 @@ class ExternalSearchResourceTest {
     }
 
     @Test
-    void shouldDefaultToDemoSourceAndReturnDeterministicNormalizedResults() {
+    void shouldSearchCompatibleAutomaticFilmProvidersAndReturnWarningsForSkippedProviders() {
         given()
                 .when()
                 .get("/api/external/search?query=a&mediaType=FILM")
@@ -100,12 +100,13 @@ class ExternalSearchResourceTest {
                 .statusCode(200)
                 .body("query", is("a"))
                 .body("mediaType", is("FILM"))
-                .body("source", is("DEMO"))
-                .body("warnings[0]", is("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Using DEMO fallback."))
-                .body("results.size()", is(2))
-                .body("results[0].title", is("Arrival"))
-                .body("results[1].title", is("Severance Preview Reel"))
-                .body("results[0].attribution", is("MoodMatch Demo Provider (offline)"));
+                .body("source", is("AUTOMATIC"))
+                .body("warnings[0]", is("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Provider skipped in automatic search."))
+                .body("results.size()", is(1))
+                .body("results[0].title", is("Sen to Chihiro no Kamikakushi"))
+                .body("results[0].source", is("ANILIST"))
+                .body("results[0].mediaType", is("FILM"))
+                .body("results[0].attribution", is("Metadata from AniList"));
     }
 
     @Test
@@ -123,7 +124,7 @@ class ExternalSearchResourceTest {
     void shouldApplyMediaTypeFilteringAndReturnEmptyResultsWhenNothingMatches() {
         given()
                 .when()
-                .get("/api/external/search?query=dark&mediaType=SERIES")
+                .get("/api/external/search?query=dark&mediaType=SERIES&source=DEMO")
                 .then()
                 .statusCode(200)
                 .body("results.size()", is(1))
@@ -131,7 +132,7 @@ class ExternalSearchResourceTest {
 
         given()
                 .when()
-                .get("/api/external/search?query=dark&mediaType=FILM")
+                .get("/api/external/search?query=dark&mediaType=FILM&source=DEMO")
                 .then()
                 .statusCode(200)
                 .body("results.size()", is(0));
@@ -144,14 +145,17 @@ class ExternalSearchResourceTest {
                 .get("/api/external/search?query=dune&mediaType=BOOK")
                 .then()
                 .statusCode(200)
-                .body("source", is("OPEN_LIBRARY"))
+                .body("source", is("AUTOMATIC"))
                 .body("warnings.size()", is(0))
-                .body("results.size()", is(1))
+                .body("results.size()", is(2))
                 .body("results[0].title", is("Dune"))
                 .body("results[0].externalId", is("OL12345W"))
+                .body("results[0].source", is("OPEN_LIBRARY"))
                 .body("results[0].creatorNames[0]", is("Frank Herbert"))
                 .body("results[0].mediaType", is("BOOK"))
-                .body("results[0].attribution", is("Metadata from Open Library"));
+                .body("results[0].attribution", is("Metadata from Open Library"))
+                .body("results[1].title", is("Berserk"))
+                .body("results[1].source", is("ANILIST"));
     }
 
     @Test
@@ -161,7 +165,7 @@ class ExternalSearchResourceTest {
                 .get("/api/external/search?query=pride&mediaType=AUDIOBOOK")
                 .then()
                 .statusCode(200)
-                .body("source", is("LIBRIVOX"))
+                .body("source", is("AUTOMATIC"))
                 .body("warnings.size()", is(0))
                 .body("results.size()", is(1))
                 .body("results[0].title", is("Pride and Prejudice"))
@@ -170,6 +174,21 @@ class ExternalSearchResourceTest {
                 .body("results[0].creatorNames[1]", is("Reader: Annie Coleman Rothenberg"))
                 .body("results[0].mediaType", is("AUDIOBOOK"))
                 .body("results[0].attribution", is("LibriVox public domain audiobook catalog"));
+    }
+
+    @Test
+    void shouldSearchAutomaticSeriesThroughAniListWhenTmdbIsUnconfigured() {
+        given()
+                .when()
+                .get("/api/external/search?query=attack%20on%20titan&mediaType=SERIES")
+                .then()
+                .statusCode(200)
+                .body("source", is("AUTOMATIC"))
+                .body("warnings[0]", is("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Provider skipped in automatic search."))
+                .body("results.size()", is(1))
+                .body("results[0].source", is("ANILIST"))
+                .body("results[0].title", is("Shingeki no Kyojin"))
+                .body("results[0].mediaType", is("SERIES"));
     }
 
     @Test
@@ -188,6 +207,17 @@ class ExternalSearchResourceTest {
                 .body("results[0].mediaType", is("SERIES"))
                 .body("results[0].externalSubjects[0]", is("Format: TV"))
                 .body("results[0].attribution", is("Metadata from AniList"));
+
+        given()
+                .when()
+                .get("/api/external/search?query=spirited%20away&mediaType=FILM&source=ANILIST")
+                .then()
+                .statusCode(200)
+                .body("source", is("ANILIST"))
+                .body("results.size()", is(1))
+                .body("results[0].title", is("Sen to Chihiro no Kamikakushi"))
+                .body("results[0].mediaType", is("FILM"))
+                .body("results[0].externalSubjects[0]", is("Format: MOVIE"));
 
         given()
                 .when()

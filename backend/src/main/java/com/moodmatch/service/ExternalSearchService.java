@@ -1,8 +1,11 @@
 package com.moodmatch.service;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -40,13 +43,17 @@ public class ExternalSearchService {
         String normalizedQuery = normalizeQuery(query);
         MediaType mediaType = parseMediaType(mediaTypeRaw);
         int safeLimit = toSafeLimit(limit);
-        ProviderSelection selection = selectProvider(sourceRaw, mediaType);
-        ExternalSearchProvider provider = selection.provider();
 
+        if (isAutomaticSearch(sourceRaw)) {
+            return searchAutomatically(normalizedQuery, mediaType, safeLimit);
+        }
+
+        ExternalSearchProvider provider = resolveProvider(parseSource(sourceRaw));
         if (!provider.supportedMediaTypes().contains(mediaType)) {
             throw new BusinessRuleViolationException(
                     "Source %s does not support media type %s.".formatted(provider.sourceName(), mediaType));
         }
+        ensureConfigured(provider);
 
         ExternalSearchRequest request =
                 new ExternalSearchRequest(normalizedQuery, mediaType, provider.sourceName(), safeLimit);
@@ -60,7 +67,7 @@ public class ExternalSearchService {
                 mediaType,
                 provider.sourceName(),
                 results,
-                List.copyOf(selection.warnings()));
+                List.of());
     }
 
     private String normalizeQuery(String query) {
@@ -93,37 +100,97 @@ public class ExternalSearchService {
         return Math.min(limit, MAX_LIMIT);
     }
 
-    private ProviderSelection selectProvider(String sourceRaw, MediaType mediaType) {
-        if (sourceRaw != null && !sourceRaw.isBlank()) {
-            ExternalSearchSourceName requestedSource = parseSource(sourceRaw);
-            ExternalSearchProvider provider = resolveProvider(requestedSource);
-            ensureConfigured(provider);
-            return new ProviderSelection(provider, List.of());
+    private boolean isAutomaticSearch(String sourceRaw) {
+        if (sourceRaw == null || sourceRaw.isBlank()) {
+            return true;
         }
-
-        Optional<ExternalSearchProvider> preferredProvider = preferredProviderFor(mediaType);
-        if (preferredProvider.isPresent()) {
-            ExternalSearchProvider provider = preferredProvider.get();
-            if (provider.isConfigured()) {
-                return new ProviderSelection(provider, List.of());
-            }
-
-            return new ProviderSelection(
-                    resolveProvider(ExternalSearchSourceName.DEMO),
-                    List.of(provider.configurationErrorMessage() + " Using DEMO fallback."));
-        }
-
-        return new ProviderSelection(resolveProvider(ExternalSearchSourceName.DEMO), List.of());
+        return parseSource(sourceRaw) == ExternalSearchSourceName.AUTOMATIC;
     }
 
-    private Optional<ExternalSearchProvider> preferredProviderFor(MediaType mediaType) {
+    private ExternalSearchResponse searchAutomatically(String normalizedQuery, MediaType mediaType, int safeLimit) {
+        List<String> warnings = new ArrayList<>();
+        List<ExternalSearchProvider> realProviders = compatibleRealProvidersFor(mediaType);
+        List<ExternalSearchResult> results = new ArrayList<>();
+        int successfulRealProviderCount = 0;
+
+        for (ExternalSearchProvider provider : realProviders) {
+            if (!provider.isConfigured()) {
+                warnings.add(provider.configurationErrorMessage() + " Provider skipped in automatic search.");
+                continue;
+            }
+
+            try {
+                ExternalSearchRequest request =
+                        new ExternalSearchRequest(normalizedQuery, mediaType, provider.sourceName(), safeLimit);
+                results.addAll(provider.search(request));
+                successfulRealProviderCount++;
+            } catch (RuntimeException exception) {
+                warnings.add("%s search failed in automatic mode: %s"
+                        .formatted(provider.sourceName(), exception.getMessage()));
+            }
+        }
+
+        if (successfulRealProviderCount == 0 && shouldUseDemoFallback(mediaType)) {
+            Optional<ExternalSearchProvider> demoProvider = findProvider(ExternalSearchSourceName.DEMO);
+            if (demoProvider.isPresent()) {
+                ExternalSearchProvider provider = demoProvider.get();
+                ExternalSearchRequest request =
+                        new ExternalSearchRequest(normalizedQuery, mediaType, provider.sourceName(), safeLimit);
+                results.addAll(provider.search(request));
+                if (!warnings.isEmpty()) {
+                    warnings.add("Using DEMO fallback.");
+                }
+            }
+        }
+
+        List<ExternalSearchResultResponse> responseResults = deduplicate(results).stream()
+                .map(this::enrichSuggestions)
+                .map(this::toResponse)
+                .toList();
+
+        return new ExternalSearchResponse(
+                normalizedQuery,
+                mediaType,
+                ExternalSearchSourceName.AUTOMATIC,
+                responseResults,
+                List.copyOf(warnings));
+    }
+
+    private List<ExternalSearchProvider> compatibleRealProvidersFor(MediaType mediaType) {
         return switch (mediaType) {
-            case FILM, SERIES -> findProvider(ExternalSearchSourceName.TMDB);
-            case BOOK -> findProvider(ExternalSearchSourceName.OPEN_LIBRARY);
-            case AUDIOBOOK -> findProvider(ExternalSearchSourceName.LIBRIVOX);
-            case GAME -> findProvider(ExternalSearchSourceName.RAWG);
-            case PODCAST, VIDEO -> Optional.empty();
+            case FILM, SERIES -> providersInOrder(
+                    ExternalSearchSourceName.TMDB,
+                    ExternalSearchSourceName.ANILIST);
+            case BOOK -> providersInOrder(
+                    ExternalSearchSourceName.OPEN_LIBRARY,
+                    ExternalSearchSourceName.ANILIST);
+            case AUDIOBOOK -> providersInOrder(ExternalSearchSourceName.LIBRIVOX);
+            case GAME -> providersInOrder(ExternalSearchSourceName.RAWG);
+            case PODCAST, VIDEO -> List.of();
         };
+    }
+
+    private List<ExternalSearchProvider> providersInOrder(ExternalSearchSourceName... sources) {
+        ArrayList<ExternalSearchProvider> providers = new ArrayList<>();
+        for (ExternalSearchSourceName source : sources) {
+            findProvider(source).ifPresent(providers::add);
+        }
+        return List.copyOf(providers);
+    }
+
+    private boolean shouldUseDemoFallback(MediaType mediaType) {
+        return switch (mediaType) {
+            case FILM, SERIES, BOOK, AUDIOBOOK, GAME -> true;
+            case PODCAST, VIDEO -> false;
+        };
+    }
+
+    private List<ExternalSearchResult> deduplicate(List<ExternalSearchResult> results) {
+        Map<String, ExternalSearchResult> bySourceAndId = new LinkedHashMap<>();
+        for (ExternalSearchResult result : results) {
+            bySourceAndId.putIfAbsent(result.source() + ":" + result.externalId(), result);
+        }
+        return List.copyOf(bySourceAndId.values());
     }
 
     private ExternalSearchProvider resolveProvider(ExternalSearchSourceName source) {
@@ -193,5 +260,4 @@ public class ExternalSearchService {
                 suggestedTag.confidence());
     }
 
-    private record ProviderSelection(ExternalSearchProvider provider, List<String> warnings) {}
 }

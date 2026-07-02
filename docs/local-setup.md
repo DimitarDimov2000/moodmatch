@@ -81,7 +81,7 @@ Example terminal setup:
 export MOODMATCH_TMDB_API_KEY=your_tmdb_api_key
 ```
 
-If `MOODMATCH_TMDB_API_KEY` is missing, MoodMatch keeps the offline `DEMO` provider active as a fallback. No real API key is committed in this repository, and the frontend never receives the TMDB key directly.
+If `MOODMATCH_TMDB_API_KEY` is missing, automatic film/series searches skip TMDB, return a warning, and still use other compatible providers such as AniList when available. If no compatible real provider can run, MoodMatch keeps the offline `DEMO` provider active as a fallback. No real API key is committed in this repository, and the frontend never receives the TMDB key directly.
 
 ## Open Library Provider Setup
 
@@ -136,7 +136,7 @@ Optional local variable:
 Notes:
 
 - No secret or API key is required.
-- AniList searches are selected explicitly from the external search UI.
+- AniList can be selected explicitly and is also included automatically for compatible `FILM`, `SERIES`, and `BOOK` searches.
 - Anime movies import as `FILM`, anime TV/OVA/ONA/special/short formats import as `SERIES`, and manga/light novel/novel/one-shot formats import as `BOOK`.
 - MoodMatch does not add core `ANIME` or `MANGA` media types.
 

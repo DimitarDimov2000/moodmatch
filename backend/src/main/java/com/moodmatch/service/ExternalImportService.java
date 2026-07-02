@@ -19,7 +19,9 @@ import com.moodmatch.entity.MediaType;
 import com.moodmatch.entity.MetadataOrigin;
 import com.moodmatch.entity.SourceType;
 import com.moodmatch.entity.Tag;
+import com.moodmatch.exception.BusinessRuleViolationException;
 import com.moodmatch.external.adapter.ExternalSearchResult;
+import com.moodmatch.external.adapter.ExternalSearchSourceName;
 import com.moodmatch.external.adapter.ExternalSourceMappings;
 import com.moodmatch.mapper.MediaItemMapper;
 import com.moodmatch.repository.MediaItemRepository;
@@ -53,6 +55,9 @@ public class ExternalImportService {
     @Transactional
     public ExternalImportResponse importMedia(ExternalImportRequest request) {
         Objects.requireNonNull(request, "External import request must not be null.");
+        if (request.source() == ExternalSearchSourceName.AUTOMATIC) {
+            throw new BusinessRuleViolationException("Automatic search results must be imported with their result source.");
+        }
 
         MediaItem existing = mediaItemRepository
                 .findByExternalSourceWithAssociations(

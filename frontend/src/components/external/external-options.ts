@@ -1,5 +1,5 @@
 import type { MediaType } from '@/types/api-common';
-import type { ExternalSearchSourceName } from '@/types/external';
+import type { ExternalSearchResponseSourceName, ExternalSearchSourceName } from '@/types/external';
 
 export interface ExternalOptionItem<T extends string> {
   value: T;
@@ -9,7 +9,8 @@ export interface ExternalOptionItem<T extends string> {
 
 export type ExternalSourceSelection = 'AUTO' | ExternalSearchSourceName;
 
-export const externalSourceLabels: Record<ExternalSearchSourceName, string> = {
+export const externalSourceLabels: Record<ExternalSearchResponseSourceName, string> = {
+  AUTOMATIC: 'Automatic',
   DEMO: 'DEMO',
   TMDB: 'TMDB',
   OPEN_LIBRARY: 'Open Library',
@@ -25,18 +26,24 @@ export function sourceOptionsForMediaType(
 ): ExternalOptionItem<ExternalSourceSelection>[] {
   switch (mediaType) {
     case 'FILM':
+      return [
+        { value: 'AUTO', label: 'Automatisch (TMDB + AniList)' },
+        { value: 'TMDB', label: 'TMDB (Filme/Serien)' },
+        { value: 'ANILIST', label: 'Anime movie / AniList' },
+        { value: 'DEMO', label: 'DEMO-Fallback' },
+      ];
     case 'SERIES':
       return [
-        { value: 'AUTO', label: 'Automatisch (TMDB, sonst DEMO)' },
+        { value: 'AUTO', label: 'Automatisch (TMDB + AniList)' },
         { value: 'TMDB', label: 'TMDB (Filme/Serien)' },
-        { value: 'ANILIST', label: 'AniList (Anime)' },
+        { value: 'ANILIST', label: 'Anime series / AniList' },
         { value: 'DEMO', label: 'DEMO-Fallback' },
       ];
     case 'BOOK':
       return [
-        { value: 'AUTO', label: 'Automatisch (Open Library)' },
+        { value: 'AUTO', label: 'Automatisch (Open Library + AniList)' },
         { value: 'OPEN_LIBRARY', label: 'Open Library (Buecher)' },
-        { value: 'ANILIST', label: 'AniList (Manga/Light Novels)' },
+        { value: 'ANILIST', label: 'Manga / AniList' },
         { value: 'DEMO', label: 'DEMO-Fallback' },
       ];
     case 'GAME':
@@ -53,13 +60,13 @@ export function sourceOptionsForMediaType(
       ];
     case 'PODCAST':
       return [
-        { value: 'AUTO', label: 'Automatisch (DEMO)' },
+        { value: 'AUTO', label: 'Automatisch (noch keine aktive Quelle)' },
         { value: 'PODCAST_INDEX', label: 'Podcast Index (Podcasts geplant)', disabled: true },
         { value: 'DEMO', label: 'DEMO-Fallback' },
       ];
     case 'VIDEO':
       return [
-        { value: 'AUTO', label: 'Automatisch (DEMO)' },
+        { value: 'AUTO', label: 'Automatisch (noch keine aktive Suche)' },
         { value: 'YOUTUBE', label: 'YouTube (URL-Import geplant)', disabled: true },
         { value: 'DEMO', label: 'DEMO-Fallback' },
       ];
@@ -77,16 +84,16 @@ export function sourceHintForMediaType(mediaType: MediaType): string {
   switch (mediaType) {
     case 'FILM':
     case 'SERIES':
-      return 'Filme und Serien bevorzugen TMDB. Waehle AniList explizit fuer Anime; Anime-Filme bleiben Film, Anime-Serien bleiben Serie.';
+      return 'Automatisch durchsucht alle passenden Quellen: TMDB und AniList. Anime-Filme bleiben Film, Anime-Serien bleiben Serie.';
     case 'BOOK':
-      return 'Buecher werden automatisch ueber Open Library gesucht. Waehle AniList explizit fuer Manga und Light Novels; sie werden als Buch importiert.';
+      return 'Automatisch durchsucht Open Library und AniList. Manga und Light Novels bleiben beim Import normale Buecher.';
     case 'GAME':
-      return 'Games bevorzugen RAWG, wenn das Backend mit einem API-Key konfiguriert ist. Sonst faellt MoodMatch auf DEMO zurueck.';
+      return 'Automatisch durchsucht RAWG, wenn das Backend mit einem API-Key konfiguriert ist. Sonst faellt MoodMatch auf DEMO zurueck.';
     case 'AUDIOBOOK':
-      return 'Hoerbuecher werden ueber LibriVox gesucht. Der Katalog ist auf gemeinfreie Audiobooks begrenzt und benoetigt keinen geheimen API-Key.';
+      return 'Automatisch durchsucht LibriVox. Der Katalog ist auf gemeinfreie Audiobooks begrenzt und benoetigt keinen geheimen API-Key.';
     case 'PODCAST':
-      return 'Podcast Index ist als Podcast-Quelle geplant. Episodenimport ist nicht Teil dieses Pakets.';
+      return 'Podcast Index ist als Podcast-Quelle geplant. Automatisch zeigt bis dahin einen leeren Zustand.';
     case 'VIDEO':
-      return 'YouTube ist nur fuer spaeteren URL-Import vorgesehen. YouTube-Suche bleibt ausserhalb des Scopes.';
+      return 'YouTube ist nur fuer spaeteren URL-Import vorgesehen. Automatische Videosuche bleibt ausserhalb des Scopes.';
   }
 }

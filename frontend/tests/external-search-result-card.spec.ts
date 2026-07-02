@@ -47,6 +47,7 @@ describe('ExternalSearchResultCard', () => {
 
     expect(wrapper.text()).toContain('Pride and Prejudice');
     expect(wrapper.text()).toContain('LibriVox');
+    expect(wrapper.text()).toContain('Hoerbuch');
     expect(wrapper.text()).toContain('Autor:in / Sprecher:in');
     expect(wrapper.text()).toContain('Author: Jane Austen');
     expect(wrapper.text()).toContain('Reader: Annie Coleman Rothenberg');
@@ -131,6 +132,7 @@ describe('ExternalSearchResultCard', () => {
     expect(wrapper.text()).toContain('Elden Ring');
     expect(wrapper.text()).toContain('RAWG');
     expect(wrapper.text()).toContain('Spiel • 2022');
+    expect(wrapper.text()).toContain('Spiel');
     expect(wrapper.text()).toContain('Entwicklung / Publisher');
     expect(wrapper.text()).toContain('Developer: FromSoftware');
     expect(wrapper.text()).toContain('Action');
@@ -172,6 +174,7 @@ describe('ExternalSearchResultCard', () => {
     expect(wrapper.text()).toContain('Sen to Chihiro no Kamikakushi');
     expect(wrapper.text()).toContain('AniList');
     expect(wrapper.text()).toContain('Film • 2001');
+    expect(wrapper.text()).toContain('Anime movie');
     expect(wrapper.text()).toContain('Originaltitel: 千と千尋の神隠し');
     expect(wrapper.text()).toContain('Studios');
     expect(wrapper.text()).toContain('Studio Ghibli');
@@ -211,6 +214,7 @@ describe('ExternalSearchResultCard', () => {
 
     expect(wrapper.text()).toContain('Berserk');
     expect(wrapper.text()).toContain('Buch • 1989');
+    expect(wrapper.text()).toContain('Manga');
     expect(wrapper.text()).toContain('Autor:innen');
     expect(wrapper.text()).toContain('Kentaro Miura');
     expect(wrapper.text()).toContain('Format: MANGA');

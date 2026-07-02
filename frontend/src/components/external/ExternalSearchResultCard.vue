@@ -19,6 +19,27 @@ const emit = defineEmits<{
 }>();
 
 const sourceLabel = computed(() => externalSourceLabels[props.result.source]);
+const mediaTypeLabel = computed(() => mediaTypeLabels[props.result.mediaType]);
+const subtypeLabel = computed(() => {
+  const format = props.result.externalSubjects.find((subject) => subject.startsWith('Format: '))?.replace('Format: ', '');
+  if (props.result.source !== 'ANILIST' || !format) {
+    return format ?? '';
+  }
+
+  if (props.result.mediaType === 'FILM') {
+    return 'Anime movie';
+  }
+  if (props.result.mediaType === 'SERIES') {
+    return 'Anime series';
+  }
+  if (format === 'NOVEL') {
+    return 'Light novel';
+  }
+  if (format === 'ONE_SHOT') {
+    return 'Manga one-shot';
+  }
+  return 'Manga';
+});
 const creatorLabel = computed(() => {
   if (props.result.source === 'ANILIST' && props.result.mediaType !== 'BOOK') {
     return 'Studios';
@@ -44,7 +65,7 @@ const subjectsLabel = computed(() => {
   return 'Externe Subjects';
 });
 const subtitle = computed(() => {
-  const parts = [mediaTypeLabels[props.result.mediaType]];
+  const parts = [mediaTypeLabel.value];
   if (props.result.releaseYear) {
     parts.push(String(props.result.releaseYear));
   }
@@ -59,6 +80,13 @@ const subtitle = computed(() => {
         <div class="external-result-card__eyebrow-row">
           <span class="eyebrow">External Preview</span>
           <span class="external-result-card__source-badge">{{ sourceLabel }}</span>
+          <span class="external-result-card__media-badge">{{ mediaTypeLabel }}</span>
+          <span
+            v-if="subtypeLabel"
+            class="external-result-card__subtype-badge"
+          >
+            {{ subtypeLabel }}
+          </span>
         </div>
 
         <h2 class="external-result-card__title">
@@ -284,6 +312,23 @@ const subtitle = computed(() => {
   border: 1px solid color-mix(in srgb, var(--color-info) 24%, var(--color-border));
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+.external-result-card__media-badge,
+.external-result-card__subtype-badge {
+  display: inline-flex;
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.external-result-card__subtype-badge {
+  background: color-mix(in srgb, var(--color-warning-soft) 72%, var(--color-surface));
+  color: var(--color-text-primary);
 }
 
 .external-result-card__title,

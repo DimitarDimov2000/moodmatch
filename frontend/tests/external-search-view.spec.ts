@@ -68,12 +68,20 @@ describe('ExternalSearchView', () => {
   it('enables AniList for anime and manga without exposing anime or manga core media types', async () => {
     const wrapper = mountView();
 
-    expect(wrapper.text()).toContain('AniList (Anime)');
+    expect(wrapper.text()).toContain('Automatisch (TMDB + AniList)');
+    expect(wrapper.text()).toContain('Automatisch durchsucht alle passenden Quellen');
+    expect(wrapper.text()).toContain('Anime movie / AniList');
+    expect(wrapper.get('option[value="ANILIST"]').attributes('disabled')).toBeUndefined();
+
+    await wrapper.get('select[name="mediaType"]').setValue('SERIES');
+
+    expect(wrapper.text()).toContain('Anime series / AniList');
     expect(wrapper.get('option[value="ANILIST"]').attributes('disabled')).toBeUndefined();
 
     await wrapper.get('select[name="mediaType"]').setValue('BOOK');
 
-    expect(wrapper.text()).toContain('AniList (Manga/Light Novels)');
+    expect(wrapper.text()).toContain('Manga / AniList');
+    expect(wrapper.text()).toContain('Automatisch (Open Library + AniList)');
     expect(wrapper.get('option[value="ANILIST"]').attributes('disabled')).toBeUndefined();
     expect(wrapper.find('option[value="ANIME"]').exists()).toBe(false);
     expect(wrapper.find('option[value="MANGA"]').exists()).toBe(false);
@@ -81,28 +89,28 @@ describe('ExternalSearchView', () => {
     expect(wrapper.text()).not.toContain('Music');
   });
 
-  it('renders search results and the demo fallback message from the normalized response', async () => {
+  it('renders automatic search results and provider warnings from the normalized response', async () => {
     searchExternalMock.mockResolvedValue({
-      query: 'arrival',
+      query: 'spirited away',
       mediaType: 'FILM',
-      source: 'DEMO',
-      warnings: ['TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Using DEMO fallback.'],
+      source: 'AUTOMATIC',
+      warnings: ['TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Provider skipped in automatic search.'],
       results: [
         {
-          source: 'DEMO',
-          externalId: 'demo-film-arrival',
+          source: 'ANILIST',
+          externalId: '199',
           mediaType: 'FILM',
-          title: 'Arrival',
-          originalTitle: null,
-          creatorNames: [],
-          description: 'A linguist races to understand visitors.',
-          releaseYear: 2016,
-          coverUrl: null,
-          sourceUrl: 'https://demo.moodmatch.local/items/demo-film-arrival',
-          externalGenres: ['Science-Fiction'],
-          externalSubjects: ['Zeit'],
+          title: 'Sen to Chihiro no Kamikakushi',
+          originalTitle: '千と千尋の神隠し',
+          creatorNames: ['Studio Ghibli'],
+          description: 'A young girl enters a world of spirits.',
+          releaseYear: 2001,
+          coverUrl: 'https://img.anilist.co/spirited-away.jpg',
+          sourceUrl: 'https://anilist.co/anime/199',
+          externalGenres: ['Adventure'],
+          externalSubjects: ['Format: MOVIE', 'Status: FINISHED'],
           suggestedTags: [],
-          attribution: 'MoodMatch Demo Provider (offline)',
+          attribution: 'Metadata from AniList',
           warnings: [],
         },
       ],
@@ -110,18 +118,80 @@ describe('ExternalSearchView', () => {
 
     const wrapper = mountView();
 
-    await wrapper.get('input[name="query"]').setValue('arrival');
+    await wrapper.get('input[name="query"]').setValue('spirited away');
     await wrapper.get('form').trigger('submit');
     await flushPromises();
 
     expect(searchExternalMock).toHaveBeenCalledWith({
-      query: 'arrival',
+      query: 'spirited away',
       mediaType: 'FILM',
       source: undefined,
     });
-    expect(wrapper.text()).toContain('1 Treffer aus DEMO');
-    expect(wrapper.text()).toContain('Arrival');
-    expect(wrapper.text()).toContain('DEMO-Fallback aktiv');
+    expect(wrapper.text()).toContain('1 Treffer aus passenden Quellen');
+    expect(wrapper.text()).toContain('Sen to Chihiro no Kamikakushi');
+    expect(wrapper.text()).toContain('AniList');
+    expect(wrapper.text()).toContain('Film');
+    expect(wrapper.text()).toContain('Anime movie');
+    expect(wrapper.text()).toContain('Provider-Hinweis');
+    expect(wrapper.text()).toContain('TMDB provider is not configured');
+  });
+
+  it('renders mixed-source automatic results with provider badges', async () => {
+    searchExternalMock.mockResolvedValue({
+      query: 'berserk',
+      mediaType: 'BOOK',
+      source: 'AUTOMATIC',
+      warnings: [],
+      results: [
+        {
+          source: 'OPEN_LIBRARY',
+          externalId: 'OL12345W',
+          mediaType: 'BOOK',
+          title: 'Berserk Deluxe',
+          originalTitle: null,
+          creatorNames: ['Kentaro Miura'],
+          description: 'Book metadata from Open Library.',
+          releaseYear: 2019,
+          coverUrl: null,
+          sourceUrl: 'https://openlibrary.org/works/OL12345W',
+          externalGenres: ['Fantasy'],
+          externalSubjects: ['Dark fantasy'],
+          suggestedTags: [],
+          attribution: 'Metadata from Open Library',
+          warnings: [],
+        },
+        {
+          source: 'ANILIST',
+          externalId: '30002',
+          mediaType: 'BOOK',
+          title: 'Berserk',
+          originalTitle: 'ベルセルク',
+          creatorNames: ['Kentaro Miura'],
+          description: 'A dark fantasy manga.',
+          releaseYear: 1989,
+          coverUrl: 'https://img.anilist.co/berserk.jpg',
+          sourceUrl: 'https://anilist.co/manga/30002',
+          externalGenres: ['Action'],
+          externalSubjects: ['Format: MANGA', 'Status: RELEASING'],
+          suggestedTags: [],
+          attribution: 'Metadata from AniList',
+          warnings: [],
+        },
+      ],
+    });
+
+    const wrapper = mountView();
+
+    await wrapper.get('input[name="query"]').setValue('berserk');
+    await wrapper.get('select[name="mediaType"]').setValue('BOOK');
+    await wrapper.get('form').trigger('submit');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('2 Treffer aus passenden Quellen');
+    expect(wrapper.text()).toContain('Open Library');
+    expect(wrapper.text()).toContain('AniList');
+    expect(wrapper.text()).toContain('Buch');
+    expect(wrapper.text()).toContain('Manga');
   });
 
   it('passes the selected book source through the search request', async () => {
@@ -425,6 +495,33 @@ describe('ExternalSearchView', () => {
   });
 
   it('renders AniList anime movie and manga mappings from normalized results', async () => {
+    importExternalMediaMock.mockResolvedValue({
+      created: true,
+      message: 'Imported into your media library.',
+      media: {
+        id: 'anime-movie-1',
+        title: 'Sen to Chihiro no Kamikakushi',
+        originalTitle: '千と千尋の神隠し',
+        description: 'A young girl enters a world of spirits.',
+        mediaType: 'FILM',
+        consumptionStatus: 'WANT_TO_CONSUME',
+        isFavourite: false,
+        rating: null,
+        sourceType: 'EXTERNAL_SEARCH',
+        sourceNote: 'Imported from ANILIST',
+        commitmentLevel: 'MEDIUM',
+        releaseYear: 2001,
+        coverUrl: 'https://img.anilist.co/spirited-away.jpg',
+        externalSourceName: 'ANILIST',
+        externalSourceId: '199',
+        externalSourceUrl: 'https://anilist.co/anime/199',
+        metadataOrigin: 'IMPORTED',
+        tags: [],
+        externalReferences: [],
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
+    });
     searchExternalMock.mockResolvedValueOnce({
       query: 'spirited away',
       mediaType: 'FILM',
@@ -460,6 +557,28 @@ describe('ExternalSearchView', () => {
 
     expect(wrapper.text()).toContain('Sen to Chihiro no Kamikakushi');
     expect(wrapper.text()).toContain('Film • 2001');
+
+    const importButton = getImportButton(wrapper);
+    expect(importButton).toBeTruthy();
+    await importButton!.trigger('click');
+    await flushPromises();
+
+    expect(importExternalMediaMock).toHaveBeenCalledWith({
+      source: 'ANILIST',
+      externalId: '199',
+      mediaType: 'FILM',
+      title: 'Sen to Chihiro no Kamikakushi',
+      originalTitle: '千と千尋の神隠し',
+      creatorNames: ['Studio Ghibli'],
+      description: 'A young girl enters a world of spirits.',
+      releaseYear: 2001,
+      coverUrl: 'https://img.anilist.co/spirited-away.jpg',
+      sourceUrl: 'https://anilist.co/anime/199',
+      externalGenres: ['Adventure'],
+      externalSubjects: ['Format: MOVIE', 'Status: FINISHED'],
+      attribution: 'Metadata from AniList',
+    });
+    expect(wrapper.text()).toContain('In Mediathek ansehen');
 
     searchExternalMock.mockResolvedValueOnce({
       query: 'berserk',
