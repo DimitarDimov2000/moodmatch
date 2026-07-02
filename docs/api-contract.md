@@ -20,6 +20,55 @@ Example response:
 }
 ```
 
+### Auth
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| POST | `/auth/register` | Create a local email/password account |
+| POST | `/auth/login` | Log in with email/password |
+| GET | `/auth/me` | Return the current authenticated user |
+| POST | `/auth/logout` | Revoke the current bearer token |
+
+Register request:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "displayName": "Mood Student"
+}
+```
+
+Login request:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+Auth response:
+
+```json
+{
+  "token": "opaque-bearer-token",
+  "user": {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "email": "user@example.com",
+    "displayName": "Mood Student"
+  }
+}
+```
+
+Notes:
+
+- Email is normalized to lowercase.
+- Password must be at least 8 characters.
+- Duplicate email returns `409`.
+- Invalid login returns `401` without revealing whether email or password was wrong.
+- Password hashes are never returned.
+
 ### Media
 
 | Method | Endpoint | Purpose |
@@ -41,7 +90,7 @@ Notes:
 - `PATCH /media/{id}/favorite` updates only `isFavourite`.
 - The frontend does not send a `user_id`; the backend resolves the current user internally.
 - In `local-demo` mode, the backend resolves the Local Demo User internally for development and tests.
-- In `oidc` mode, these endpoints require a valid bearer token and the backend resolves the current `AppUser` from token claims.
+- In `local-password` mode, these endpoints require a valid bearer token and the backend resolves the current `AppUser` from the local session.
 
 ### Tags
 
@@ -60,7 +109,7 @@ Profile behavior:
 - Uses only the current user's consumed media with rating 4 or 5 and at least one confirmed local tag.
 - Returns readiness information and explanation text.
 - Suppresses meaningful matching until enough profile-relevant media exist.
-- Requires bearer authentication in `oidc` mode.
+- Requires bearer authentication in `local-password` mode.
 
 ### Candidates
 
@@ -72,7 +121,7 @@ Candidate behavior:
 
 - Candidates are the current user's items with `consumptionStatus = WANT_TO_CONSUME`.
 - Each candidate includes `isCompleteForMatching`.
-- Requires bearer authentication in `oidc` mode.
+- Requires bearer authentication in `local-password` mode.
 
 ### Matches
 
@@ -86,7 +135,7 @@ Match behavior:
 - `relativeScore` may be `null` when comparisons are not meaningful yet.
 - `scoresSuppressed` may be `true` when the profile is not ready.
 - Explanations distinguish incomplete candidates from no-overlap candidates.
-- Requires bearer authentication in `oidc` mode.
+- Requires bearer authentication in `local-password` mode.
 
 ### External Search Preview
 
@@ -109,7 +158,7 @@ Preview behavior:
 - Does not call real external APIs yet.
 - Does not import anything into the local media library.
 - Suggested tags are suggestions only and do not become local media tags automatically.
-- Requires bearer authentication in `oidc` mode.
+- Requires bearer authentication in `local-password` mode.
 
 Example response shape:
 
@@ -185,12 +234,12 @@ The following are not part of the implemented API contract yet:
 
 - Public endpoint: `GET /api/health`
 - Public for now: `GET /api/tags`
-- Protected in `oidc` mode: `/api/media`, `/api/profile`, `/api/candidates`, `/api/matches`, `/api/external/search`
-- Local development and backend tests default to `local-demo`, so protected endpoints continue to work without real Google/OIDC setup there
+- Protected in `local-password` mode: `/api/media`, `/api/profile`, `/api/candidates`, `/api/matches`, `/api/external/search`, `/api/auth/me`, `/api/auth/logout`
+- Backend tests still use `local-demo` where useful, while dedicated auth tests run `local-password`.
 
 ## Frontend Auth Expectations
 
 - In `local-demo` frontend mode, private routes remain locally accessible and frontend API requests may omit `Authorization`.
-- In `oidc` frontend mode, the SPA should treat dashboard, media, profile, candidates, matches, swipe, and external search routes as protected.
-- When the frontend has a provider token, it should call protected backend endpoints with `Authorization: Bearer <token>`.
+- In `local-password` frontend mode, the SPA treats dashboard, media, profile, candidates, matches, swipe, and external search routes as protected.
+- When the frontend has a MoodMatch token, it should call protected backend endpoints with `Authorization: Bearer <token>`.
 - A backend `401 Unauthorized` should be treated as a login-required or session-expired state on the frontend.

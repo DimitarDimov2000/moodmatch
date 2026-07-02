@@ -1,16 +1,19 @@
-import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { googleIdentityProvider } from '@/auth/google-identity';
+import { login, logout, register } from '@/api/auth';
 import { useAuthStore } from '@/stores/auth';
 
-function createMockJwt(payload: Record<string, unknown>) {
-  const encode = (value: object) =>
-    btoa(JSON.stringify(value)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+vi.mock('@/api/auth', () => ({
+  getCurrentUser: vi.fn(),
+  login: vi.fn(),
+  logout: vi.fn().mockResolvedValue(undefined),
+  register: vi.fn(),
+}));
 
-  return `${encode({ alg: 'none', typ: 'JWT' })}.${encode(payload)}.signature`;
-}
+const loginMock = vi.mocked(login);
+const logoutMock = vi.mocked(logout);
+const registerMock = vi.mocked(register);
 
 describe('auth store', () => {
   beforeEach(() => {
@@ -18,95 +21,94 @@ describe('auth store', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
-  it('starts with a safe logged-out default state', () => {
+  it('starts with a safe logged-out local-password default state', () => {
     const authStore = useAuthStore();
 
-    expect(authStore.mode).toBe('local-demo');
-    expect(authStore.provider).toBe('local-demo');
+    expect(authStore.mode).toBe('local-password');
+    expect(authStore.provider).toBe('local-password');
     expect(authStore.token).toBeNull();
     expect(authStore.user).toBeNull();
     expect(authStore.isAuthenticated).toBe(false);
-    expect(authStore.isInitialized).toBe(false);
-    expect(authStore.isLoading).toBe(false);
-    expect(authStore.canAccessProtectedRoutes).toBe(true);
-    expect(authStore.providerSetupState).toBe('idle');
+    expect(authStore.canAccessProtectedRoutes).toBe(false);
   });
 
-  it('stores provider session details in memory and clears them on logout', () => {
+  it('keeps private routes accessible in local-demo mode', () => {
     const authStore = useAuthStore();
-    authStore.setAuthMode('oidc', 'google');
-    authStore.setAuthenticatedSession({
-      token: 'header.payload.signature',
+    authStore.setAuthMode('local-demo');
+
+    expect(authStore.canAccessProtectedRoutes).toBe(true);
+    expect(authStore.providerLabel).toBe('Local Demo');
+  });
+
+  it('stores a successful login token and safe user details', async () => {
+    loginMock.mockResolvedValue({
+      token: 'local-token',
       user: {
+        id: 'user-id',
+        email: 'melli@example.com',
         displayName: 'Melli Example',
+      },
+    });
+
+    const authStore = useAuthStore();
+    const didLogin = await authStore.loginWithPassword('melli@example.com', 'password123');
+
+    expect(didLogin).toBe(true);
+    expect(loginMock).toHaveBeenCalledWith({
+      email: 'melli@example.com',
+      password: 'password123',
+    });
+    expect(authStore.isAuthenticated).toBe(true);
+    expect(authStore.token).toBe('local-token');
+    expect(authStore.userDisplayName).toBe('Melli Example');
+    expect(authStore.canAccessProtectedRoutes).toBe(true);
+  });
+
+  it('registers a new account and trims optional display name', async () => {
+    registerMock.mockResolvedValue({
+      token: 'register-token',
+      user: {
+        id: 'user-id',
+        email: 'student@example.com',
+        displayName: 'Student',
+      },
+    });
+
+    const authStore = useAuthStore();
+    const didRegister = await authStore.registerWithPassword(
+      'student@example.com',
+      'password123',
+      ' Student ',
+    );
+
+    expect(didRegister).toBe(true);
+    expect(registerMock).toHaveBeenCalledWith({
+      email: 'student@example.com',
+      password: 'password123',
+      displayName: 'Student',
+    });
+    expect(authStore.token).toBe('register-token');
+    expect(authStore.user?.email).toBe('student@example.com');
+  });
+
+  it('clears the session on logout', async () => {
+    const authStore = useAuthStore();
+    authStore.setAuthenticatedSession({
+      token: 'local-token',
+      user: {
+        id: 'user-id',
         email: 'melli@example.com',
       },
     });
 
-    expect(authStore.isAuthenticated).toBe(true);
-    expect(authStore.userDisplayName).toBe('Melli Example');
-    expect(authStore.canAccessProtectedRoutes).toBe(true);
+    await authStore.logout();
 
-    authStore.logout();
-
+    expect(logoutMock).toHaveBeenCalledTimes(1);
     expect(authStore.isAuthenticated).toBe(false);
     expect(authStore.token).toBeNull();
     expect(authStore.user).toBeNull();
-    expect(authStore.canAccessProtectedRoutes).toBe(false);
-  });
-
-  it('marks Google login as setup-needed when oidc mode has no client id', async () => {
-    const authStore = useAuthStore();
-    authStore.setAuthMode('oidc', 'google');
-    authStore.setGoogleClientId(null);
-
-    authStore.initialize();
-    await flushPromises();
-
-    expect(authStore.providerSetupState).toBe('missing-client-id');
-    expect(authStore.providerError).toContain('VITE_GOOGLE_CLIENT_ID');
-  });
-
-  it('can use a mocked Google provider boundary to start login', async () => {
-    const initializeSpy = vi.spyOn(googleIdentityProvider, 'initialize').mockResolvedValue({
-      status: 'ready',
-    });
-    const promptSpy = vi.spyOn(googleIdentityProvider, 'prompt').mockReturnValue(true);
-
-    const authStore = useAuthStore();
-    authStore.setAuthMode('oidc', 'google');
-    authStore.setGoogleClientId('google-client-id');
-
-    authStore.initialize();
-    await flushPromises();
-    const didStart = await authStore.startGoogleLogin();
-
-    expect(initializeSpy).toHaveBeenCalled();
-    expect(promptSpy).toHaveBeenCalled();
-    expect(didStart).toBe(true);
-  });
-
-  it('accepts a mocked Google credential response and decodes display data safely', () => {
-    const authStore = useAuthStore();
-    authStore.setAuthMode('oidc', 'google');
-
-    authStore.handleGoogleCredentialResponse({
-      credential: createMockJwt({
-        name: 'Melli Example',
-        email: 'melli@example.com',
-        picture: 'https://example.com/avatar.png',
-      }),
-    });
-
-    expect(authStore.isAuthenticated).toBe(true);
-    expect(authStore.token).toContain('.signature');
-    expect(authStore.user).toEqual({
-      displayName: 'Melli Example',
-      email: 'melli@example.com',
-      avatarUrl: 'https://example.com/avatar.png',
-    });
   });
 });

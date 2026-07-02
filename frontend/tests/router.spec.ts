@@ -6,10 +6,10 @@ import { createAppRouter } from '@/router';
 import { useAuthStore } from '@/stores/auth';
 
 describe('router auth protection', () => {
-  it('redirects unauthenticated users to login in oidc mode', async () => {
+  it('redirects unauthenticated users to login in local-password mode', async () => {
     const pinia = createPinia();
     const authStore = useAuthStore(pinia);
-    authStore.setAuthMode('oidc', 'google');
+    authStore.setAuthMode('local-password');
 
     const router = createAppRouter({
       history: createMemoryHistory(),
@@ -41,7 +41,7 @@ describe('router auth protection', () => {
   it('keeps not-found behavior working in auth-required mode', async () => {
     const pinia = createPinia();
     const authStore = useAuthStore(pinia);
-    authStore.setAuthMode('oidc', 'oidc');
+    authStore.setAuthMode('local-password');
 
     const router = createAppRouter({
       history: createMemoryHistory(),

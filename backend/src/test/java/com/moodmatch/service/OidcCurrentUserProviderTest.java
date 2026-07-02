@@ -47,9 +47,9 @@ class OidcCurrentUserProviderTest {
     @Test
     void shouldCreateAppUserFromTokenClaimsOnFirstAuthenticatedAccess() {
         securityIdentityProvider.securityIdentity = new StubSecurityIdentity(
-                "google-user-123",
+                "oidc-subject-123",
                 Map.of(
-                        "sub", "google-user-123",
+                        "sub", "oidc-subject-123",
                         "email", "oidc-user@example.com",
                         "name", "OIDC User",
                         "picture", "https://images.example.com/oidc-user.png"),
@@ -59,7 +59,7 @@ class OidcCurrentUserProviderTest {
 
         assertNotNull(currentUser.getId());
         assertEquals(AuthProvider.OIDC, currentUser.getProvider());
-        assertEquals("google-user-123", currentUser.getProviderSubject());
+        assertEquals("oidc-subject-123", currentUser.getProviderSubject());
         assertEquals("oidc-user@example.com", currentUser.getEmail());
         assertEquals("OIDC User", currentUser.getDisplayName());
         assertEquals("https://images.example.com/oidc-user.png", currentUser.getAvatarUrl());
@@ -69,9 +69,9 @@ class OidcCurrentUserProviderTest {
     @Test
     void shouldReuseExistingAppUserAndOnlyUpdateNonBlankClaimFields() {
         securityIdentityProvider.securityIdentity = new StubSecurityIdentity(
-                "google-user-123",
+                "oidc-subject-123",
                 Map.of(
-                        "sub", "google-user-123",
+                        "sub", "oidc-subject-123",
                         "email", "first@example.com",
                         "name", "First Name",
                         "picture", "https://images.example.com/first.png"),
@@ -80,9 +80,9 @@ class OidcCurrentUserProviderTest {
         AppUser createdUser = oidcCurrentUserProvider.getCurrentUser();
 
         securityIdentityProvider.securityIdentity = new StubSecurityIdentity(
-                "google-user-123",
+                "oidc-subject-123",
                 Map.of(
-                        "sub", "google-user-123",
+                        "sub", "oidc-subject-123",
                         "email", "   ",
                         "name", "Updated Name",
                         "picture", "https://images.example.com/updated.png"),

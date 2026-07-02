@@ -17,10 +17,14 @@ public class ModeAwareCurrentUserProvider implements CurrentUserProvider {
     @Inject
     OidcCurrentUserProvider oidcCurrentUserProvider;
 
+    @Inject
+    LocalPasswordCurrentUserProvider localPasswordCurrentUserProvider;
+
     @Override
     public AppUser getCurrentUser() {
         return switch (authConfiguration.getAuthMode()) {
             case LOCAL_DEMO -> localDemoCurrentUserProvider.getCurrentUser();
+            case LOCAL_PASSWORD -> localPasswordCurrentUserProvider.getCurrentUser();
             case OIDC -> oidcCurrentUserProvider.getCurrentUser();
         };
     }

@@ -9,7 +9,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class MoodMatchAuthConfiguration {
 
-    @ConfigProperty(name = "moodmatch.auth.mode", defaultValue = "oidc")
+    @ConfigProperty(name = "moodmatch.auth.mode", defaultValue = "local-password")
     String authMode;
 
     @ConfigProperty(name = "moodmatch.auth.oidc.provider", defaultValue = "OIDC")
@@ -25,6 +25,10 @@ public class MoodMatchAuthConfiguration {
 
     public boolean isOidcMode() {
         return getAuthMode() == AuthMode.OIDC;
+    }
+
+    public boolean isLocalPasswordMode() {
+        return getAuthMode() == AuthMode.LOCAL_PASSWORD;
     }
 
     public AuthProvider getOidcProvider() {

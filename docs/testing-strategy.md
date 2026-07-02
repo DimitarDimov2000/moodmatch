@@ -14,7 +14,8 @@ Current backend tests cover:
 - media and tag services
 - interest profile calculation
 - deterministic matching
-- auth mode behavior for local-demo and OIDC foundation
+- auth mode behavior for local-demo and local-password
+- local registration/login/logout and bearer-token protection
 - user-isolation behavior for media/profile/candidates/matches
 - DTO/entity mappers
 - starter tag migration behavior
@@ -28,7 +29,7 @@ Current frontend tests cover:
 
 - API client/config helpers
 - auth store defaults and login/logout state transitions
-- protected-route guard behavior in `local-demo` vs `oidc`
+- protected-route guard behavior in `local-demo` vs `local-password`
 - login view and app-shell auth UI basics
 - dashboard view behavior
 - external search view and result card
@@ -79,11 +80,12 @@ npm run typecheck
 - Profile, candidate, and match calculations stay scoped to the resolved current user
 - External DEMO preview stays normalized and offline
 - Local demo auth mode still resolves the demo user in backend tests
-- OIDC mode rejects unauthenticated requests on protected endpoints
-- OIDC token claims can resolve/create/update the backing `AppUser`
+- Local-password mode rejects missing/invalid tokens on protected endpoints
+- Local-password tokens resolve the backing `AppUser`
+- Registration rejects duplicate email and login rejects wrong passwords
 - Swipe mode semantics stay unchanged
 - Frontend route-level views still build and render against the typed API layer
-- Frontend auth mode state, bearer-header attachment, and route protection remain wired correctly without requiring real Google credentials
+- Frontend auth mode state, bearer-header attachment, and route protection remain wired correctly without Google credentials
 
 ## Manual Checkpoint Smoke Test
 
@@ -92,11 +94,13 @@ For a presentation or final checkpoint pass:
 1. Start PostgreSQL locally.
 2. Start the backend with `./mvnw quarkus:dev`.
 3. Start the frontend with `npm run dev`.
-4. Open the dashboard and confirm the summary cards load.
-5. Create or edit media, then confirm tags and status/favourite rules still behave as documented.
-6. Open profile and matches to confirm profile readiness and score explanations.
-7. Open swipe mode and verify local like/skip vs persistent reject.
-8. Open external search and confirm DEMO preview results render without import behavior.
+4. Create a MoodMatch account with email/password.
+5. Log out and log back in with the same account.
+6. Open the dashboard and confirm the summary cards load.
+7. Create or edit media, then confirm tags and status/favourite rules still behave as documented.
+8. Open profile and matches to confirm profile readiness and score explanations.
+9. Open swipe mode and verify local like/skip vs persistent reject.
+10. Open external search and confirm DEMO preview results render without import behavior.
 
 ## Future Work
 

@@ -11,6 +11,7 @@ Implemented migrations:
 - `V1__init_schema.sql`
 - `V2__seed_starter_tags.sql`
 - `V3__add_app_users_and_media_ownership.sql`
+- `V4__add_local_password_auth.sql`
 
 ## Tables
 
@@ -52,29 +53,50 @@ Index:
 
 ### `app_users`
 
-Stores MoodMatch's internal user records. This is the ownership anchor for private media data and is intentionally separate from future external authentication provider details.
+Stores MoodMatch's internal user records. This is the ownership anchor for private media data.
 
 | Column | Notes |
 | --- | --- |
 | `id` | UUID primary key |
-| `provider` | Required auth provider key like `LOCAL`, `GOOGLE`, or `OIDC` |
-| `provider_subject` | Required stable provider-side user identifier |
-| `email` | Optional email address |
+| `provider` | Required auth provider key; local password users use `LOCAL` |
+| `provider_subject` | Required stable subject; local password users use normalized email |
+| `email` | Optional email address, unique when present |
 | `display_name` | Optional display name |
 | `avatar_url` | Optional avatar URL |
+| `password_hash` | Optional hash for local password users; never plaintext |
+| `last_login_at` | Optional timestamp of last successful local-password login |
 | `created_at` | Required timestamp |
 | `updated_at` | Required timestamp |
 
-Unique constraint:
+Unique constraints:
 
 ```text
 (provider, provider_subject)
+email
 ```
 
-Current transitional behavior:
+Current behavior:
 
 - the migration ensures a local/demo user exists with `provider = LOCAL` and `provider_subject = local-demo-user`
-- current backend services resolve that demo user automatically until real OIDC/Google auth is implemented
+- local email/password users are also stored in `app_users`
+- media/profile/candidates/matches remain scoped by `media_items.user_id`
+
+### `auth_sessions`
+
+Stores local password bearer sessions.
+
+| Column | Notes |
+| --- | --- |
+| `id` | UUID primary key |
+| `user_id` | Required FK to `app_users` |
+| `token_hash` | Unique SHA-256 hash of the opaque token |
+| `expires_at` | Required expiration timestamp |
+| `last_used_at` | Optional timestamp updated when a token is accepted |
+| `revoked_at` | Optional timestamp set on logout |
+| `created_at` | Required timestamp |
+| `updated_at` | Required timestamp |
+
+Raw bearer tokens are returned once to the frontend and are not stored in the database.
 
 ### `tags`
 

@@ -34,10 +34,10 @@ const authStatusDescription = computed(() => {
   }
 
   if (isAuthenticated.value) {
-    return 'Bearer token available for protected API requests.';
+    return 'Your private media and matches are tied to this account.';
   }
 
-  return 'Protected routes redirect to login until a provider session exists.';
+  return 'Protected routes redirect to login until you sign in.';
 });
 
 async function handleLogout() {

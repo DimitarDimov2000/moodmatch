@@ -20,13 +20,13 @@ public class TestLocalDemoUserIdentitySource implements LocalDemoUserIdentitySou
             LocalDemoCurrentUserProvider.LOCAL_DEMO_DISPLAY_NAME);
     private static final LocalDemoUserIdentity USER_A = new LocalDemoUserIdentity(
             UUID.fromString("10000000-0000-0000-0000-000000000001"),
-            AuthProvider.OIDC,
+            AuthProvider.LOCAL,
             "test-user-a",
             "user-a@example.local",
             "Test User A");
     private static final LocalDemoUserIdentity USER_B = new LocalDemoUserIdentity(
             UUID.fromString("20000000-0000-0000-0000-000000000001"),
-            AuthProvider.OIDC,
+            AuthProvider.LOCAL,
             "test-user-b",
             "user-b@example.local",
             "Test User B");

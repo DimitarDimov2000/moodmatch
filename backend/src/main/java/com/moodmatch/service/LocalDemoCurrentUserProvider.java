@@ -34,7 +34,7 @@ public class LocalDemoCurrentUserProvider {
     }
 
     private AppUser createLocalDemoUser(LocalDemoUserIdentity identity) {
-        // Temporary development fallback until real OIDC/Google auth resolves the current user.
+        // Development/test fallback for flows that do not need a real local password session.
         AppUser user = new AppUser();
         user.setId(identity.id());
         user.setProvider(identity.provider());

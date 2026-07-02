@@ -15,4 +15,8 @@ public class AppUserRepository implements PanacheRepositoryBase<AppUser, UUID> {
     public Optional<AppUser> findByProviderAndProviderSubject(AuthProvider provider, String providerSubject) {
         return find("provider = ?1 and providerSubject = ?2", provider, providerSubject).firstResultOptional();
     }
+
+    public Optional<AppUser> findByEmail(String email) {
+        return find("email = ?1", email).firstResultOptional();
+    }
 }

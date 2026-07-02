@@ -2,6 +2,7 @@ package com.moodmatch.service;
 
 public enum AuthMode {
     LOCAL_DEMO("local-demo"),
+    LOCAL_PASSWORD("local-password"),
     OIDC("oidc");
 
     private final String configValue;

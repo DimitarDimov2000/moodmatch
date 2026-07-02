@@ -40,6 +40,7 @@ class ExternalSearchResourceTest {
             entityManager.createNativeQuery("DELETE FROM media_items").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM external_tag_mappings").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM tags").executeUpdate();
+            entityManager.createNativeQuery("DELETE FROM auth_sessions").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM app_users").executeUpdate();
         });
     }

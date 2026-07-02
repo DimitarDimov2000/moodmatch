@@ -78,11 +78,15 @@ describe('api client', () => {
     expect(headers.get('Authorization')).toBe('Bearer frontend-token');
   });
 
-  it('sends the mocked Google credential token after store login', async () => {
+  it('sends the local password token after store login', async () => {
     setActivePinia(createPinia());
     const authStore = useAuthStore();
-    authStore.handleGoogleCredentialResponse({
-      credential: 'google-credential-token',
+    authStore.setAuthenticatedSession({
+      token: 'local-password-token',
+      user: {
+        id: 'user-id',
+        email: 'melli@example.com',
+      },
     });
 
     configureApiClientAuth({
@@ -103,7 +107,7 @@ describe('api client', () => {
     const [, requestInit] = fetchSpy.mock.calls[0] ?? [];
     const headers = requestInit?.headers as Headers;
 
-    expect(headers.get('Authorization')).toBe('Bearer google-credential-token');
+    expect(headers.get('Authorization')).toBe('Bearer local-password-token');
   });
 
   it('keeps requests working without an Authorization header when no token exists', async () => {

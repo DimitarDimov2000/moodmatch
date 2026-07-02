@@ -1,6 +1,7 @@
 export * from './candidates';
 export * from './client';
 export * from './config';
+export * from './auth';
 export * from './external';
 export * from './matches';
 export * from './media';

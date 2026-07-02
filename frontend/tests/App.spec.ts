@@ -4,9 +4,11 @@ import { createMemoryHistory, createRouter } from "vue-router";
 import { vi } from "vitest";
 
 import App from "@/App.vue";
+import { useAuthStore } from "@/stores/auth";
 import CandidatesView from "@/views/CandidatesView.vue";
 import DashboardView from "@/views/DashboardView.vue";
 import ExternalSearchView from "@/views/ExternalSearchView.vue";
+import LoginView from "@/views/LoginView.vue";
 import MediaCreateView from "@/views/MediaCreateView.vue";
 import MediaDetailView from "@/views/MediaDetailView.vue";
 import MediaLibraryView from "@/views/MediaLibraryView.vue";
@@ -54,10 +56,15 @@ vi.mock("@/api/matches", () => ({
 }));
 
 async function mountApp() {
+  const pinia = createPinia();
+  const authStore = useAuthStore(pinia);
+  authStore.setAuthMode("local-demo");
+
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
       { path: "/", name: "dashboard", component: DashboardView },
+      { path: "/login", name: "login", component: LoginView },
       { path: "/profile", name: "profile", component: ProfileView },
       { path: "/external-search", name: "external-search", component: ExternalSearchView },
       { path: "/media", name: "media-list", component: MediaLibraryView },
@@ -75,7 +82,7 @@ async function mountApp() {
 
   return mount(App, {
     global: {
-      plugins: [createPinia(), router],
+      plugins: [pinia, router],
     },
   });
 }
