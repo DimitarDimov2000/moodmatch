@@ -18,6 +18,7 @@ import com.moodmatch.entity.TagMappingConfidence;
 import com.moodmatch.external.anilist.TestAniListGateway;
 import com.moodmatch.external.librivox.TestLibriVoxGateway;
 import com.moodmatch.external.openlibrary.TestOpenLibraryGateway;
+import com.moodmatch.external.podcastindex.TestPodcastIndexGateway;
 import com.moodmatch.external.rawg.TestRawgGateway;
 import com.moodmatch.repository.ExternalTagMappingRepository;
 import com.moodmatch.repository.TagRepository;
@@ -61,6 +62,7 @@ class ExternalSearchResourceTest {
         TestLibriVoxGateway.reset();
         TestRawgGateway.reset();
         TestAniListGateway.reset();
+        TestPodcastIndexGateway.reset();
         QuarkusTransaction.requiringNew().run(() -> {
             entityManager.createNativeQuery("DELETE FROM media_tags").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM media_external_refs").executeUpdate();
@@ -229,6 +231,33 @@ class ExternalSearchResourceTest {
                 .body("results[0].title", is("Berserk"))
                 .body("results[0].creatorNames[0]", is("Kentaro Miura"))
                 .body("results[0].mediaType", is("BOOK"));
+    }
+
+    @Test
+    void shouldReturnClearWarningsForAutomaticPodcastSearchWithoutCredentials() {
+        given()
+                .when()
+                .get("/api/external/search?query=lex%20fridman&mediaType=PODCAST")
+                .then()
+                .statusCode(200)
+                .body("source", is("AUTOMATIC"))
+                .body("results.size()", is(0))
+                .body(
+                        "warnings[0]",
+                        is("Podcast Index provider is not configured. Set MOODMATCH_PODCASTINDEX_KEY and MOODMATCH_PODCASTINDEX_SECRET. Provider skipped in automatic search."));
+    }
+
+    @Test
+    void shouldRejectExplicitPodcastIndexSearchWithClearConfigurationErrors() {
+        given()
+                .when()
+                .get("/api/external/search?query=radiolab&mediaType=PODCAST&source=PODCAST_INDEX")
+                .then()
+                .statusCode(400)
+                .body("code", is("BUSINESS_RULE_VIOLATION"))
+                .body(
+                        "message",
+                        is("Podcast Index provider is not configured. Set MOODMATCH_PODCASTINDEX_KEY and MOODMATCH_PODCASTINDEX_SECRET."));
     }
 
     @Test
@@ -434,6 +463,44 @@ class ExternalSearchResourceTest {
                 .body("media.tags[0].name", is("Survival"));
     }
 
+    @Test
+    void shouldImportPodcastIndexResultsAsPodcastsAndPreserveExternalMetadata() {
+        QuarkusTransaction.requiringNew().run(() -> {
+            Tag tag = new Tag();
+            tag.setId(UUID.fromString("10000000-0000-0000-0000-000000000060"));
+            tag.setName("Technologie");
+            tag.setCategory(TagCategory.THEME);
+            tagRepository.persist(tag);
+
+            ExternalTagMapping mapping = new ExternalTagMapping();
+            mapping.setSourceName(ExternalSourceName.PODCAST_INDEX);
+            mapping.setExternalField("genre");
+            mapping.setExternalValue("Technology");
+            mapping.setTag(tag);
+            mapping.setConfidence(TagMappingConfidence.HIGH);
+            externalTagMappingRepository.persist(mapping);
+        });
+
+        TestCurrentUserProvider.useUserA();
+        given()
+                .contentType(io.restassured.http.ContentType.JSON)
+                .body(buildPodcastIndexImportPayload())
+                .when()
+                .post("/api/external/import")
+                .then()
+                .statusCode(201)
+                .body("created", is(true))
+                .body("media.title", is("Lex Fridman Podcast"))
+                .body("media.mediaType", is("PODCAST"))
+                .body("media.commitmentLevel", is("LONG"))
+                .body("media.externalSourceName", is("PODCAST_INDEX"))
+                .body("media.externalSourceId", is("75075"))
+                .body("media.externalReferences[0].sourceName", is("PODCAST_INDEX"))
+                .body("media.externalReferences[0].externalId", is("75075"))
+                .body("media.externalReferences[0].attributionText", is("Metadata from Podcast Index"))
+                .body("media.tags[0].name", is("Technologie"));
+    }
+
     private Map<String, Object> buildImportPayload() {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("source", "DEMO");
@@ -523,6 +590,24 @@ class ExternalSearchResourceTest {
         payload.put("externalGenres", java.util.List.of("Action", "Drama"));
         payload.put("externalSubjects", java.util.List.of("Format: TV", "Status: FINISHED", "Survival"));
         payload.put("attribution", "Metadata from AniList");
+        return payload;
+    }
+
+    private Map<String, Object> buildPodcastIndexImportPayload() {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("source", "PODCAST_INDEX");
+        payload.put("externalId", "75075");
+        payload.put("mediaType", "PODCAST");
+        payload.put("title", "Lex Fridman Podcast");
+        payload.put("originalTitle", null);
+        payload.put("creatorNames", java.util.List.of("Lex Fridman"));
+        payload.put("description", "Conversations about science, technology, history, philosophy, and the nature of intelligence.");
+        payload.put("releaseYear", 2024);
+        payload.put("coverUrl", "https://image.simplecastcdn.com/images/lex-fridman.jpg");
+        payload.put("sourceUrl", "https://lexfridman.com/podcast/");
+        payload.put("externalGenres", java.util.List.of("Technology", "Science"));
+        payload.put("externalSubjects", java.util.List.of("Language: en", "Explicit: No", "Feed type: podcast"));
+        payload.put("attribution", "Metadata from Podcast Index");
         return payload;
     }
 }

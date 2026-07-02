@@ -163,7 +163,10 @@ Search behavior:
 - LibriVox results are limited to public-domain audiobooks in the LibriVox catalog.
 - Automatic `GAME` searches query `RAWG` when `MOODMATCH_RAWG_API_KEY` is configured.
 - If RAWG is not configured, automatic game search falls back to `DEMO` with warnings. Explicit `source=RAWG` returns `RAWG provider is not configured. Set MOODMATCH_RAWG_API_KEY.`
-- `PODCAST` and `VIDEO` have no active automatic search provider in this package and return a clear empty response.
+- Automatic `PODCAST` searches query `PODCAST_INDEX` when `MOODMATCH_PODCASTINDEX_KEY` and `MOODMATCH_PODCASTINDEX_SECRET` are configured.
+- If Podcast Index is not configured, automatic podcast search returns an empty result set plus a warning. Explicit `source=PODCAST_INDEX` returns `Podcast Index provider is not configured. Set MOODMATCH_PODCASTINDEX_KEY and MOODMATCH_PODCASTINDEX_SECRET.`
+- Podcast Index imports podcast shows/feeds only, never episode rows.
+- `VIDEO` has no active automatic search provider in this package and returns a clear empty response.
 - Anime movie results from AniList map to `FILM`; anime TV/OVA/ONA/special/short results map to `SERIES`; manga/light novel/novel/one-shot results map to `BOOK`.
 - Automatic responses use response-level `"source": "AUTOMATIC"` and preserve the real provider on every result in `results[*].source`.
 - In automatic mode, the capped `limit` is applied per provider before merging so one provider cannot hide another provider's results.
@@ -179,6 +182,7 @@ Implemented provider/media-type combinations:
 - `OPEN_LIBRARY` -> `BOOK`
 - `LIBRIVOX` -> `AUDIOBOOK`
 - `RAWG` -> `GAME`
+- `PODCAST_INDEX` -> `PODCAST`
 - `ANILIST` -> `FILM`, `SERIES`, `BOOK`
 - `DEMO` -> `FILM`, `SERIES`, `BOOK`, `GAME`, `AUDIOBOOK`, `PODCAST`, `VIDEO`
 
@@ -284,6 +288,56 @@ Audiobook search response example:
       "warnings": []
     }
   ]
+}
+```
+
+Podcast search response example:
+
+```json
+{
+  "query": "lex fridman",
+  "mediaType": "PODCAST",
+  "source": "PODCAST_INDEX",
+  "warnings": [],
+  "results": [
+    {
+      "source": "PODCAST_INDEX",
+      "externalId": "75075",
+      "mediaType": "PODCAST",
+      "title": "Lex Fridman Podcast",
+      "originalTitle": null,
+      "creatorNames": ["Lex Fridman"],
+      "description": "Conversations about science, technology, history, philosophy, and the nature of intelligence.",
+      "releaseYear": 2024,
+      "coverUrl": "https://image.simplecastcdn.com/images/lex-fridman.jpg",
+      "sourceUrl": "https://lexfridman.com/podcast/",
+      "externalGenres": ["Technology", "Science"],
+      "externalSubjects": ["Language: en", "Explicit: No", "Feed type: podcast"],
+      "suggestedTags": [],
+      "attribution": "Metadata from Podcast Index",
+      "warnings": []
+    }
+  ]
+}
+```
+
+Podcast import request example:
+
+```json
+{
+  "source": "PODCAST_INDEX",
+  "externalId": "75075",
+  "mediaType": "PODCAST",
+  "title": "Lex Fridman Podcast",
+  "originalTitle": null,
+  "creatorNames": ["Lex Fridman"],
+  "description": "Conversations about science, technology, history, philosophy, and the nature of intelligence.",
+  "releaseYear": 2024,
+  "coverUrl": "https://image.simplecastcdn.com/images/lex-fridman.jpg",
+  "sourceUrl": "https://lexfridman.com/podcast/",
+  "externalGenres": ["Technology", "Science"],
+  "externalSubjects": ["Language: en", "Explicit: No", "Feed type: podcast"],
+  "attribution": "Metadata from Podcast Index"
 }
 ```
 

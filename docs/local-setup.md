@@ -125,6 +125,30 @@ If `MOODMATCH_RAWG_API_KEY` is missing, automatic game searches use the offline 
 
 RAWG is included for non-commercial university prototype usage. Review RAWG attribution and usage terms before any production deployment.
 
+## Optional Podcast Index Provider Setup
+
+Podcast Index is the active real provider for `PODCAST` podcast-show search in Package 2.9.
+
+Backend-only local variables:
+
+- `MOODMATCH_PODCASTINDEX_KEY`
+- `MOODMATCH_PODCASTINDEX_SECRET`
+- `MOODMATCH_PODCASTINDEX_BASE_URL`
+
+Example terminal setup:
+
+```bash
+export MOODMATCH_PODCASTINDEX_KEY=replace-with-your-key
+export MOODMATCH_PODCASTINDEX_SECRET=replace-with-your-secret
+```
+
+Notes:
+
+- Configure these variables only on the backend side. The frontend never receives the key or secret.
+- If the key or secret is missing, automatic podcast search returns a clear warning and no results instead of crashing.
+- Explicit `source=PODCAST_INDEX` searches return a clear provider configuration error until both values are set.
+- The current prototype imports podcast shows/feeds only. It does not import individual episodes, crawl RSS feeds, play audio, or track playback progress.
+
 ## AniList Provider Setup
 
 AniList is the active real provider for anime/manga metadata in Package 2.8.
@@ -144,15 +168,11 @@ Notes:
 
 These names are reserved for later provider packages. They are not required for the current app and should only be set once the matching provider is implemented:
 
-- `MOODMATCH_PODCAST_INDEX_API_KEY`
-- `MOODMATCH_PODCAST_INDEX_API_SECRET`
-- `MOODMATCH_PODCAST_INDEX_BASE_URL`
 - `MOODMATCH_YOUTUBE_API_KEY`
 - `MOODMATCH_YOUTUBE_BASE_URL`
 
 Provider scope notes:
 
-- Podcast Index is planned for `PODCAST`; podcast episode import is out of scope.
 - YouTube is planned for `VIDEO` URL import only, not search.
 - IGDB is a backup/future game provider and is not active.
 - Music is out of scope.

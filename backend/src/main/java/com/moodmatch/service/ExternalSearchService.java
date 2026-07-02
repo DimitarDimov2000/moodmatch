@@ -166,7 +166,8 @@ public class ExternalSearchService {
                     ExternalSearchSourceName.ANILIST);
             case AUDIOBOOK -> providersInOrder(ExternalSearchSourceName.LIBRIVOX);
             case GAME -> providersInOrder(ExternalSearchSourceName.RAWG);
-            case PODCAST, VIDEO -> List.of();
+            case PODCAST -> providersInOrder(ExternalSearchSourceName.PODCAST_INDEX);
+            case VIDEO -> List.of();
         };
     }
 

@@ -60,8 +60,8 @@ export function sourceOptionsForMediaType(
       ];
     case 'PODCAST':
       return [
-        { value: 'AUTO', label: 'Automatisch (noch keine aktive Quelle)' },
-        { value: 'PODCAST_INDEX', label: 'Podcast Index (Podcasts geplant)', disabled: true },
+        { value: 'AUTO', label: 'Automatisch (Podcast Index)' },
+        { value: 'PODCAST_INDEX', label: 'Podcast Index (Podcast-Shows)' },
         { value: 'DEMO', label: 'DEMO-Fallback' },
       ];
     case 'VIDEO':
@@ -92,7 +92,7 @@ export function sourceHintForMediaType(mediaType: MediaType): string {
     case 'AUDIOBOOK':
       return 'Automatisch durchsucht LibriVox. Der Katalog ist auf gemeinfreie Audiobooks begrenzt und benoetigt keinen geheimen API-Key.';
     case 'PODCAST':
-      return 'Podcast Index ist als Podcast-Quelle geplant. Automatisch zeigt bis dahin einen leeren Zustand.';
+      return 'Automatisch durchsucht Podcast Index fuer Podcast-Shows, wenn der Backend-Key und das Backend-Secret gesetzt sind. Einzelne Episoden werden nicht importiert.';
     case 'VIDEO':
       return 'YouTube ist nur fuer spaeteren URL-Import vorgesehen. Automatische Videosuche bleibt ausserhalb des Scopes.';
   }

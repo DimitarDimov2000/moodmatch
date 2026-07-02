@@ -6,6 +6,7 @@
 - `OPEN_LIBRARY` is the active real provider for `BOOK`.
 - `LIBRIVOX` is the active real provider for `AUDIOBOOK`.
 - `RAWG` is the active real provider for `GAME`.
+- `PODCAST_INDEX` is the active real provider for `PODCAST` podcast-show search and import.
 - `ANILIST` is the active real provider for anime and manga metadata mapped into existing media types.
 - `DEMO` remains available as an offline fallback and local test source.
 
@@ -15,6 +16,7 @@ Provider notes:
 - `OPEN_LIBRARY` uses the public Search API and does not require a committed secret.
 - `LIBRIVOX` uses the public catalog API and does not require a committed secret in the current implementation.
 - `RAWG` requires backend-only configuration through `MOODMATCH_RAWG_API_KEY`.
+- `PODCAST_INDEX` requires backend-only configuration through `MOODMATCH_PODCASTINDEX_KEY` and `MOODMATCH_PODCASTINDEX_SECRET`.
 - `ANILIST` uses AniList GraphQL and does not require an API key.
 - LibriVox search is intentionally limited to public-domain audiobooks in the catalog.
 - RAWG is used only for this non-commercial university prototype. Keep provider attribution/backlinks visible and review RAWG terms before any production or commercial deployment.
@@ -29,8 +31,8 @@ Provider notes:
 | `OPEN_LIBRARY` | `BOOK` | Active |
 | `LIBRIVOX` | `AUDIOBOOK` | Active |
 | `RAWG` | `GAME` | Active |
+| `PODCAST_INDEX` | `PODCAST` show/feed import only | Active |
 | `ANILIST` | Anime and manga mapped into `FILM`, `SERIES`, or `BOOK` | Active |
-| `PODCAST_INDEX` | `PODCAST` | Planned, without episode import for now |
 | `YOUTUBE` | `VIDEO` URL import only | Planned, no YouTube search |
 | `IGDB` | Backup/future game provider | Not active |
 | Music providers | Music | Out of scope |
@@ -44,11 +46,14 @@ AniList does not introduce core `ANIME` or `MANGA` media types. Anime movies map
 - Automatic `BOOK` searches query `OPEN_LIBRARY` and `ANILIST` in that order. This allows book results and manga/light novel results to appear together without adding `MANGA` as a core media type.
 - Automatic `AUDIOBOOK` searches query `LIBRIVOX`.
 - Automatic `GAME` searches query `RAWG` when `MOODMATCH_RAWG_API_KEY` is configured.
+- Automatic `PODCAST` searches query `PODCAST_INDEX` when `MOODMATCH_PODCASTINDEX_KEY` and `MOODMATCH_PODCASTINDEX_SECRET` are configured.
 - Explicit provider search, such as `source=TMDB`, `source=OPEN_LIBRARY`, or `source=ANILIST`, searches only that provider and keeps the existing provider-specific error behavior.
+- Explicit `source=PODCAST_INDEX` searches only Podcast Index podcast shows/feeds.
 - When a compatible provider is unconfigured in automatic mode, MoodMatch skips it, records a non-blocking warning, and returns partial results from other compatible providers when possible.
 - When the RAWG key is missing, automatic `GAME` searches fall back to the offline `DEMO` provider and return a clear warning. Explicit `source=RAWG` searches return a provider configuration error instead of silently falling back.
 - When all compatible real providers for `FILM`, `SERIES`, `BOOK`, `AUDIOBOOK`, or `GAME` are unavailable and `DEMO` can cover the media type, MoodMatch uses `DEMO` as the fallback.
-- `PODCAST` and `VIDEO` currently have no active automatic search provider and return an empty response until their real providers are implemented.
+- When Podcast Index credentials are missing, automatic `PODCAST` searches return an empty result set plus a clear warning instead of crashing or silently falling back.
+- `VIDEO` currently has no active automatic search provider and returns an empty response until its real provider is implemented.
 - `DEMO` remains available for local development and tests.
 
 ## Search And Import Mapping
@@ -70,7 +75,7 @@ Automatic provider matrix:
 | `BOOK` | `OPEN_LIBRARY`, `ANILIST`, then `DEMO` only if all compatible real providers are unavailable |
 | `AUDIOBOOK` | `LIBRIVOX`, then `DEMO` only if all compatible real providers are unavailable |
 | `GAME` | `RAWG`, then `DEMO` only if all compatible real providers are unavailable |
-| `PODCAST` | no active automatic provider yet |
+| `PODCAST` | `PODCAST_INDEX` only; no automatic `DEMO` fallback |
 | `VIDEO` | no active automatic search provider; YouTube URL resolver is future work |
 
 Open Library book mapping decisions:
@@ -110,6 +115,22 @@ RAWG game mapping decisions:
 - `externalSubjects`: a capped, de-duplicated list of platforms followed by tags so the UI can show platform/tag context without noisy payloads
 - `attribution`: `Metadata from RAWG. View source on RAWG for full provider details.`
 
+Podcast Index podcast mapping decisions:
+
+- `externalId`: Podcast Index numeric feed `id` when available, otherwise a stable feed URL
+- `mediaType`: always `PODCAST`
+- imported unit: one podcast show/feed only, never individual episodes
+- `title`: Podcast Index feed `title`
+- `originalTitle`: `null` in the current normalized mapping
+- `creatorNames`: `author` and `ownerName` when available and distinct
+- `description`: Podcast Index feed `description` with HTML stripped into plain text
+- `releaseYear`: derived from `newestItemPubdate` only when it looks reliable
+- `coverUrl`: prefer `artwork`, otherwise `image`
+- `sourceUrl`: prefer website `link`, otherwise feed URL
+- `externalGenres`: Podcast Index categories when available
+- `externalSubjects`: compact provider context such as language, explicit flag, and feed type
+- `attribution`: `Metadata from Podcast Index`
+
 AniList anime/manga mapping decisions:
 
 - `externalId`: AniList media `id`
@@ -139,6 +160,7 @@ Imports create a normal user-owned `media_items` row with:
 - `OPEN_LIBRARY` search results map directly to `external_source_name = OPEN_LIBRARY`.
 - `LIBRIVOX` search results map directly to `external_source_name = LIBRIVOX`.
 - `RAWG` search results map directly to `external_source_name = RAWG`.
+- `PODCAST_INDEX` search results map directly to `external_source_name = PODCAST_INDEX`.
 - `ANILIST` search results map directly to `external_source_name = ANILIST`.
 - `DEMO` imports preserve `external_source_name = DEMO`.
 - `DEMO` tag suggestions reuse provider-specific mapping sources:
@@ -155,7 +177,9 @@ Imports create a normal user-owned `media_items` row with:
 - Do not implement IGDB unless the provider plan changes later.
 - Do not implement YouTube search; keep YouTube scoped to future URL import.
 - Do not import podcast episodes in the current provider plan.
+- Do not build RSS crawling from Podcast Index feed URLs in this prototype.
 - Do not add `ANIME` or `MANGA` as core media types.
 - Do not build audio or video players as part of provider integration.
+- Do not build podcast playback or progress tracking in this prototype.
 - Do not add audiobook playback, progress tracking, chapter state, or streaming UI in this prototype.
 - Keep provider-specific HTTP clients behind the backend adapter boundary.

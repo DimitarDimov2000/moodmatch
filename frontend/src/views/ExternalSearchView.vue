@@ -204,7 +204,7 @@ interface ImportState {
 
     <AppMessage
       title="Provider-Verhalten"
-      description="TMDB, Open Library, LibriVox, RAWG und AniList sind aktiv. AniList bleibt eine Quelle fuer Anime/Manga; importierte Anime-Filme, Anime-Serien und Manga landen als Film, Serie oder Buch in deiner Mediathek."
+      description="TMDB, Open Library, LibriVox, RAWG und AniList sind aktiv. Podcast Index ist fuer Podcast-Shows verfuegbar, sobald Backend-Key und Backend-Secret gesetzt sind. AniList bleibt eine Quelle fuer Anime/Manga; importierte Anime-Filme, Anime-Serien und Manga landen als Film, Serie oder Buch in deiner Mediathek."
       tone="info"
     />
 

@@ -50,6 +50,9 @@ const creatorLabel = computed(() => {
   if (props.result.mediaType === 'AUDIOBOOK') {
     return 'Autor:in / Sprecher:in';
   }
+  if (props.result.mediaType === 'PODCAST') {
+    return 'Host / Autor:in';
+  }
   if (props.result.mediaType === 'GAME') {
     return 'Entwicklung / Publisher';
   }
@@ -61,6 +64,9 @@ const subjectsLabel = computed(() => {
   }
   if (props.result.mediaType === 'GAME') {
     return 'Platforms / Tags';
+  }
+  if (props.result.mediaType === 'PODCAST') {
+    return 'Sprache / Hinweise';
   }
   return 'Externe Subjects';
 });
@@ -125,6 +131,18 @@ const subtitle = computed(() => {
           </p>
           <p class="body-muted">
             {{ sourceLabel }} Audiobook Catalog
+          </p>
+        </div>
+
+        <div
+          v-if="result.mediaType === 'PODCAST'"
+          class="external-result-card__section"
+        >
+          <p class="external-result-card__section-label">
+            Quelle
+          </p>
+          <p class="body-muted">
+            {{ sourceLabel }} Podcast Catalog
           </p>
         </div>
 

@@ -219,4 +219,52 @@ describe('ExternalSearchResultCard', () => {
     expect(wrapper.text()).toContain('Kentaro Miura');
     expect(wrapper.text()).toContain('Format: MANGA');
   });
+
+  it('renders Podcast Index podcast metadata clearly', () => {
+    const wrapper = mount(ExternalSearchResultCard, {
+      global: {
+        stubs: {
+          RouterLink: {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+      props: {
+        result: {
+          source: 'PODCAST_INDEX',
+          externalId: '75075',
+          mediaType: 'PODCAST',
+          title: 'Lex Fridman Podcast',
+          originalTitle: null,
+          creatorNames: ['Lex Fridman'],
+          description:
+            'Conversations about science, technology, history, philosophy, and the nature of intelligence.',
+          releaseYear: 2024,
+          coverUrl: 'https://image.simplecastcdn.com/images/lex-fridman.jpg',
+          sourceUrl: 'https://lexfridman.com/podcast/',
+          externalGenres: ['Technology', 'Science'],
+          externalSubjects: ['Language: en', 'Explicit: No', 'Feed type: podcast'],
+          suggestedTags: [],
+          attribution: 'Metadata from Podcast Index',
+          warnings: [],
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain('Lex Fridman Podcast');
+    expect(wrapper.text()).toContain('Podcast Index');
+    expect(wrapper.text()).toContain('Podcast • 2024');
+    expect(wrapper.text()).toContain('Host / Autor:in');
+    expect(wrapper.text()).toContain('Lex Fridman');
+    expect(wrapper.text()).toContain('Technology');
+    expect(wrapper.text()).toContain('Science');
+    expect(wrapper.text()).toContain('Sprache / Hinweise');
+    expect(wrapper.text()).toContain('Language: en');
+    expect(wrapper.text()).toContain('Explicit: No');
+    expect(wrapper.text()).toContain('Quelle');
+    expect(wrapper.text()).toContain('Podcast Index Podcast Catalog');
+    expect(wrapper.get('img').attributes('src')).toBe(
+      'https://image.simplecastcdn.com/images/lex-fridman.jpg',
+    );
+  });
 });

@@ -65,6 +65,19 @@ describe('ExternalSearchView', () => {
     expect(wrapper.text()).not.toContain('Music');
   });
 
+  it('enables Podcast Index for podcasts without introducing music UI', async () => {
+    const wrapper = mountView();
+
+    await wrapper.get('select[name="mediaType"]').setValue('PODCAST');
+
+    expect(wrapper.text()).toContain('Automatisch (Podcast Index)');
+    expect(wrapper.text()).toContain('Podcast Index (Podcast-Shows)');
+    expect(wrapper.text()).toContain('Automatisch durchsucht Podcast Index fuer Podcast-Shows');
+    expect(wrapper.get('option[value="PODCAST_INDEX"]').attributes('disabled')).toBeUndefined();
+    expect(wrapper.text()).not.toContain('Spotify');
+    expect(wrapper.text()).not.toContain('Music');
+  });
+
   it('enables AniList for anime and manga without exposing anime or manga core media types', async () => {
     const wrapper = mountView();
 
@@ -216,6 +229,124 @@ describe('ExternalSearchView', () => {
       mediaType: 'BOOK',
       source: 'OPEN_LIBRARY',
     });
+  });
+
+  it('shows podcast provider warnings from automatic search when credentials are missing', async () => {
+    searchExternalMock.mockResolvedValue({
+      query: 'lex fridman',
+      mediaType: 'PODCAST',
+      source: 'AUTOMATIC',
+      warnings: [
+        'Podcast Index provider is not configured. Set MOODMATCH_PODCASTINDEX_KEY and MOODMATCH_PODCASTINDEX_SECRET. Provider skipped in automatic search.',
+      ],
+      results: [],
+    });
+
+    const wrapper = mountView();
+
+    await wrapper.get('input[name="query"]').setValue('lex fridman');
+    await wrapper.get('select[name="mediaType"]').setValue('PODCAST');
+    await wrapper.get('form').trigger('submit');
+    await flushPromises();
+
+    expect(searchExternalMock).toHaveBeenCalledWith({
+      query: 'lex fridman',
+      mediaType: 'PODCAST',
+      source: undefined,
+    });
+    expect(wrapper.text()).toContain('Provider-Hinweis');
+    expect(wrapper.text()).toContain('Podcast Index provider is not configured');
+    expect(wrapper.text()).toContain('Keine Ergebnisse gefunden');
+  });
+
+  it('imports a podcast result and shows the library link state', async () => {
+    searchExternalMock.mockResolvedValue({
+      query: 'lex fridman',
+      mediaType: 'PODCAST',
+      source: 'PODCAST_INDEX',
+      warnings: [],
+      results: [
+        {
+          source: 'PODCAST_INDEX',
+          externalId: '75075',
+          mediaType: 'PODCAST',
+          title: 'Lex Fridman Podcast',
+          originalTitle: null,
+          creatorNames: ['Lex Fridman'],
+          description:
+            'Conversations about science, technology, history, philosophy, and the nature of intelligence.',
+          releaseYear: 2024,
+          coverUrl: 'https://image.simplecastcdn.com/images/lex-fridman.jpg',
+          sourceUrl: 'https://lexfridman.com/podcast/',
+          externalGenres: ['Technology', 'Science'],
+          externalSubjects: ['Language: en', 'Explicit: No', 'Feed type: podcast'],
+          suggestedTags: [],
+          attribution: 'Metadata from Podcast Index',
+          warnings: [],
+        },
+      ],
+    });
+    importExternalMediaMock.mockResolvedValue({
+      created: true,
+      message: 'Imported into your media library.',
+      media: {
+        id: 'media-podcast-1',
+        title: 'Lex Fridman Podcast',
+        originalTitle: null,
+        description:
+          'Conversations about science, technology, history, philosophy, and the nature of intelligence.',
+        mediaType: 'PODCAST',
+        consumptionStatus: 'WANT_TO_CONSUME',
+        isFavourite: false,
+        rating: null,
+        sourceType: 'EXTERNAL_SEARCH',
+        sourceNote: 'Imported from PODCAST_INDEX',
+        commitmentLevel: 'LONG',
+        releaseYear: 2024,
+        coverUrl: 'https://image.simplecastcdn.com/images/lex-fridman.jpg',
+        externalSourceName: 'PODCAST_INDEX',
+        externalSourceId: '75075',
+        externalSourceUrl: 'https://lexfridman.com/podcast/',
+        metadataOrigin: 'IMPORTED',
+        tags: [],
+        externalReferences: [],
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
+    });
+
+    const wrapper = mountView();
+
+    await wrapper.get('input[name="query"]').setValue('lex fridman');
+    await wrapper.get('select[name="mediaType"]').setValue('PODCAST');
+    await wrapper.get('select[name="source"]').setValue('PODCAST_INDEX');
+    await wrapper.get('form').trigger('submit');
+    await flushPromises();
+
+    const importButton = getImportButton(wrapper);
+    expect(importButton).toBeDefined();
+
+    await importButton!.trigger('click');
+    await flushPromises();
+
+    expect(importExternalMediaMock).toHaveBeenCalledWith({
+      source: 'PODCAST_INDEX',
+      externalId: '75075',
+      mediaType: 'PODCAST',
+      title: 'Lex Fridman Podcast',
+      originalTitle: null,
+      creatorNames: ['Lex Fridman'],
+      description:
+        'Conversations about science, technology, history, philosophy, and the nature of intelligence.',
+      releaseYear: 2024,
+      coverUrl: 'https://image.simplecastcdn.com/images/lex-fridman.jpg',
+      sourceUrl: 'https://lexfridman.com/podcast/',
+      externalGenres: ['Technology', 'Science'],
+      externalSubjects: ['Language: en', 'Explicit: No', 'Feed type: podcast'],
+      attribution: 'Metadata from Podcast Index',
+    });
+    expect(wrapper.text()).toContain('Imported into your media library.');
+    expect(wrapper.text()).toContain('In Mediathek ansehen');
   });
 
   it('imports an audiobook result and shows the library link state', async () => {

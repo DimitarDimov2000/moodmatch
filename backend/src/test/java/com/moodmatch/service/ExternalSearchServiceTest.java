@@ -23,6 +23,7 @@ import com.moodmatch.entity.TagMappingConfidence;
 import com.moodmatch.external.anilist.TestAniListGateway;
 import com.moodmatch.external.librivox.TestLibriVoxGateway;
 import com.moodmatch.external.openlibrary.TestOpenLibraryGateway;
+import com.moodmatch.external.podcastindex.TestPodcastIndexGateway;
 import com.moodmatch.external.rawg.TestRawgGateway;
 import com.moodmatch.repository.ExternalTagMappingRepository;
 import com.moodmatch.repository.TagRepository;
@@ -62,6 +63,7 @@ class ExternalSearchServiceTest {
         TestLibriVoxGateway.reset();
         TestRawgGateway.reset();
         TestAniListGateway.reset();
+        TestPodcastIndexGateway.reset();
         QuarkusTransaction.requiringNew().run(() -> {
             entityManager.createNativeQuery("DELETE FROM media_tags").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM media_external_refs").executeUpdate();
@@ -261,13 +263,27 @@ class ExternalSearchServiceTest {
     }
 
     @Test
-    void shouldKeepDemoFallbackForFutureMediaTypesWithoutARealProvider() {
-        ExternalSearchResponse response = externalSearchService.search("episode", "PODCAST", null, 5);
+    void shouldSkipUnconfiguredPodcastIndexInAutomaticPodcastSearchWithoutCrashing() {
+        ExternalSearchResponse response = externalSearchService.search("lex fridman", "PODCAST", null, 5);
 
         assertEquals("PODCAST", response.mediaType().name());
         assertEquals("AUTOMATIC", response.source().name());
         assertTrue(response.results().isEmpty());
-        assertTrue(response.warnings().isEmpty());
+        assertEquals(
+                List.of(
+                        "Podcast Index provider is not configured. Set MOODMATCH_PODCASTINDEX_KEY and MOODMATCH_PODCASTINDEX_SECRET. Provider skipped in automatic search."),
+                response.warnings());
+    }
+
+    @Test
+    void shouldRejectExplicitPodcastIndexSearchWhenProviderConfigIsMissing() {
+        com.moodmatch.exception.BusinessRuleViolationException exception = assertThrows(
+                com.moodmatch.exception.BusinessRuleViolationException.class,
+                () -> externalSearchService.search("radiolab", "PODCAST", "PODCAST_INDEX", 5));
+
+        assertEquals(
+                "Podcast Index provider is not configured. Set MOODMATCH_PODCASTINDEX_KEY and MOODMATCH_PODCASTINDEX_SECRET.",
+                exception.getMessage());
     }
 
     @Test

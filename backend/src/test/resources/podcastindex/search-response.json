@@ -1,0 +1,44 @@
+{
+  "status": "true",
+  "feeds": [
+    {
+      "id": 75075,
+      "title": "Lex Fridman Podcast",
+      "url": "https://lexfridman.com/feed/podcast/",
+      "originalUrl": "https://lexfridman.com/feed/podcast/",
+      "link": "https://lexfridman.com/podcast/",
+      "description": "<p>Conversations about science, technology, history, philosophy, and the nature of intelligence.</p>",
+      "author": "Lex Fridman",
+      "ownerName": "Lex Fridman",
+      "image": "https://image.simplecastcdn.com/images/lex-fridman-image.jpg",
+      "artwork": "https://image.simplecastcdn.com/images/lex-fridman.jpg",
+      "newestItemPubdate": 1719838400,
+      "language": "en",
+      "explicit": 0,
+      "medium": "podcast",
+      "categories": {
+        "86": "Technology",
+        "87": "Science"
+      }
+    },
+    {
+      "id": 1521,
+      "title": "Radiolab",
+      "url": "https://feeds.simplecast.com/radiolab",
+      "originalUrl": "https://feeds.simplecast.com/radiolab",
+      "link": "https://radiolab.org/podcast",
+      "description": "Investigating a strange world.",
+      "author": "WNYC Studios",
+      "ownerName": "WNYC Studios",
+      "image": "https://media.radiolab.org/radiolab.jpg",
+      "artwork": null,
+      "newestItemPubdate": 1719000000,
+      "language": "en",
+      "explicit": 1,
+      "medium": "podcast",
+      "categories": {
+        "99": "Society & Culture"
+      }
+    }
+  ]
+}
