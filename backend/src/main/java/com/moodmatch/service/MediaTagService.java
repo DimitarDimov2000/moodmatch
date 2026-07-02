@@ -21,12 +21,22 @@ public class MediaTagService {
 
     void replaceTags(MediaItem mediaItem, ReplaceMediaTagsRequest request) {
         Set<Tag> resolvedTags = tagService.requireTags(request);
+        syncResolvedTags(mediaItem, resolvedTags, true);
+    }
+
+    void addResolvedTags(MediaItem mediaItem, Set<Tag> resolvedTags) {
+        syncResolvedTags(mediaItem, resolvedTags, false);
+    }
+
+    private void syncResolvedTags(MediaItem mediaItem, Set<Tag> resolvedTags, boolean removeMissing) {
         Set<UUID> replacementTagIds = resolvedTags.stream().map(Tag::getId).collect(java.util.stream.Collectors.toSet());
 
-        mediaItem.getMediaTags().removeIf(mediaTag -> {
-            Tag currentTag = mediaTag.getTag();
-            return currentTag == null || !replacementTagIds.contains(currentTag.getId());
-        });
+        if (removeMissing) {
+            mediaItem.getMediaTags().removeIf(mediaTag -> {
+                Tag currentTag = mediaTag.getTag();
+                return currentTag == null || !replacementTagIds.contains(currentTag.getId());
+            });
+        }
 
         Set<UUID> existingTagIds = mediaItem.getMediaTags().stream()
                 .map(MediaTag::getTag)

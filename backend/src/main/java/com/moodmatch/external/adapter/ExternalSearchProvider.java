@@ -11,5 +11,13 @@ public interface ExternalSearchProvider {
 
     Set<MediaType> supportedMediaTypes();
 
+    default boolean isConfigured() {
+        return true;
+    }
+
+    default String configurationErrorMessage() {
+        return "Source %s is not configured.".formatted(sourceName());
+    }
+
     List<ExternalSearchResult> search(ExternalSearchRequest request);
 }

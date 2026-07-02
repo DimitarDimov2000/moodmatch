@@ -10,9 +10,10 @@ This directory contains the Quarkus backend for MoodMatch.
 - Interest profile calculation under `/api/profile`
 - Candidate listing under `/api/candidates`
 - Deterministic match scoring under `/api/matches`
-- Preview-only external search under `/api/external/search`
+- External search under `/api/external/search`
+- External import under `/api/external/import`
 
-The backend owns validation rules, persistence, Flyway migrations, DTO mapping, profile calculation, match scoring, and explanation messages. The external search endpoint currently uses an offline DEMO provider and does not import media into the local library yet.
+The backend owns validation rules, persistence, Flyway migrations, DTO mapping, profile calculation, match scoring, and explanation messages. External search prefers TMDB for films and series when `MOODMATCH_TMDB_API_KEY` is configured, and otherwise falls back to the offline DEMO provider. Imported media is stored as normal user-owned `MediaItem` data with external references.
 
 ## Development Setup
 

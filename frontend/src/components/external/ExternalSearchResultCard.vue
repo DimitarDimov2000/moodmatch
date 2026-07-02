@@ -1,8 +1,18 @@
 <script setup lang="ts">
+import { RouterLink } from 'vue-router';
+
 import type { ExternalSearchResultResponse } from '@/types/api';
 
-defineProps<{
+const props = defineProps<{
   result: ExternalSearchResultResponse;
+  isImporting?: boolean;
+  importError?: string;
+  importedMediaId?: string | null;
+  importMessage?: string | null;
+}>();
+
+const emit = defineEmits<{
+  import: [result: ExternalSearchResultResponse];
 }>();
 </script>
 
@@ -90,19 +100,70 @@ defineProps<{
           </div>
         </div>
 
-        <footer class="external-result-card__footer">
-          <p class="body-muted">
-            {{ result.attribution }}
+        <div
+          v-if="result.warnings.length > 0"
+          class="external-result-card__section"
+        >
+          <p class="external-result-card__section-label">
+            Hinweise
           </p>
-          <a
-            v-if="result.sourceUrl"
-            :href="result.sourceUrl"
-            class="external-result-card__link"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Detail-Quelle ansehen
-          </a>
+          <div class="external-result-card__warning-list">
+            <p
+              v-for="warning in result.warnings"
+              :key="warning"
+              class="body-muted"
+            >
+              {{ warning }}
+            </p>
+          </div>
+        </div>
+
+        <footer class="external-result-card__footer">
+          <div class="external-result-card__footer-copy">
+            <p class="body-muted">
+              {{ result.attribution }}
+            </p>
+            <p
+              v-if="importError"
+              class="external-result-card__status external-result-card__status--error"
+            >
+              {{ importError }}
+            </p>
+            <p
+              v-else-if="importMessage"
+              class="external-result-card__status external-result-card__status--success"
+            >
+              {{ importMessage }}
+            </p>
+          </div>
+
+          <div class="external-result-card__action-row">
+            <a
+              v-if="result.sourceUrl"
+              :href="result.sourceUrl"
+              class="external-result-card__link"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Detail-Quelle ansehen
+            </a>
+            <RouterLink
+              v-if="importedMediaId"
+              :to="{ name: 'media-detail', params: { id: importedMediaId } }"
+              class="button button--secondary"
+            >
+              In Mediathek ansehen
+            </RouterLink>
+            <button
+              v-else
+              class="button button--primary"
+              type="button"
+              :disabled="isImporting"
+              @click="emit('import', props.result)"
+            >
+              {{ isImporting ? 'Import laeuft...' : 'In Mediathek importieren' }}
+            </button>
+          </div>
         </footer>
       </div>
 
@@ -210,13 +271,44 @@ defineProps<{
   color: var(--color-success);
 }
 
+.external-result-card__warning-list {
+  display: grid;
+  gap: 0.35rem;
+}
+
 .external-result-card__footer {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   padding-top: 0.35rem;
+}
+
+.external-result-card__footer-copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.external-result-card__action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.external-result-card__status {
+  margin: 0;
+  font-weight: 600;
+}
+
+.external-result-card__status--success {
+  color: var(--color-success);
+}
+
+.external-result-card__status--error {
+  color: var(--color-danger);
 }
 
 .external-result-card__link {

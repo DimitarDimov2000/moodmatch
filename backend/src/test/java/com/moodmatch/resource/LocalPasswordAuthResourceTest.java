@@ -133,6 +133,18 @@ class LocalPasswordAuthResourceTest {
                 .statusCode(401);
 
         given()
+                .contentType(ContentType.JSON)
+                .body(Map.of(
+                        "source", "DEMO",
+                        "externalId", "demo-film-arrival",
+                        "mediaType", "FILM",
+                        "title", "Arrival"))
+                .when()
+                .post("/api/external/import")
+                .then()
+                .statusCode(401);
+
+        given()
                 .header("Authorization", bearer("not-a-valid-token"))
                 .when()
                 .get("/api/media")
@@ -148,6 +160,24 @@ class LocalPasswordAuthResourceTest {
                 .then()
                 .statusCode(200)
                 .body("$", empty());
+
+        given()
+                .header("Authorization", bearer(token))
+                .contentType(ContentType.JSON)
+                .body(Map.of(
+                        "source", "DEMO",
+                        "externalId", "demo-film-arrival",
+                        "mediaType", "FILM",
+                        "title", "Arrival",
+                        "externalGenres", java.util.List.of("Science-Fiction"),
+                        "externalSubjects", java.util.List.of("Zeit"),
+                        "attribution", "MoodMatch Demo Provider (offline)"))
+                .when()
+                .post("/api/external/import")
+                .then()
+                .statusCode(201)
+                .body("created", equalTo(true))
+                .body("media.sourceType", equalTo("EXTERNAL_SEARCH"));
     }
 
     @Test

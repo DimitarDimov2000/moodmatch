@@ -1,6 +1,6 @@
 # Local Setup
 
-This guide describes the current local development setup for the Phase 19 checkpoint.
+This guide describes the current local development setup for MoodMatch.
 
 ## Prerequisites
 
@@ -59,6 +59,28 @@ Current migrations:
 
 - `V1__init_schema.sql`
 - `V2__seed_starter_tags.sql`
+- `V3__add_app_users_and_media_ownership.sql`
+- `V4__add_local_password_auth.sql`
+- `V5__add_external_import_support.sql`
+
+## Optional TMDB Provider Setup
+
+TMDB is the first real external provider. It is currently used for `FILM` and `SERIES` searches when the backend has a valid API key.
+
+Optional local variables:
+
+- `MOODMATCH_TMDB_API_KEY`
+- `MOODMATCH_TMDB_BASE_URL`
+- `MOODMATCH_TMDB_IMAGE_BASE_URL`
+- `MOODMATCH_TMDB_WEBSITE_BASE_URL`
+
+Example terminal setup:
+
+```bash
+export MOODMATCH_TMDB_API_KEY=your_tmdb_api_key
+```
+
+If `MOODMATCH_TMDB_API_KEY` is missing, MoodMatch keeps the offline `DEMO` provider active as a fallback. No real API key is committed in this repository, and the frontend never receives the TMDB key directly.
 
 ## Optional IntelliJ / PostgreSQL Inspection
 
@@ -179,3 +201,4 @@ npm run typecheck
 2. Start the backend with `cd backend && ./mvnw quarkus:dev`.
 3. Start the frontend with `cd frontend && npm run dev`.
 4. Open the frontend and inspect the dashboard, media flows, profile, matches, swipe mode, and external search preview.
+5. Log in, search external media, import one result, and verify it appears in the media library.

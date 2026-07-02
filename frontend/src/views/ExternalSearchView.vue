@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import { RouterLink } from 'vue-router';
 
-import { searchExternal } from '@/api/external';
+import { importExternalMedia, searchExternal } from '@/api/external';
 import { ApiRequestError } from '@/api/client';
 import ExternalSearchForm from '@/components/external/ExternalSearchForm.vue';
 import ExternalSearchResultCard from '@/components/external/ExternalSearchResultCard.vue';
 import AppMessage from '@/components/common/AppMessage.vue';
-import type { ExternalSearchResponse, MediaType } from '@/types/api';
+import type {
+  ExternalImportRequest,
+  ExternalSearchResponse,
+  ExternalSearchResultResponse,
+  MediaType,
+} from '@/types/api';
 
 const query = ref('');
 const mediaType = ref<MediaType>('FILM');
@@ -14,11 +20,21 @@ const loading = ref(false);
 const hasSearched = ref(false);
 const errorMessage = ref('');
 const searchResponse = ref<ExternalSearchResponse | null>(null);
+const importStates = ref<Record<string, ImportState>>({});
+
+const fallbackMessage = computed(() => {
+  if (!searchResponse.value || searchResponse.value.source !== 'DEMO' || searchResponse.value.warnings.length === 0) {
+    return '';
+  }
+
+  return searchResponse.value.warnings.join(' ');
+});
 
 async function runSearch() {
   const trimmedQuery = query.value.trim();
   hasSearched.value = true;
   errorMessage.value = '';
+  importStates.value = {};
 
   if (!trimmedQuery) {
     searchResponse.value = null;
@@ -41,12 +57,95 @@ async function runSearch() {
   }
 }
 
+async function importResult(result: ExternalSearchResultResponse) {
+  const key = resultKey(result);
+  importStates.value = {
+    ...importStates.value,
+    [key]: {
+      importing: true,
+      error: '',
+      message: '',
+      mediaId: null,
+    },
+  };
+
+  try {
+    const response = await importExternalMedia(toImportRequest(result));
+    importStates.value = {
+      ...importStates.value,
+      [key]: {
+        importing: false,
+        error: '',
+        message: response.message,
+        mediaId: response.media.id,
+      },
+    };
+  } catch (error) {
+    importStates.value = {
+      ...importStates.value,
+      [key]: {
+        importing: false,
+        error: toImportUserMessage(error),
+        message: '',
+        mediaId: null,
+      },
+    };
+  }
+}
+
 function toUserMessage(error: unknown): string {
   if (error instanceof ApiRequestError) {
     return error.message;
   }
 
-  return 'Die externe Demo-Suche konnte gerade nicht geladen werden.';
+  return 'Die externe Suche konnte gerade nicht geladen werden.';
+}
+
+function toImportUserMessage(error: unknown): string {
+  if (error instanceof ApiRequestError) {
+    return error.message;
+  }
+
+  return 'Der Import konnte gerade nicht abgeschlossen werden.';
+}
+
+function resultKey(result: ExternalSearchResultResponse) {
+  return `${result.source}:${result.externalId}`;
+}
+
+function getImportState(result: ExternalSearchResultResponse): ImportState {
+  return (
+    importStates.value[resultKey(result)] ?? {
+      importing: false,
+      error: '',
+      message: '',
+      mediaId: null,
+    }
+  );
+}
+
+function toImportRequest(result: ExternalSearchResultResponse): ExternalImportRequest {
+  return {
+    source: result.source,
+    externalId: result.externalId,
+    mediaType: result.mediaType,
+    title: result.title,
+    originalTitle: result.originalTitle,
+    description: result.description,
+    releaseYear: result.releaseYear,
+    coverUrl: result.coverUrl,
+    sourceUrl: result.sourceUrl,
+    externalGenres: result.externalGenres,
+    externalSubjects: result.externalSubjects,
+    attribution: result.attribution,
+  };
+}
+
+interface ImportState {
+  importing: boolean;
+  error: string;
+  message: string;
+  mediaId: string | null;
 }
 </script>
 
@@ -58,18 +157,34 @@ function toUserMessage(error: unknown): string {
           External Search
         </p>
         <h1 class="page-title">
-          Provider-Preview ohne Live-API
+          Externe Medien suchen und importieren
         </h1>
         <p class="page-copy">
-          Diese Phase prueft die adapterbasierte Suche mit einem deterministischen Offline-Demo-Provider.
-          Ergebnisse sind nur Vorschau, werden noch nicht importiert und aendern keine bestehenden MoodMatch-Regeln.
+          Suche aus MoodMatch heraus nach externen Titeln, pruefe die normalisierten Metadaten
+          und speichere passende Treffer direkt in deine eigene Mediathek.
         </p>
+      </div>
+
+      <div class="page-actions">
+        <RouterLink
+          :to="{ name: 'media-create' }"
+          class="button button--secondary"
+        >
+          Medium manuell anlegen
+        </RouterLink>
       </div>
     </header>
 
     <AppMessage
-      title="Phase 18 Vorschau"
-      description="Die Suche nutzt ausschliesslich normalisierte Demo-Daten. Es werden weder API-Keys noch externe HTTP-Aufrufe oder Import-Schritte verwendet."
+      title="Provider-Verhalten"
+      description="Filme und Serien nutzen automatisch TMDB, sobald das Backend mit einem API-Key konfiguriert ist. Ohne Key oder fuer andere Typen bleibt der DEMO-Provider als Fallback aktiv."
+      tone="info"
+    />
+
+    <AppMessage
+      v-if="fallbackMessage"
+      title="DEMO-Fallback aktiv"
+      :description="fallbackMessage"
       tone="info"
     />
 
@@ -82,8 +197,8 @@ function toUserMessage(error: unknown): string {
 
     <AppMessage
       v-if="loading"
-      title="Demo-Suche wird ausgefuehrt"
-      description="Der Offline-Provider filtert gerade den festen Katalog und normalisiert die Treffer fuer die UI."
+      title="Externe Suche wird ausgefuehrt"
+      description="MoodMatch laedt gerade normalisierte Provider-Treffer fuer die UI."
       tone="info"
     />
 
@@ -107,13 +222,13 @@ function toUserMessage(error: unknown): string {
     <AppMessage
       v-else-if="!hasSearched"
       title="Noch keine Suche gestartet"
-      description="Waehle einen Medientyp, gib einen Suchbegriff ein und pruefe die normalisierte Resultatform des Demo-Providers."
+      description="Waehle einen Medientyp, gib einen Suchbegriff ein und importiere interessante Treffer direkt in deine Mediathek."
     />
 
     <AppMessage
       v-else-if="searchResponse && searchResponse.results.length === 0"
-      title="Keine Demo-Ergebnisse gefunden"
-      description="Der feste Offline-Katalog enthaelt fuer diese Suche keine passenden Eintraege."
+      title="Keine Ergebnisse gefunden"
+      description="Fuer diese Suche wurden keine passenden externen Titel gefunden."
     />
 
     <section
@@ -127,7 +242,7 @@ function toUserMessage(error: unknown): string {
           </p>
           <h2>{{ searchResponse.results.length }} Treffer aus {{ searchResponse.source }}</h2>
           <p class="body-muted">
-            Preview-only. Import in die Medienbibliothek folgt in einer spaeteren Phase.
+            Importiere einen Treffer, um ihn sofort als eigenes Medium weiterzuverwenden.
           </p>
         </div>
       </header>
@@ -136,6 +251,11 @@ function toUserMessage(error: unknown): string {
         v-for="result in searchResponse.results"
         :key="result.externalId"
         :result="result"
+        :is-importing="getImportState(result).importing"
+        :import-error="getImportState(result).error"
+        :import-message="getImportState(result).message"
+        :imported-media-id="getImportState(result).mediaId"
+        @import="importResult"
       />
     </section>
   </section>

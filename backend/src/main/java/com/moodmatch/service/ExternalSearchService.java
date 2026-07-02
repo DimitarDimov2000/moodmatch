@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
 import com.moodmatch.dto.external.ExternalSearchResponse;
 import com.moodmatch.dto.external.ExternalSearchResultResponse;
@@ -38,22 +39,28 @@ public class ExternalSearchService {
     public ExternalSearchResponse search(String query, String mediaTypeRaw, String sourceRaw, Integer limit) {
         String normalizedQuery = normalizeQuery(query);
         MediaType mediaType = parseMediaType(mediaTypeRaw);
-        ExternalSearchSourceName source = parseSource(sourceRaw);
         int safeLimit = toSafeLimit(limit);
+        ProviderSelection selection = selectProvider(sourceRaw, mediaType);
+        ExternalSearchProvider provider = selection.provider();
 
-        ExternalSearchProvider provider = resolveProvider(source);
         if (!provider.supportedMediaTypes().contains(mediaType)) {
             throw new BusinessRuleViolationException(
-                    "Source %s does not support media type %s.".formatted(source, mediaType));
+                    "Source %s does not support media type %s.".formatted(provider.sourceName(), mediaType));
         }
 
-        ExternalSearchRequest request = new ExternalSearchRequest(normalizedQuery, mediaType, source, safeLimit);
+        ExternalSearchRequest request =
+                new ExternalSearchRequest(normalizedQuery, mediaType, provider.sourceName(), safeLimit);
         List<ExternalSearchResultResponse> results = provider.search(request).stream()
                 .map(this::enrichSuggestions)
                 .map(this::toResponse)
                 .toList();
 
-        return new ExternalSearchResponse(normalizedQuery, mediaType, source, results, List.of());
+        return new ExternalSearchResponse(
+                normalizedQuery,
+                mediaType,
+                provider.sourceName(),
+                results,
+                List.copyOf(selection.warnings()));
     }
 
     private String normalizeQuery(String query) {
@@ -71,10 +78,6 @@ public class ExternalSearchService {
     }
 
     private ExternalSearchSourceName parseSource(String sourceRaw) {
-        if (sourceRaw == null || sourceRaw.isBlank()) {
-            return ExternalSearchSourceName.DEMO;
-        }
-
         try {
             return ExternalSearchSourceName.valueOf(sourceRaw.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException exception) {
@@ -90,11 +93,51 @@ public class ExternalSearchService {
         return Math.min(limit, MAX_LIMIT);
     }
 
+    private ProviderSelection selectProvider(String sourceRaw, MediaType mediaType) {
+        if (sourceRaw != null && !sourceRaw.isBlank()) {
+            ExternalSearchSourceName requestedSource = parseSource(sourceRaw);
+            ExternalSearchProvider provider = resolveProvider(requestedSource);
+            ensureConfigured(provider);
+            return new ProviderSelection(provider, List.of());
+        }
+
+        Optional<ExternalSearchProvider> preferredProvider = preferredProviderFor(mediaType);
+        if (preferredProvider.isPresent()) {
+            ExternalSearchProvider provider = preferredProvider.get();
+            if (provider.isConfigured()) {
+                return new ProviderSelection(provider, List.of());
+            }
+
+            return new ProviderSelection(
+                    resolveProvider(ExternalSearchSourceName.DEMO),
+                    List.of(provider.configurationErrorMessage() + " Using DEMO fallback."));
+        }
+
+        return new ProviderSelection(resolveProvider(ExternalSearchSourceName.DEMO), List.of());
+    }
+
+    private Optional<ExternalSearchProvider> preferredProviderFor(MediaType mediaType) {
+        return switch (mediaType) {
+            case FILM, SERIES -> findProvider(ExternalSearchSourceName.TMDB);
+            case BOOK, GAME -> Optional.empty();
+        };
+    }
+
     private ExternalSearchProvider resolveProvider(ExternalSearchSourceName source) {
+        return findProvider(source)
+                .orElseThrow(() -> new BusinessRuleViolationException("Source is not available: " + source));
+    }
+
+    private Optional<ExternalSearchProvider> findProvider(ExternalSearchSourceName source) {
         return externalSearchProviders.stream()
                 .filter(provider -> provider.sourceName() == source)
-                .min(Comparator.comparing(provider -> provider.getClass().getName()))
-                .orElseThrow(() -> new BusinessRuleViolationException("Source is not available: " + source));
+                .min(Comparator.comparing(provider -> provider.getClass().getName()));
+    }
+
+    private void ensureConfigured(ExternalSearchProvider provider) {
+        if (!provider.isConfigured()) {
+            throw new BusinessRuleViolationException(provider.configurationErrorMessage());
+        }
     }
 
     private ExternalSearchResult enrichSuggestions(ExternalSearchResult result) {
@@ -144,4 +187,6 @@ public class ExternalSearchService {
                 suggestedTag.reason(),
                 suggestedTag.confidence());
     }
+
+    private record ProviderSelection(ExternalSearchProvider provider, List<String> warnings) {}
 }

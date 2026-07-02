@@ -24,7 +24,7 @@ const emit = defineEmits<{
     <div class="external-search-form__grid">
       <FormField
         label="Suchbegriff"
-        hint="Der Demo-Provider sucht lokal und offline in einem festen Katalog."
+        hint="Filme und Serien nutzen TMDB, sobald ein API-Key im Backend gesetzt ist. Sonst faellt MoodMatch auf den Demo-Katalog zurueck."
         required
       >
         <input
@@ -39,7 +39,7 @@ const emit = defineEmits<{
 
       <FormField
         label="Medientyp"
-        hint="Phase 18 prueft die providerbasierte Suche pro Typ."
+        hint="TMDB ist derzeit fuer Filme und Serien aktiv. Buecher und Games bleiben vorerst im Demo-Fallback."
         required
       >
         <select
@@ -64,7 +64,7 @@ const emit = defineEmits<{
         type="submit"
         :disabled="submitting || !query.trim()"
       >
-        {{ submitting ? 'Suche laeuft...' : 'Demo-Suche starten' }}
+        {{ submitting ? 'Suche laeuft...' : 'Externe Suche starten' }}
       </button>
     </div>
   </form>

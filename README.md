@@ -6,7 +6,7 @@ MoodMatch is a deterministic, explainable media decision assistant for choosing 
 
 This repository is frozen as a project checkpoint after Phase 18. The current app is already runnable and testable with a Vue 3 frontend, a Quarkus backend, PostgreSQL in local development, Flyway migrations, and automated frontend/backend tests.
 
-MoodMatch manages a local media library, calculates an interest profile from consumed and positively rated items, scores `WANT_TO_CONSUME` candidates with deterministic tag-based matching, and shows the reasoning behind each result. It also includes a preview-only external search flow backed by an offline DEMO provider and a swipe mode with explicit local-vs-persistent decision semantics.
+MoodMatch manages a local media library, calculates an interest profile from consumed and positively rated items, scores `WANT_TO_CONSUME` candidates with deterministic tag-based matching, and shows the reasoning behind each result. It now also includes external search plus import, with TMDB for films and series when configured and an offline DEMO fallback when no real provider key is present.
 
 ## What Works Now
 
@@ -19,12 +19,11 @@ MoodMatch manages a local media library, calculates an interest profile from con
 - Deterministic match scoring with explanations
 - Dashboard assembled from existing APIs
 - Swipe mode for local round-based decisions
-- External search preview through an offline DEMO provider
+- External search and import through TMDB for films/series when configured
+- Offline DEMO external provider fallback when no TMDB key is configured
 
 ## Current Limitations
 
-- No real external API calls yet
-- No external import into the media library yet
 - No dedicated `/api/dashboard` endpoint
 - No persistent swipe-like/save action yet
 - Swipe reject persists as `NOT_INTERESTED`
@@ -35,8 +34,8 @@ MoodMatch manages a local media library, calculates an interest profile from con
 
 | Path | Purpose |
 | --- | --- |
-| `frontend/` | Vue 3 + TypeScript app for dashboard, media management, profile, candidates, matches, swipe mode, and external search preview |
-| `backend/` | Quarkus REST API with validation, persistence, Flyway migrations, deterministic profile/matching logic, and the DEMO external search provider |
+| `frontend/` | Vue 3 + TypeScript app for dashboard, media management, profile, candidates, matches, swipe mode, and external search/import |
+| `backend/` | Quarkus REST API with validation, persistence, Flyway migrations, deterministic profile/matching logic, TMDB integration, and DEMO fallback provider |
 | `docs/` | Project documentation, API contract, setup notes, checkpoint summary, testing notes, and ADRs |
 
 ## Quick Start
@@ -51,6 +50,7 @@ Core reference docs:
 - [Architecture](docs/architecture.md)
 - [API Contract](docs/api-contract.md)
 - [Data Model](docs/data-model.md)
+- [External Media Sources](docs/external-media-sources.md)
 - [Scoring And Matching](docs/scoring-and-matching.md)
 - [Testing Strategy](docs/testing-strategy.md)
 - [Future Roadmap](docs/future-roadmap.md)

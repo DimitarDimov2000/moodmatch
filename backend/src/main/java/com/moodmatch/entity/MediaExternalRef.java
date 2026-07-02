@@ -15,8 +15,8 @@ import jakarta.persistence.UniqueConstraint;
         name = "media_external_refs",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_media_external_refs_source_external_id",
-                        columnNames = {"source_name", "external_id"})
+                        name = "uk_media_external_refs_media_source_external",
+                        columnNames = {"media_id", "source_name", "external_id"})
         })
 public class MediaExternalRef extends BaseEntity {
 

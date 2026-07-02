@@ -5,12 +5,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-import com.moodmatch.entity.ExternalSourceName;
 import com.moodmatch.entity.MediaType;
 import com.moodmatch.external.adapter.ExternalSearchProvider;
 import com.moodmatch.external.adapter.ExternalSearchRequest;
 import com.moodmatch.external.adapter.ExternalSearchResult;
 import com.moodmatch.external.adapter.ExternalSearchSourceName;
+import com.moodmatch.external.adapter.ExternalSourceMappings;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -129,7 +129,7 @@ public class DemoExternalSearchProvider implements ExternalSearchProvider {
     private ExternalSearchResult toResult(DemoCatalogEntry entry) {
         return new ExternalSearchResult(
                 ExternalSearchSourceName.DEMO,
-                toMappingSource(entry.mediaType()),
+                ExternalSourceMappings.toMappingSource(ExternalSearchSourceName.DEMO, entry.mediaType()),
                 entry.externalId(),
                 entry.mediaType(),
                 entry.title(),
@@ -143,14 +143,6 @@ public class DemoExternalSearchProvider implements ExternalSearchProvider {
                 List.of(),
                 ATTRIBUTION,
                 List.of());
-    }
-
-    private ExternalSourceName toMappingSource(MediaType mediaType) {
-        return switch (mediaType) {
-            case FILM, SERIES -> ExternalSourceName.TMDB;
-            case BOOK -> ExternalSourceName.OPEN_LIBRARY;
-            case GAME -> ExternalSourceName.RAWG;
-        };
     }
 
     private record DemoCatalogEntry(

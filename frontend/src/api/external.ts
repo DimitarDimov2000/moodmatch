@@ -1,5 +1,10 @@
-import { getJson } from './client';
-import type { ExternalSearchQuery, ExternalSearchResponse } from '@/types/api';
+import { getJson, postJson } from './client';
+import type {
+  ExternalImportRequest,
+  ExternalImportResponse,
+  ExternalSearchQuery,
+  ExternalSearchResponse,
+} from '@/types/api';
 
 export function searchExternal(query: ExternalSearchQuery): Promise<ExternalSearchResponse> {
   return getJson<ExternalSearchResponse>('/external/search', {
@@ -10,4 +15,8 @@ export function searchExternal(query: ExternalSearchQuery): Promise<ExternalSear
       limit: query.limit,
     },
   });
+}
+
+export function importExternalMedia(request: ExternalImportRequest): Promise<ExternalImportResponse> {
+  return postJson<ExternalImportResponse, ExternalImportRequest>('/external/import', request);
 }

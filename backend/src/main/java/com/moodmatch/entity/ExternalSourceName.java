@@ -1,6 +1,7 @@
 package com.moodmatch.entity;
 
 public enum ExternalSourceName {
+    DEMO,
     TMDB,
     OPEN_LIBRARY,
     RAWG,

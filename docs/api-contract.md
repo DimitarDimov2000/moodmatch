@@ -137,11 +137,12 @@ Match behavior:
 - Explanations distinguish incomplete candidates from no-overlap candidates.
 - Requires bearer authentication in `local-password` mode.
 
-### External Search Preview
+### External Search And Import
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| GET | `/external/search` | Search normalized preview results from the offline DEMO provider |
+| GET | `/external/search` | Search normalized external results |
+| POST | `/external/import` | Save one normalized external result into the current user's media library |
 
 Query parameters:
 
@@ -149,15 +150,15 @@ Query parameters:
 | --- | --- | --- | --- |
 | `query` | yes | string | Trimmed server-side |
 | `mediaType` | yes | enum | `FILM`, `SERIES`, `BOOK`, `GAME` |
-| `source` | no | enum | Only `DEMO` is currently supported |
+| `source` | no | enum | `TMDB` or `DEMO`; omit to let the backend choose the best active provider |
 | `limit` | no | integer | Positive integer, capped by backend safety rules |
 
-Preview behavior:
+Search behavior:
 
-- Uses an offline deterministic DEMO provider only.
-- Does not call real external APIs yet.
-- Does not import anything into the local media library.
-- Suggested tags are suggestions only and do not become local media tags automatically.
+- `FILM` and `SERIES` prefer `TMDB` when `MOODMATCH_TMDB_API_KEY` is configured.
+- If TMDB is not configured, the backend falls back to `DEMO` and returns a warning message.
+- `BOOK` and `GAME` remain on `DEMO` for now.
+- Suggested tags are derived from `external_tag_mappings`.
 - Requires bearer authentication in `local-password` mode.
 
 Example response shape:
@@ -167,6 +168,9 @@ Example response shape:
   "query": "arrival",
   "mediaType": "FILM",
   "source": "DEMO",
+  "warnings": [
+    "TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Using DEMO fallback."
+  ],
   "results": [
     {
       "source": "DEMO",
@@ -184,8 +188,49 @@ Example response shape:
       "attribution": "MoodMatch Demo Provider (offline)",
       "warnings": []
     }
-  ],
-  "warnings": []
+  ]
+}
+```
+
+Import request shape:
+
+```json
+{
+  "source": "TMDB",
+  "externalId": "11",
+  "mediaType": "FILM",
+  "title": "Arrival",
+  "originalTitle": null,
+  "description": "First contact changes everything.",
+  "releaseYear": 2016,
+  "coverUrl": "https://image.tmdb.org/t/p/w342/poster.jpg",
+  "sourceUrl": "https://www.themoviedb.org/movie/11",
+  "externalGenres": ["Science Fiction"],
+  "externalSubjects": [],
+  "attribution": "Metadata from TMDB"
+}
+```
+
+Import response shape:
+
+```json
+{
+  "created": true,
+  "message": "Imported into your media library.",
+  "media": {
+    "id": "5b0f51ef-1de4-49fa-8453-bac3fd8b38fd",
+    "title": "Arrival",
+    "mediaType": "FILM",
+    "consumptionStatus": "WANT_TO_CONSUME",
+    "sourceType": "EXTERNAL_SEARCH",
+    "commitmentLevel": "MEDIUM",
+    "externalSourceName": "TMDB",
+    "externalSourceId": "11",
+    "externalSourceUrl": "https://www.themoviedb.org/movie/11",
+    "metadataOrigin": "IMPORTED",
+    "tags": [],
+    "externalReferences": []
+  }
 }
 ```
 
@@ -219,22 +264,23 @@ Current error codes include:
 - Favourite is a persisted domain flag, not a swipe/save action.
 - Favourite is only valid for consumed media with rating 4 or 5.
 - Candidate matching uses confirmed local tags only.
-- External preview results never affect scoring by themselves.
+- External search results never affect scoring by themselves.
+- Imported external media behaves like any other local media item after it is saved.
 
 ## Future Work Outside The Current Contract
 
 The following are not part of the implemented API contract yet:
 
 - `/api/dashboard`
-- External import endpoints
 - Dedicated decision-mode filter endpoints
 - Persistent swipe-like/save endpoints
+- YouTube integration
 
 ## Auth Mode Summary
 
 - Public endpoint: `GET /api/health`
 - Public for now: `GET /api/tags`
-- Protected in `local-password` mode: `/api/media`, `/api/profile`, `/api/candidates`, `/api/matches`, `/api/external/search`, `/api/auth/me`, `/api/auth/logout`
+- Protected in `local-password` mode: `/api/media`, `/api/profile`, `/api/candidates`, `/api/matches`, `/api/external/*`, `/api/auth/me`, `/api/auth/logout`
 - Backend tests still use `local-demo` where useful, while dedicated auth tests run `local-password`.
 
 ## Frontend Auth Expectations

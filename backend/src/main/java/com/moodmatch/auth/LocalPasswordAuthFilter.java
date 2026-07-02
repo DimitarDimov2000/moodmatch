@@ -25,12 +25,11 @@ public class LocalPasswordAuthFilter implements ContainerRequestFilter {
             "api/profile",
             "api/candidates",
             "api/matches",
-            "api/external/search",
             "api/auth/me",
             "api/auth/logout",
             "api/media");
 
-    private static final List<String> PROTECTED_PATH_PREFIXES = List.of("api/media/");
+    private static final List<String> PROTECTED_PATH_PREFIXES = List.of("api/media/", "api/external/");
 
     @Inject
     MoodMatchAuthConfiguration authConfiguration;

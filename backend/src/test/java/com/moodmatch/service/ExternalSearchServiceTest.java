@@ -71,6 +71,9 @@ class ExternalSearchServiceTest {
         assertEquals(1, response.results().size());
         assertTrue(response.results().getFirst().suggestedTags().isEmpty());
         assertEquals("DEMO", response.source().name());
+        assertEquals(
+                List.of("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Using DEMO fallback."),
+                response.warnings());
     }
 
     @Test
@@ -104,5 +107,17 @@ class ExternalSearchServiceTest {
 
         assertEquals(List.of("Arrival", "Severance Preview Reel"),
                 response.results().stream().map(result -> result.title()).toList());
+    }
+
+    @Test
+    void shouldRejectExplicitTmdbSearchWhenProviderConfigIsMissing() {
+        try {
+            externalSearchService.search("arrival", "FILM", "TMDB", 5);
+        } catch (com.moodmatch.exception.BusinessRuleViolationException exception) {
+            assertEquals("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY.", exception.getMessage());
+            return;
+        }
+
+        throw new AssertionError("Expected TMDB configuration error.");
     }
 }

@@ -156,16 +156,17 @@ Stores external identities linked to local media.
 Unique constraint:
 
 ```text
-(source_name, external_id)
+(media_id, source_name, external_id)
 ```
 
 Ownership note:
 
 - external reference access is enforced through the owning `media_items` row
+- the same external id can now be imported by different users without cross-user collisions
 
 ### `external_tag_mappings`
 
-Stores provider-value to local-tag mappings for the external preview foundation.
+Stores provider-value to local-tag mappings for the external search and import foundation.
 
 | Column | Notes |
 | --- | --- |
@@ -230,6 +231,7 @@ IMPORTED_AND_EDITED
 ### `external_source_name`
 
 ```text
+DEMO
 TMDB
 OPEN_LIBRARY
 RAWG
