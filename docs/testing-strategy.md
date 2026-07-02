@@ -14,6 +14,7 @@ Current backend tests cover:
 - media and tag services
 - interest profile calculation
 - deterministic matching
+- auth mode behavior for local-demo and OIDC foundation
 - user-isolation behavior for media/profile/candidates/matches
 - DTO/entity mappers
 - starter tag migration behavior
@@ -74,6 +75,9 @@ npm run typecheck
 - Match scoring and explanation states stay deterministic
 - Profile, candidate, and match calculations stay scoped to the resolved current user
 - External DEMO preview stays normalized and offline
+- Local demo auth mode still resolves the demo user in backend tests
+- OIDC mode rejects unauthenticated requests on protected endpoints
+- OIDC token claims can resolve/create/update the backing `AppUser`
 - Swipe mode semantics stay unchanged
 - Frontend route-level views still build and render against the typed API layer
 

@@ -90,6 +90,16 @@ Expected backend changes:
 
 The backend must not trust user IDs from the frontend.
 
+Status after Phase 26:
+
+* `quarkus-oidc` bearer-token support is wired in on the backend.
+* `moodmatch.auth.mode` now supports `local-demo` and `oidc`.
+* dev/test default to `local-demo`; the base/default configuration is `oidc`.
+* OIDC issuer/client/audience values are read from environment variables.
+* Protected backend API paths now switch between permit-in-local-demo and authenticated-in-oidc mode.
+* `CurrentUserProvider` stays the only injected abstraction for services.
+* The backend now includes an `OidcCurrentUserProvider` that resolves or creates `AppUser` from token claims.
+
 ## 6. Frontend Plan
 
 The frontend should add:
@@ -158,6 +168,11 @@ Recommended auth modes:
 * Requires valid bearer token.
 * Resolves or creates `AppUser` from token claims.
 
+Current implementation detail:
+
+* `%dev` and `%test` default to `local-demo` so existing local development and H2-backed tests continue to work without Google credentials.
+* The default/base profile uses `oidc`, so deployed environments do not silently fall back to the local demo user.
+
 ## 9. Backend Endpoint Protection
 
 Protected endpoints should include:
@@ -199,6 +214,13 @@ Backend tests should cover:
 * repeated authenticated request reuses the same `AppUser`.
 * user A cannot see user B's media.
 * profile/candidates/matches remain user-scoped.
+
+Implemented in Phase 26:
+
+* local-demo provider resolution test
+* protected-endpoint rejection in OIDC mode
+* OIDC claim-to-`AppUser` lookup/create/update unit coverage
+* existing user-ownership tests kept intact
 
 Frontend tests should cover:
 

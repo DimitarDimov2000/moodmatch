@@ -40,7 +40,8 @@ Notes:
 - `PATCH /media/{id}/status` may also clear rating and favourite when leaving `CONSUMED`.
 - `PATCH /media/{id}/favorite` updates only `isFavourite`.
 - The frontend does not send a `user_id`; the backend resolves the current user internally.
-- In the current local prototype phase, the backend resolves a temporary local/demo user until real OIDC/Google auth is implemented.
+- In `local-demo` mode, the backend resolves the Local Demo User internally for development and tests.
+- In `oidc` mode, these endpoints require a valid bearer token and the backend resolves the current `AppUser` from token claims.
 
 ### Tags
 
@@ -59,6 +60,7 @@ Profile behavior:
 - Uses only the current user's consumed media with rating 4 or 5 and at least one confirmed local tag.
 - Returns readiness information and explanation text.
 - Suppresses meaningful matching until enough profile-relevant media exist.
+- Requires bearer authentication in `oidc` mode.
 
 ### Candidates
 
@@ -70,6 +72,7 @@ Candidate behavior:
 
 - Candidates are the current user's items with `consumptionStatus = WANT_TO_CONSUME`.
 - Each candidate includes `isCompleteForMatching`.
+- Requires bearer authentication in `oidc` mode.
 
 ### Matches
 
@@ -83,6 +86,7 @@ Match behavior:
 - `relativeScore` may be `null` when comparisons are not meaningful yet.
 - `scoresSuppressed` may be `true` when the profile is not ready.
 - Explanations distinguish incomplete candidates from no-overlap candidates.
+- Requires bearer authentication in `oidc` mode.
 
 ### External Search Preview
 
@@ -105,6 +109,7 @@ Preview behavior:
 - Does not call real external APIs yet.
 - Does not import anything into the local media library.
 - Suggested tags are suggestions only and do not become local media tags automatically.
+- Requires bearer authentication in `oidc` mode.
 
 Example response shape:
 
@@ -175,3 +180,10 @@ The following are not part of the implemented API contract yet:
 - External import endpoints
 - Dedicated decision-mode filter endpoints
 - Persistent swipe-like/save endpoints
+
+## Auth Mode Summary
+
+- Public endpoint: `GET /api/health`
+- Public for now: `GET /api/tags`
+- Protected in `oidc` mode: `/api/media`, `/api/profile`, `/api/candidates`, `/api/matches`, `/api/external/search`
+- Local development and backend tests default to `local-demo`, so protected endpoints continue to work without real Google/OIDC setup there
