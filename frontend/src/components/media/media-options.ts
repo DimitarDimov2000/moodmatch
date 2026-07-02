@@ -17,6 +17,9 @@ export const mediaTypeOptions: OptionItem<MediaType>[] = [
   { value: 'SERIES', label: 'Serie' },
   { value: 'BOOK', label: 'Buch' },
   { value: 'GAME', label: 'Spiel' },
+  { value: 'AUDIOBOOK', label: 'Hoerbuch' },
+  { value: 'PODCAST', label: 'Podcast' },
+  { value: 'VIDEO', label: 'Video' },
 ];
 
 export const consumptionStatusOptions: OptionItem<ConsumptionStatus>[] = [
@@ -79,4 +82,3 @@ export function getMediaSubtitle(media: MediaResponse): string {
 
   return parts.join(' • ');
 }
-

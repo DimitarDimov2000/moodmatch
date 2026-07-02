@@ -149,8 +149,8 @@ Query parameters:
 | Name | Required | Type | Notes |
 | --- | --- | --- | --- |
 | `query` | yes | string | Trimmed server-side |
-| `mediaType` | yes | enum | `FILM`, `SERIES`, `BOOK`, `GAME` |
-| `source` | no | enum | `TMDB`, `OPEN_LIBRARY`, or `DEMO`; omit to let the backend choose the best active provider |
+| `mediaType` | yes | enum | `FILM`, `SERIES`, `BOOK`, `GAME`, `AUDIOBOOK`, `PODCAST`, `VIDEO` |
+| `source` | no | enum | `DEMO`, `TMDB`, `OPEN_LIBRARY`, `RAWG`, `LIBRIVOX`, `PODCAST_INDEX`, `ANILIST`, or `YOUTUBE`; omit to let the backend choose the best active provider |
 | `limit` | no | integer | Positive integer, capped by backend safety rules |
 
 Search behavior:
@@ -158,7 +158,10 @@ Search behavior:
 - `FILM` and `SERIES` prefer `TMDB` when `MOODMATCH_TMDB_API_KEY` is configured.
 - If TMDB is not configured, the backend falls back to `DEMO` and returns a warning message.
 - `BOOK` prefers `OPEN_LIBRARY` and does not require a secret.
-- `GAME` remains on `DEMO` for now.
+- `GAME`, `AUDIOBOOK`, `PODCAST`, and `VIDEO` remain on `DEMO` until their real providers are implemented.
+- Future provider names are accepted by the enum contract, but requests fail with `Source is not available` until a provider bean exists.
+- AniList anime/manga data will map into `FILM`, `SERIES`, or `BOOK`; there are no core `ANIME` or `MANGA` media types.
+- YouTube is planned only for later URL import, not search.
 - Suggested tags are derived from `external_tag_mappings`.
 - Requires bearer authentication in `local-password` mode.
 
@@ -166,7 +169,7 @@ Implemented provider/media-type combinations:
 
 - `TMDB` -> `FILM`, `SERIES`
 - `OPEN_LIBRARY` -> `BOOK`
-- `DEMO` -> `FILM`, `SERIES`, `BOOK`, `GAME`
+- `DEMO` -> `FILM`, `SERIES`, `BOOK`, `GAME`, `AUDIOBOOK`, `PODCAST`, `VIDEO`
 
 Example response shape:
 

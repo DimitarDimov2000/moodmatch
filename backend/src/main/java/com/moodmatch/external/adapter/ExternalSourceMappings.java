@@ -12,6 +12,11 @@ public final class ExternalSourceMappings {
             case DEMO -> ExternalSourceName.DEMO;
             case TMDB -> ExternalSourceName.TMDB;
             case OPEN_LIBRARY -> ExternalSourceName.OPEN_LIBRARY;
+            case RAWG -> ExternalSourceName.RAWG;
+            case LIBRIVOX -> ExternalSourceName.LIBRIVOX;
+            case PODCAST_INDEX -> ExternalSourceName.PODCAST_INDEX;
+            case ANILIST -> ExternalSourceName.ANILIST;
+            case YOUTUBE -> ExternalSourceName.YOUTUBE;
         };
     }
 
@@ -19,10 +24,18 @@ public final class ExternalSourceMappings {
         return switch (source) {
             case TMDB -> ExternalSourceName.TMDB;
             case OPEN_LIBRARY -> ExternalSourceName.OPEN_LIBRARY;
+            case RAWG -> ExternalSourceName.RAWG;
+            case LIBRIVOX -> ExternalSourceName.LIBRIVOX;
+            case PODCAST_INDEX -> ExternalSourceName.PODCAST_INDEX;
+            case ANILIST -> ExternalSourceName.ANILIST;
+            case YOUTUBE -> ExternalSourceName.YOUTUBE;
             case DEMO -> switch (mediaType) {
                 case FILM, SERIES -> ExternalSourceName.TMDB;
                 case BOOK -> ExternalSourceName.OPEN_LIBRARY;
                 case GAME -> ExternalSourceName.RAWG;
+                case AUDIOBOOK -> ExternalSourceName.LIBRIVOX;
+                case PODCAST -> ExternalSourceName.PODCAST_INDEX;
+                case VIDEO -> ExternalSourceName.YOUTUBE;
             };
         };
     }

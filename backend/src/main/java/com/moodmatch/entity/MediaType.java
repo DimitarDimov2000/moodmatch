@@ -4,5 +4,8 @@ public enum MediaType {
     FILM,
     SERIES,
     BOOK,
-    GAME
+    GAME,
+    PODCAST,
+    AUDIOBOOK,
+    VIDEO
 }

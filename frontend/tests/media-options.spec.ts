@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   canBeFavourite,
   getMediaSubtitle,
+  mediaTypeOptions,
 } from '@/components/media/media-options';
 import type { MediaResponse } from '@/types/api';
 
@@ -13,6 +14,18 @@ describe('media-options', () => {
     expect(canBeFavourite('CONSUMED', 3)).toBe(false);
     expect(canBeFavourite('WANT_TO_CONSUME', 5)).toBe(false);
     expect(canBeFavourite('CONSUMED', null)).toBe(false);
+  });
+
+  it('lists all supported core media types without anime or manga core types', () => {
+    expect(mediaTypeOptions.map((option) => option.value)).toEqual([
+      'FILM',
+      'SERIES',
+      'BOOK',
+      'GAME',
+      'AUDIOBOOK',
+      'PODCAST',
+      'VIDEO',
+    ]);
   });
 
   it('builds a readable subtitle for media cards', () => {
@@ -43,4 +56,3 @@ describe('media-options', () => {
     expect(getMediaSubtitle(media)).toBe('Film • Konsumiert • 2016');
   });
 });
-

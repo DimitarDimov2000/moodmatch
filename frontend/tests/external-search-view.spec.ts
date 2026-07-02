@@ -40,12 +40,16 @@ describe('ExternalSearchView', () => {
       .find((candidate) => candidate.text().includes('In Mediathek importieren'));
   }
 
-  it('renders the import-first state before a search starts and keeps YouTube out of the UI', () => {
+  it('renders the import-first state before a search starts with future providers disabled', async () => {
     const wrapper = mountView();
 
     expect(wrapper.text()).toContain('Externe Medien suchen und importieren');
     expect(wrapper.text()).toContain('Noch keine Suche gestartet');
-    expect(wrapper.text()).not.toContain('YouTube');
+
+    await wrapper.get('select[name="mediaType"]').setValue('VIDEO');
+
+    expect(wrapper.text()).toContain('YouTube (URL-Import geplant)');
+    expect(wrapper.get('option[value="YOUTUBE"]').attributes('disabled')).toBeDefined();
   });
 
   it('renders search results and the demo fallback message from the normalized response', async () => {

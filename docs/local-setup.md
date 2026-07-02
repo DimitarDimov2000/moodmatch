@@ -62,6 +62,7 @@ Current migrations:
 - `V3__add_app_users_and_media_ownership.sql`
 - `V4__add_local_password_auth.sql`
 - `V5__add_external_import_support.sql`
+- `V6__expand_external_provider_model.sql`
 
 ## Optional TMDB Provider Setup
 
@@ -91,6 +92,30 @@ Notes:
 - No secret or paid API key is required for the implemented public search flow.
 - Do not commit any personal contact header or experimental credentials to the repository.
 - If you need endpoint overrides for debugging, they should stay local-only and out of committed secrets.
+
+## Future Provider Configuration
+
+These names are reserved for later provider packages. They are not required for the current app and should only be set once the matching provider is implemented:
+
+- `MOODMATCH_LIBRIVOX_BASE_URL`
+- `MOODMATCH_RAWG_API_KEY`
+- `MOODMATCH_RAWG_BASE_URL`
+- `MOODMATCH_PODCAST_INDEX_API_KEY`
+- `MOODMATCH_PODCAST_INDEX_API_SECRET`
+- `MOODMATCH_PODCAST_INDEX_BASE_URL`
+- `MOODMATCH_ANILIST_BASE_URL`
+- `MOODMATCH_YOUTUBE_API_KEY`
+- `MOODMATCH_YOUTUBE_BASE_URL`
+
+Provider scope notes:
+
+- LibriVox is planned for `AUDIOBOOK`.
+- RAWG is planned for `GAME`.
+- Podcast Index is planned for `PODCAST`; podcast episode import is out of scope.
+- AniList is planned for anime/manga metadata mapped into `FILM`, `SERIES`, or `BOOK`.
+- YouTube is planned for `VIDEO` URL import only, not search.
+- IGDB is a backup/future game provider and is not active.
+- Music is out of scope.
 
 ## Optional IntelliJ / PostgreSQL Inspection
 

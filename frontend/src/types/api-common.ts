@@ -1,4 +1,4 @@
-export type MediaType = 'FILM' | 'SERIES' | 'BOOK' | 'GAME';
+export type MediaType = 'FILM' | 'SERIES' | 'BOOK' | 'GAME' | 'PODCAST' | 'AUDIOBOOK' | 'VIDEO';
 
 export type ConsumptionStatus =
   | 'CONSUMED'
@@ -22,9 +22,14 @@ export type MetadataOrigin = 'MANUAL' | 'IMPORTED' | 'IMPORTED_AND_EDITED';
 export type TagCategory = 'GENRE' | 'THEME' | 'SETTING' | 'TONE' | 'EXPERIENCE';
 
 export type ExternalSourceName =
+  | 'DEMO'
   | 'TMDB'
   | 'OPEN_LIBRARY'
   | 'RAWG'
+  | 'LIBRIVOX'
+  | 'PODCAST_INDEX'
+  | 'ANILIST'
+  | 'YOUTUBE'
   | 'WIKIDATA'
   | 'IGDB'
   | 'GOOGLE_BOOKS'

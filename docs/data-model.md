@@ -13,12 +13,13 @@ Implemented migrations:
 - `V3__add_app_users_and_media_ownership.sql`
 - `V4__add_local_password_auth.sql`
 - `V5__add_external_import_support.sql`
+- `V6__expand_external_provider_model.sql`
 
 ## Tables
 
 ### `media_items`
 
-Stores local media entries across films, series, books, and games. Each media item now belongs to exactly one app user.
+Stores local media entries across films, series, books, games, audiobooks, podcasts, and videos. Each media item belongs to exactly one app user.
 
 | Column | Notes |
 | --- | --- |
@@ -190,6 +191,9 @@ FILM
 SERIES
 BOOK
 GAME
+AUDIOBOOK
+PODCAST
+VIDEO
 ```
 
 ### `consumption_status`
@@ -237,6 +241,10 @@ DEMO
 TMDB
 OPEN_LIBRARY
 RAWG
+LIBRIVOX
+PODCAST_INDEX
+ANILIST
+YOUTUBE
 WIKIDATA
 IGDB
 GOOGLE_BOOKS

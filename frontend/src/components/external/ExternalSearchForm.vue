@@ -86,6 +86,7 @@ const sourceHint = computed(() => sourceHintForMediaType(props.mediaType));
             v-for="option in sourceOptions"
             :key="option.value"
             :value="option.value"
+            :disabled="option.disabled"
           >
             {{ option.label }}
           </option>

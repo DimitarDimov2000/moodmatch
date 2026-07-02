@@ -11,20 +11,37 @@ Provider notes:
 - `TMDB` requires backend-only configuration through `MOODMATCH_TMDB_API_KEY`.
 - `OPEN_LIBRARY` uses the public Search API and does not require a committed secret.
 - The frontend never stores or sends provider secrets.
+- Tests must not require live external APIs or real API keys.
+
+## Provider Plan
+
+| Provider | Planned media coverage | Status |
+| --- | --- | --- |
+| `TMDB` | `FILM`, `SERIES` | Active |
+| `OPEN_LIBRARY` | `BOOK` | Active |
+| `LIBRIVOX` | `AUDIOBOOK` | Planned for Package 2.6 |
+| `RAWG` | `GAME` | Planned |
+| `PODCAST_INDEX` | `PODCAST` | Planned, without episode import for now |
+| `ANILIST` | Anime and manga mapped into `FILM`, `SERIES`, or `BOOK` | Planned |
+| `YOUTUBE` | `VIDEO` URL import only | Planned, no YouTube search |
+| `IGDB` | Backup/future game provider | Not active |
+| Music providers | Music | Out of scope |
+
+AniList does not introduce core `ANIME` or `MANGA` media types. Anime should map to `FILM` or `SERIES`; manga should map to `BOOK`. The source stays `ANILIST`, and anime/manga meaning should be preserved through tags, categories, or provider metadata.
 
 ## Fallback Behavior
 
 - When `MOODMATCH_TMDB_API_KEY` is configured, film and series searches default to `TMDB`.
 - When the key is missing, MoodMatch falls back to the offline `DEMO` provider and returns a clear warning in the search response.
 - `BOOK` searches default to `OPEN_LIBRARY`.
-- `GAME` searches still use `DEMO` for now.
+- `GAME`, `AUDIOBOOK`, `PODCAST`, and `VIDEO` currently default to `DEMO` until their real providers are implemented.
 - `DEMO` remains available for local development and tests.
 
 ## Search And Import Mapping
 
 Search responses are normalized before they reach the frontend:
 
-- `source`: the provider that actually answered the search (`TMDB`, `OPEN_LIBRARY`, or `DEMO`)
+- `source`: the provider that actually answered the search
 - `externalId`: provider-specific identifier
 - `title`, `originalTitle`, `creatorNames`, `description`, `releaseYear`, `coverUrl`, `sourceUrl`
 - `externalGenres`, `externalSubjects`
@@ -50,16 +67,22 @@ Imports create a normal user-owned `media_items` row with:
 
 ## Current Source Mapping
 
-- `TMDB` search results map directly to `external_source_name = TMDB`
-- `OPEN_LIBRARY` search results map directly to `external_source_name = OPEN_LIBRARY`
-- `DEMO` imports preserve `external_source_name = DEMO`
-- `DEMO` tag suggestions still reuse the existing mapping sources:
+- `TMDB` search results map directly to `external_source_name = TMDB`.
+- `OPEN_LIBRARY` search results map directly to `external_source_name = OPEN_LIBRARY`.
+- `DEMO` imports preserve `external_source_name = DEMO`.
+- `DEMO` tag suggestions reuse provider-specific mapping sources:
   - `FILM` and `SERIES` -> `TMDB`
   - `BOOK` -> `OPEN_LIBRARY`
   - `GAME` -> `RAWG`
+  - `AUDIOBOOK` -> `LIBRIVOX`
+  - `PODCAST` -> `PODCAST_INDEX`
+  - `VIDEO` -> `YOUTUBE`
 
-## Future Work
+## Guardrails
 
-- Add more real providers behind the same backend adapter boundary.
-- An optional third provider for a later package could target music or anime, for example `MusicBrainz` or `Jikan`.
-- Keep YouTube as future work only. It is not part of the active scope for this package.
+- Do not implement music providers.
+- Do not implement IGDB unless the provider plan changes later.
+- Do not implement YouTube search; keep YouTube scoped to future URL import.
+- Do not import podcast episodes in the current provider plan.
+- Do not build audio or video players as part of provider integration.
+- Keep provider-specific HTTP clients behind the backend adapter boundary.

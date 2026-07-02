@@ -200,7 +200,7 @@ interface ImportState {
 
     <AppMessage
       title="Provider-Verhalten"
-      description="Filme und Serien koennen TMDB nutzen, Buecher laufen ueber Open Library, und DEMO bleibt als Fallback fuer Entwicklung sowie nicht konfigurierte Flows erhalten."
+      description="TMDB und Open Library bleiben aktiv. Weitere Quellen sind als Provider-Optionen vorbereitet und nutzen bis zur Umsetzung den DEMO-Fallback."
       tone="info"
     />
 

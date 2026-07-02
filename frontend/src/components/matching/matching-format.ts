@@ -15,6 +15,9 @@ export const mediaTypeLabels: Record<MediaType, string> = {
   SERIES: 'Serie',
   BOOK: 'Buch',
   GAME: 'Spiel',
+  AUDIOBOOK: 'Hoerbuch',
+  PODCAST: 'Podcast',
+  VIDEO: 'Video',
 };
 
 export const consumptionStatusLabels: Record<ConsumptionStatus, string> = {

@@ -142,6 +142,27 @@ class MediaServiceTest {
         assertEquals(2, tagRepository.count());
     }
 
+    @Test
+    @TestTransaction
+    void shouldPersistExpandedMediaTypes() {
+        MediaResponse created = mediaService.createMedia(new CreateMediaRequest(
+                "The Fellowship of the Ring",
+                null,
+                "Unabridged audiobook edition.",
+                MediaType.AUDIOBOOK,
+                ConsumptionStatus.WANT_TO_CONSUME,
+                false,
+                null,
+                SourceType.MANUAL,
+                null,
+                CommitmentLevel.LONG,
+                1954,
+                null,
+                MetadataOrigin.MANUAL));
+
+        assertEquals(MediaType.AUDIOBOOK, created.mediaType());
+    }
+
     private CreateMediaRequest buildConsumedRequest(String title, int rating, boolean isFavourite) {
         return new CreateMediaRequest(
                 title,

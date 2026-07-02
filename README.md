@@ -6,7 +6,7 @@ MoodMatch is a deterministic, explainable media decision assistant for choosing 
 
 This repository is frozen as a project checkpoint after Phase 18. The current app is already runnable and testable with a Vue 3 frontend, a Quarkus backend, PostgreSQL in local development, Flyway migrations, and automated frontend/backend tests.
 
-MoodMatch manages a local media library, calculates an interest profile from consumed and positively rated items, scores `WANT_TO_CONSUME` candidates with deterministic tag-based matching, and shows the reasoning behind each result. It now also includes external search plus import, with TMDB for films and series when configured, Open Library for books, and an offline DEMO fallback when no real provider key is present.
+MoodMatch manages a local media library, calculates an interest profile from consumed and positively rated items, scores `WANT_TO_CONSUME` candidates with deterministic tag-based matching, and shows the reasoning behind each result. It now also includes provider-neutral external search plus import, with TMDB for films and series when configured, Open Library for books, prepared provider names for later media types, and an offline DEMO fallback when no real provider key is present.
 
 ## What Works Now
 
@@ -21,6 +21,7 @@ MoodMatch manages a local media library, calculates an interest profile from con
 - Swipe mode for local round-based decisions
 - External search and import through TMDB for films/series when configured
 - External search and import through Open Library for books without a secret
+- Prepared external provider model for games, audiobooks, podcasts, videos, and AniList-sourced anime/manga mappings
 - Offline DEMO external provider fallback when no TMDB key is configured
 
 ## Current Limitations

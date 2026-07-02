@@ -1,6 +1,7 @@
 package com.moodmatch.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.inject.Inject;
@@ -141,5 +142,33 @@ class ExternalSearchServiceTest {
 
         assertEquals("OPEN_LIBRARY", response.source().name());
         assertEquals("OPEN_LIBRARY", response.results().getFirst().source().name());
+    }
+
+    @Test
+    void shouldAcceptFutureMediaTypesThroughDemoFallbackWhenNoProviderIsRegisteredYet() {
+        ExternalSearchResponse response = externalSearchService.search("chapter", "AUDIOBOOK", null, 5);
+
+        assertEquals("AUDIOBOOK", response.mediaType().name());
+        assertEquals("DEMO", response.source().name());
+        assertTrue(response.results().isEmpty());
+        assertTrue(response.warnings().isEmpty());
+    }
+
+    @Test
+    void shouldRecognizeFutureProviderNamesBeforeProviderResolution() {
+        com.moodmatch.exception.BusinessRuleViolationException exception = assertThrows(
+                com.moodmatch.exception.BusinessRuleViolationException.class,
+                () -> externalSearchService.search("zelda", "GAME", "RAWG", 5));
+
+        assertEquals("Source is not available: RAWG", exception.getMessage());
+    }
+
+    @Test
+    void shouldRejectUnknownProviderNames() {
+        com.moodmatch.exception.BusinessRuleViolationException exception = assertThrows(
+                com.moodmatch.exception.BusinessRuleViolationException.class,
+                () -> externalSearchService.search("song", "AUDIOBOOK", "SPOTIFY", 5));
+
+        assertEquals("Unsupported source: SPOTIFY", exception.getMessage());
     }
 }

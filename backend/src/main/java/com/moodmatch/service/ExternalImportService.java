@@ -171,7 +171,7 @@ public class ExternalImportService {
     private CommitmentLevel inferCommitmentLevel(MediaType mediaType) {
         return switch (mediaType) {
             case FILM -> CommitmentLevel.MEDIUM;
-            case SERIES, BOOK, GAME -> CommitmentLevel.LONG;
+            case SERIES, BOOK, GAME, PODCAST, AUDIOBOOK, VIDEO -> CommitmentLevel.LONG;
         };
     }
 

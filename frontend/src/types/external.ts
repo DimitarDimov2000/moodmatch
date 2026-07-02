@@ -1,7 +1,15 @@
 import type { MediaType, TagCategory } from './api-common';
 import type { MediaResponse } from './media';
 
-export type ExternalSearchSourceName = 'DEMO' | 'TMDB' | 'OPEN_LIBRARY';
+export type ExternalSearchSourceName =
+  | 'DEMO'
+  | 'TMDB'
+  | 'OPEN_LIBRARY'
+  | 'RAWG'
+  | 'LIBRIVOX'
+  | 'PODCAST_INDEX'
+  | 'ANILIST'
+  | 'YOUTUBE';
 
 export interface ExternalSearchQuery {
   query: string;
