@@ -187,3 +187,10 @@ The following are not part of the implemented API contract yet:
 - Public for now: `GET /api/tags`
 - Protected in `oidc` mode: `/api/media`, `/api/profile`, `/api/candidates`, `/api/matches`, `/api/external/search`
 - Local development and backend tests default to `local-demo`, so protected endpoints continue to work without real Google/OIDC setup there
+
+## Frontend Auth Expectations
+
+- In `local-demo` frontend mode, private routes remain locally accessible and frontend API requests may omit `Authorization`.
+- In `oidc` frontend mode, the SPA should treat dashboard, media, profile, candidates, matches, swipe, and external search routes as protected.
+- When the frontend has a provider token, it should call protected backend endpoints with `Authorization: Bearer <token>`.
+- A backend `401 Unauthorized` should be treated as a login-required or session-expired state on the frontend.

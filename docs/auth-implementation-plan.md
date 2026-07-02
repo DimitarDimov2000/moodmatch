@@ -116,9 +116,19 @@ Frontend environment variables:
 
 * `VITE_GOOGLE_CLIENT_ID`
 * `VITE_API_BASE_URL`
+* `VITE_AUTH_MODE`
 * `VITE_AUTH_PROVIDER`
 
 Frontend must not contain backend secrets.
+
+Status after Phase 27:
+
+* The Vue frontend now has an auth store that tracks initialization, authenticated state, optional user display data, current auth mode/provider, and an in-memory bearer token placeholder for future provider callbacks.
+* Protected frontend routes now redirect to `/login` in `oidc` mode when no authenticated frontend session exists.
+* `local-demo` mode keeps the current local development flow accessible without real provider setup.
+* The shared frontend API client now attaches `Authorization: Bearer <token>` when a token exists and triggers a consistent `401` unauthorized path.
+* The login view and app shell now provide provider-ready login/logout UI scaffolding without shipping a fake production Google sign-in.
+* Token persistence is intentionally not implemented yet; the current foundation keeps the frontend token in memory only until the real provider integration is chosen and reviewed.
 
 ## 7. Environment Variables
 

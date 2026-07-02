@@ -1,11 +1,49 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
 
 import { useAppStore } from '@/stores/app';
+import { useAuthStore } from '@/stores/auth';
 
 const appStore = useAppStore();
+const authStore = useAuthStore();
+const router = useRouter();
 const { appTitle, navigationItems } = storeToRefs(appStore);
+const { isAuthenticated, userDisplayName } = storeToRefs(authStore);
+
+const visibleNavigationItems = computed(() =>
+  authStore.canAccessProtectedRoutes ? navigationItems.value : [],
+);
+
+const authStatusLabel = computed(() => {
+  if (authStore.mode === 'local-demo') {
+    return 'Local demo mode';
+  }
+
+  if (isAuthenticated.value) {
+    return userDisplayName.value ?? 'Authenticated';
+  }
+
+  return 'Signed out';
+});
+
+const authStatusDescription = computed(() => {
+  if (authStore.mode === 'local-demo') {
+    return 'Private routes stay open for local development.';
+  }
+
+  if (isAuthenticated.value) {
+    return 'Bearer token available for protected API requests.';
+  }
+
+  return 'Protected routes redirect to login until a provider session exists.';
+});
+
+async function handleLogout() {
+  authStore.logout();
+  await router.push({ name: 'login' });
+}
 </script>
 
 <template>
@@ -21,11 +59,12 @@ const { appTitle, navigationItems } = storeToRefs(appStore);
         </RouterLink>
 
         <nav
+          v-if="visibleNavigationItems.length > 0"
           class="app-shell__nav"
           aria-label="Primary navigation"
         >
           <RouterLink
-            v-for="item in navigationItems"
+            v-for="item in visibleNavigationItems"
             :key="item.label"
             :to="item.to"
             class="app-shell__nav-link"
@@ -33,6 +72,30 @@ const { appTitle, navigationItems } = storeToRefs(appStore);
             {{ item.label }}
           </RouterLink>
         </nav>
+
+        <div class="app-shell__auth">
+          <div class="app-shell__auth-copy">
+            <span class="app-shell__auth-label">{{ authStatusLabel }}</span>
+            <span class="app-shell__auth-description">{{ authStatusDescription }}</span>
+          </div>
+
+          <RouterLink
+            v-if="authStore.isAuthRequiredMode && !isAuthenticated"
+            :to="{ name: 'login' }"
+            class="button button--secondary app-shell__auth-action"
+          >
+            Anmelden
+          </RouterLink>
+
+          <button
+            v-else-if="isAuthenticated"
+            class="button button--secondary app-shell__auth-action"
+            type="button"
+            @click="handleLogout"
+          >
+            Abmelden
+          </button>
+        </div>
       </div>
     </header>
 
@@ -91,6 +154,31 @@ const { appTitle, navigationItems } = storeToRefs(appStore);
   gap: 0.75rem;
 }
 
+.app-shell__auth {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.app-shell__auth-copy {
+  display: grid;
+  gap: 0.15rem;
+  text-align: right;
+}
+
+.app-shell__auth-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.app-shell__auth-description {
+  max-width: 20rem;
+  color: var(--color-text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
 .app-shell__nav-link {
   padding: 0.625rem 0.875rem;
   border-radius: var(--radius-full);
@@ -116,6 +204,15 @@ const { appTitle, navigationItems } = storeToRefs(appStore);
     justify-content: center;
     padding-top: 1rem;
     padding-bottom: 1rem;
+  }
+
+  .app-shell__auth {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .app-shell__auth-copy {
+    text-align: left;
   }
 }
 </style>

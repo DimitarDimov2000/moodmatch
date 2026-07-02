@@ -1,11 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { API_BASE_URL } from '@/api/config';
-import { apiRequest, buildUrl, deleteRequest, getJson, patchJson } from '@/api/client';
+import {
+  apiRequest,
+  buildUrl,
+  configureApiClientAuth,
+  deleteRequest,
+  getJson,
+  patchJson,
+  resetApiClientAuth,
+} from '@/api/client';
 
 describe('api client', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    resetApiClientAuth();
   });
 
   it('builds requests with the shared base url and json headers', async () => {
@@ -43,6 +52,46 @@ describe('api client', () => {
 
     expect(headers.get('Accept')).toBe('application/json');
     expect(headers.get('Content-Type')).toBe('application/json');
+  });
+
+  it('adds an Authorization bearer header when a token is available', async () => {
+    configureApiClientAuth({
+      getAccessToken: () => 'frontend-token',
+    });
+
+    const fetchSpy = vi.spyOn(window, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+    );
+
+    await getJson('/profile');
+
+    const [, requestInit] = fetchSpy.mock.calls[0] ?? [];
+    const headers = requestInit?.headers as Headers;
+
+    expect(headers.get('Authorization')).toBe('Bearer frontend-token');
+  });
+
+  it('keeps requests working without an Authorization header when no token exists', async () => {
+    const fetchSpy = vi.spyOn(window, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+    );
+
+    await getJson('/matches');
+
+    const [, requestInit] = fetchSpy.mock.calls[0] ?? [];
+    const headers = requestInit?.headers as Headers;
+
+    expect(headers.get('Authorization')).toBeNull();
   });
 
   it('maps backend error responses into ApiRequestError', async () => {
@@ -110,5 +159,25 @@ describe('api client', () => {
     expect(buildUrl('/profile', undefined, 'http://localhost:8080/api')).toBe(
       'http://localhost:8080/api/profile',
     );
+  });
+
+  it('calls the unauthorized handler when the backend responds with 401', async () => {
+    const onUnauthorized = vi.fn();
+    configureApiClientAuth({
+      onUnauthorized,
+    });
+
+    vi.spyOn(window, 'fetch').mockResolvedValue(
+      new Response(null, {
+        status: 401,
+      }),
+    );
+
+    await expect(getJson('/media')).rejects.toMatchObject({
+      status: 401,
+      code: 'UNAUTHORIZED',
+    });
+
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
   });
 });

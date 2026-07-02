@@ -27,6 +27,9 @@ The backend test suite uses Quarkus tests plus H2 in PostgreSQL compatibility mo
 Current frontend tests cover:
 
 - API client/config helpers
+- auth store defaults and login/logout state transitions
+- protected-route guard behavior in `local-demo` vs `oidc`
+- login view and app-shell auth UI basics
 - dashboard view behavior
 - external search view and result card
 - media detail flow
@@ -80,6 +83,7 @@ npm run typecheck
 - OIDC token claims can resolve/create/update the backing `AppUser`
 - Swipe mode semantics stay unchanged
 - Frontend route-level views still build and render against the typed API layer
+- Frontend auth mode state, bearer-header attachment, and route protection remain wired correctly without requiring real Google credentials
 
 ## Manual Checkpoint Smoke Test
 

@@ -7,6 +7,11 @@ export interface ApiRequestOptions extends Omit<RequestInit, 'body' | 'headers'>
   query?: Record<string, string | number | boolean | null | undefined>;
 }
 
+export interface ApiClientAuthConfig {
+  getAccessToken?: () => string | null | undefined;
+  onUnauthorized?: (error: ApiRequestError) => void;
+}
+
 export class ApiRequestError extends Error {
   status: number;
   code: string;
@@ -29,6 +34,16 @@ export class ApiRequestError extends Error {
     this.details = options.details ?? [];
     this.cause = options.cause;
   }
+}
+
+let apiClientAuthConfig: ApiClientAuthConfig = {};
+
+export function configureApiClientAuth(config: ApiClientAuthConfig) {
+  apiClientAuthConfig = config;
+}
+
+export function resetApiClientAuth() {
+  apiClientAuthConfig = {};
 }
 
 export function buildUrl(
@@ -59,6 +74,7 @@ function isPlainObject(value: ApiRequestOptions['body']): value is Record<string
 function createRequestHeaders(
   body: ApiRequestOptions['body'],
   headers: HeadersInit | undefined,
+  accessToken: string | null | undefined,
 ): Headers {
   const requestHeaders = new Headers(headers);
 
@@ -68,6 +84,10 @@ function createRequestHeaders(
 
   if (!requestHeaders.has('Accept')) {
     requestHeaders.set('Accept', 'application/json');
+  }
+
+  if (accessToken && !requestHeaders.has('Authorization')) {
+    requestHeaders.set('Authorization', `Bearer ${accessToken}`);
   }
 
   return requestHeaders;
@@ -119,12 +139,13 @@ export async function apiRequest<T>(
   { body, headers, query, ...init }: ApiRequestOptions = {},
 ): Promise<T> {
   let response: Response;
+  const accessToken = apiClientAuthConfig.getAccessToken?.() ?? null;
 
   try {
     response = await fetch(buildUrl(path, query), {
       ...init,
       body: createRequestBody(body),
-      headers: createRequestHeaders(body, headers),
+      headers: createRequestHeaders(body, headers, accessToken),
     });
   } catch (error) {
     throw new ApiRequestError('Network request failed.', {
@@ -138,15 +159,20 @@ export async function apiRequest<T>(
 
   if (!response.ok) {
     const apiError = isApiErrorResponse(responseBody) ? responseBody : null;
-
-    throw new ApiRequestError(
+    const requestError = new ApiRequestError(
       apiError?.message ?? `Request failed with status ${response.status}.`,
       {
         status: response.status,
-        code: apiError?.code ?? 'REQUEST_ERROR',
+        code: apiError?.code ?? (response.status === 401 ? 'UNAUTHORIZED' : 'REQUEST_ERROR'),
         details: apiError?.details ?? [],
       },
     );
+
+    if (response.status === 401) {
+      apiClientAuthConfig.onUnauthorized?.(requestError);
+    }
+
+    throw requestError;
   }
 
   return responseBody as T;
