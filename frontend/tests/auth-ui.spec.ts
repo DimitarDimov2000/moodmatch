@@ -4,6 +4,7 @@ import { createMemoryHistory } from 'vue-router';
 import { vi } from 'vitest';
 
 import App from '@/App.vue';
+import { googleIdentityProvider } from '@/auth/google-identity';
 import { createAppRouter } from '@/router';
 import { useAuthStore } from '@/stores/auth';
 
@@ -74,15 +75,39 @@ async function mountAppAtRoute(
 }
 
 describe('auth UI foundation', () => {
+  it('shows the local-demo explanation on the login route', async () => {
+    const { wrapper } = await mountAppAtRoute('/login', (authStore) => {
+      authStore.setAuthMode('local-demo');
+    });
+
+    expect(wrapper.text()).toContain('Local demo mode is active.');
+    expect(wrapper.text()).toContain('Continue to the app');
+  });
+
   it('shows the login foundation when oidc mode blocks a protected route', async () => {
     const { router, wrapper } = await mountAppAtRoute('/matches', (authStore) => {
       authStore.setAuthMode('oidc', 'google');
     });
 
     expect(router.currentRoute.value.name).toBe('login');
-    expect(wrapper.text()).toContain('Provider-ready authentication entry');
-    expect(wrapper.text()).toContain('Google login coming next');
+    expect(wrapper.text()).toContain('Google-ready authentication entry');
+    expect(wrapper.text()).toContain('Google login setup is still required.');
+    expect(wrapper.text()).toContain('Google client ID required');
     expect(wrapper.text()).toContain('Signed out');
+  });
+
+  it('shows a Google login option when the provider is configured', async () => {
+    vi.spyOn(googleIdentityProvider, 'initialize').mockResolvedValue({
+      status: 'ready',
+    });
+
+    const { wrapper } = await mountAppAtRoute('/login', (authStore) => {
+      authStore.setAuthMode('oidc', 'google');
+      authStore.setGoogleClientId('google-client-id');
+    });
+
+    expect(wrapper.text()).toContain('Continue with Google');
+    expect(wrapper.text()).toContain('Google Identity Services is configured for this frontend.');
   });
 
   it('clears auth state and returns to login on logout', async () => {

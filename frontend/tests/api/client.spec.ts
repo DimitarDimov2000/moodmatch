@@ -1,3 +1,4 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { API_BASE_URL } from '@/api/config';
@@ -10,6 +11,7 @@ import {
   patchJson,
   resetApiClientAuth,
 } from '@/api/client';
+import { useAuthStore } from '@/stores/auth';
 
 describe('api client', () => {
   afterEach(() => {
@@ -74,6 +76,34 @@ describe('api client', () => {
     const headers = requestInit?.headers as Headers;
 
     expect(headers.get('Authorization')).toBe('Bearer frontend-token');
+  });
+
+  it('sends the mocked Google credential token after store login', async () => {
+    setActivePinia(createPinia());
+    const authStore = useAuthStore();
+    authStore.handleGoogleCredentialResponse({
+      credential: 'google-credential-token',
+    });
+
+    configureApiClientAuth({
+      getAccessToken: () => authStore.token,
+    });
+
+    const fetchSpy = vi.spyOn(window, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+    );
+
+    await getJson('/profile');
+
+    const [, requestInit] = fetchSpy.mock.calls[0] ?? [];
+    const headers = requestInit?.headers as Headers;
+
+    expect(headers.get('Authorization')).toBe('Bearer google-credential-token');
   });
 
   it('keeps requests working without an Authorization header when no token exists', async () => {

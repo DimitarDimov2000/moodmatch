@@ -8,16 +8,22 @@ import { useAuthStore } from '@/stores/auth';
 
 const route = useRoute();
 const authStore = useAuthStore();
-const { isAuthenticated, isLoading, userDisplayName } = storeToRefs(authStore);
+const { isAuthenticated, isLoading, providerError, userDisplayName } = storeToRefs(authStore);
 
 const redirectTarget = computed(() => {
   const redirect = route.query.redirect;
   return typeof redirect === 'string' && redirect ? redirect : '/';
 });
 
+const isGoogleOidcMode = computed(() => authStore.isAuthRequiredMode && authStore.isGoogleProvider);
+
 const loginTitle = computed(() => {
   if (authStore.mode === 'local-demo') {
     return 'Local demo mode is active.';
+  }
+
+  if (authStore.needsGoogleClientId) {
+    return 'Google login setup is still required.';
   }
 
   if (route.query.reason === 'session-expired') {
@@ -36,11 +42,19 @@ const loginDescription = computed(() => {
     return 'Local development keeps private routes accessible without a real identity provider so the existing workflow continues to work.';
   }
 
-  if (isAuthenticated.value) {
-    return 'The provider-backed login callback can send you back to your protected routes from here once Google/OIDC is connected.';
+  if (authStore.needsGoogleClientId) {
+    return 'This frontend expects Google Identity Services in oidc mode, but no public Google client ID is configured yet.';
   }
 
-  return 'This frontend now has auth state, route protection, bearer-token support, and a dedicated login route. Real Google/OIDC button wiring is the next step and still needs provider setup.';
+  if (isAuthenticated.value) {
+    return 'Your Google credential token is stored in memory and can already be sent to the backend as a bearer token.';
+  }
+
+  if (authStore.hasGoogleLoginOption) {
+    return 'Google Identity Services is configured for this frontend. Start sign-in here to request a credential token for protected API calls.';
+  }
+
+  return 'This frontend keeps a provider boundary in place so the auth store and protected routes do not depend on raw Google window globals.';
 });
 
 const providerHint = computed(() => {
@@ -48,16 +62,56 @@ const providerHint = computed(() => {
     return 'No provider setup is required in local-demo mode.';
   }
 
-  if (authStore.provider === 'google' && authStore.hasGoogleClientIdConfigured) {
-    return 'A public Google client ID is configured, but the Google Identity Services client is intentionally not wired in yet.';
+  if (authStore.needsGoogleClientId) {
+    return 'Add a public VITE_GOOGLE_CLIENT_ID value in frontend/.env.local and keep real Google secrets out of the frontend.';
   }
 
-  if (authStore.provider === 'google') {
-    return 'Set VITE_GOOGLE_CLIENT_ID only after the real Google Identity Services integration is added.';
+  if (authStore.hasGoogleLoginOption) {
+    return 'The provider module lazily loads Google Identity Services and passes the credential response into the auth store.';
   }
 
-  return 'This placeholder stays provider-neutral so a future OIDC client can plug into the auth store without changing the protected-route flow.';
+  return 'This build currently ships a Google-specific provider boundary for oidc mode.';
 });
+
+const primaryActionLabel = computed(() => {
+  if (authStore.mode === 'local-demo') {
+    return 'Local demo mode active';
+  }
+
+  if (isAuthenticated.value) {
+    return 'Google session received';
+  }
+
+  if (authStore.needsGoogleClientId) {
+    return 'Google client ID required';
+  }
+
+  if (isGoogleOidcMode.value && isLoading.value) {
+    return 'Preparing Google sign-in...';
+  }
+
+  if (isGoogleOidcMode.value) {
+    return 'Continue with Google';
+  }
+
+  return 'OIDC provider unavailable';
+});
+
+const primaryActionDisabled = computed(() => {
+  if (!isGoogleOidcMode.value) {
+    return true;
+  }
+
+  return authStore.needsGoogleClientId || isLoading.value || isAuthenticated.value;
+});
+
+async function handlePrimaryAction() {
+  if (primaryActionDisabled.value) {
+    return;
+  }
+
+  await authStore.startGoogleLogin();
+}
 </script>
 
 <template>
@@ -68,10 +122,10 @@ const providerHint = computed(() => {
           Login
         </p>
         <h1 class="page-title">
-          Provider-ready authentication entry
+          Google-ready authentication entry
         </h1>
         <p class="page-copy">
-          This phase prepares the frontend for a future deployed bearer-token login flow without shipping a fake production sign-in.
+          This phase connects the existing auth foundation to a real Google Identity Services boundary without requiring live credentials for local demo work or tests.
         </p>
       </div>
     </header>
@@ -79,85 +133,91 @@ const providerHint = computed(() => {
     <AppMessage
       v-if="isLoading"
       title="Authentication state is loading"
-      description="Frontend auth initialization is being prepared."
+      description="Frontend provider initialization is preparing the current login state."
       tone="info"
     />
 
-    <template v-else>
-      <AppMessage
-        :title="loginTitle"
-        :description="loginDescription"
-        :tone="authStore.mode === 'local-demo' ? 'info' : 'warning'"
-      />
+    <AppMessage
+      :title="loginTitle"
+      :description="loginDescription"
+      :tone="authStore.mode === 'local-demo' ? 'info' : authStore.needsGoogleClientId ? 'warning' : 'info'"
+    />
 
-      <section class="login-view__cards">
-        <article class="page-card login-view__card">
-          <p class="eyebrow">
-            Current mode
-          </p>
-          <h2>{{ authStore.mode }}</h2>
-          <p class="body-muted">
-            Provider: {{ authStore.providerLabel }}
-          </p>
-        </article>
+    <AppMessage
+      v-if="providerError"
+      title="Provider setup detail"
+      :description="providerError"
+      tone="warning"
+    />
 
-        <article class="page-card login-view__card">
-          <p class="eyebrow">
-            Current user
-          </p>
-          <h2>{{ userDisplayName ?? 'Signed out' }}</h2>
-          <p class="body-muted">
-            {{ isAuthenticated ? 'A bearer token is available in memory.' : 'No token is stored yet.' }}
-          </p>
-        </article>
-
-        <article class="page-card login-view__card">
-          <p class="eyebrow">
-            Next integration step
-          </p>
-          <h2>{{ authStore.providerLabel }}</h2>
-          <p class="body-muted">
-            {{ providerHint }}
-          </p>
-        </article>
-      </section>
-
-      <section class="page-card login-view__panel">
-        <h2 class="section-title">
-          Login UI foundation
-        </h2>
-        <p class="page-copy">
-          A real provider callback should eventually call the auth store with the verified frontend token and user display information.
+    <section class="login-view__cards">
+      <article class="page-card login-view__card">
+        <p class="eyebrow">
+          Current mode
         </p>
+        <h2>{{ authStore.mode }}</h2>
+        <p class="body-muted">
+          Provider: {{ authStore.providerLabel }}
+        </p>
+      </article>
 
-        <div class="login-view__actions">
-          <button
-            class="button button--primary"
-            type="button"
-            disabled
-          >
-            {{ authStore.provider === 'google' ? 'Google login coming next' : 'OIDC login coming next' }}
-          </button>
+      <article class="page-card login-view__card">
+        <p class="eyebrow">
+          Current user
+        </p>
+        <h2>{{ userDisplayName ?? 'Signed out' }}</h2>
+        <p class="body-muted">
+          {{ isAuthenticated ? 'A bearer token is available in memory.' : 'No token is stored yet.' }}
+        </p>
+      </article>
 
-          <RouterLink
-            v-if="authStore.mode === 'local-demo' || isAuthenticated"
-            class="button button--secondary"
-            :to="redirectTarget"
-          >
-            {{ authStore.mode === 'local-demo' ? 'Continue to the app' : 'Return to the app' }}
-          </RouterLink>
+      <article class="page-card login-view__card">
+        <p class="eyebrow">
+          Provider boundary
+        </p>
+        <h2>{{ authStore.providerLabel }}</h2>
+        <p class="body-muted">
+          {{ providerHint }}
+        </p>
+      </article>
+    </section>
 
-          <button
-            v-else
-            class="button button--secondary"
-            type="button"
-            disabled
-          >
-            Protected routes unlock after provider setup
-          </button>
-        </div>
-      </section>
-    </template>
+    <section class="page-card login-view__panel">
+      <h2 class="section-title">
+        Login actions
+      </h2>
+      <p class="page-copy">
+        The frontend stores the Google credential token in memory only and sends it to the backend through the existing bearer-token API client when available.
+      </p>
+
+      <div class="login-view__actions">
+        <button
+          class="button button--primary"
+          type="button"
+          :disabled="primaryActionDisabled"
+          @click="handlePrimaryAction"
+        >
+          {{ primaryActionLabel }}
+        </button>
+
+        <RouterLink
+          v-if="authStore.mode === 'local-demo' || isAuthenticated"
+          class="button button--secondary"
+          :to="redirectTarget"
+        >
+          {{ authStore.mode === 'local-demo' ? 'Continue to the app' : 'Return to the app' }}
+        </RouterLink>
+
+        <button
+          v-else
+          class="button button--secondary"
+          type="button"
+          disabled
+        >
+          Protected routes unlock after login
+        </button>
+      </div>
+    </section>
   </section>
 </template>
 

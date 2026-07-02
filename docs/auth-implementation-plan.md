@@ -130,6 +130,13 @@ Status after Phase 27:
 * The login view and app shell now provide provider-ready login/logout UI scaffolding without shipping a fake production Google sign-in.
 * Token persistence is intentionally not implemented yet; the current foundation keeps the frontend token in memory only until the real provider integration is chosen and reviewed.
 
+Phase 28 frontend note:
+
+* The frontend now includes a small Google Identity Services wrapper that stays inactive when `VITE_GOOGLE_CLIENT_ID` is missing.
+* Local demo mode still does not require Google credentials.
+* OIDC + Google mode should use a public browser client ID via `frontend/.env.local`, for example `VITE_GOOGLE_CLIENT_ID=replace-with-google-client-id`.
+* The Google credential token remains memory-only on the frontend for now and is passed through the existing bearer-token API client when present.
+
 ## 7. Environment Variables
 
 Backend variables:
