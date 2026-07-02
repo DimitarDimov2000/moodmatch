@@ -120,7 +120,8 @@ public class ExternalSearchService {
         return switch (mediaType) {
             case FILM, SERIES -> findProvider(ExternalSearchSourceName.TMDB);
             case BOOK -> findProvider(ExternalSearchSourceName.OPEN_LIBRARY);
-            case GAME, PODCAST, AUDIOBOOK, VIDEO -> Optional.empty();
+            case AUDIOBOOK -> findProvider(ExternalSearchSourceName.LIBRIVOX);
+            case GAME, PODCAST, VIDEO -> Optional.empty();
         };
     }
 

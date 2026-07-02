@@ -47,8 +47,8 @@ export function sourceOptionsForMediaType(
       ];
     case 'AUDIOBOOK':
       return [
-        { value: 'AUTO', label: 'Automatisch (DEMO)' },
-        { value: 'LIBRIVOX', label: 'LibriVox (Hoerbuecher geplant)', disabled: true },
+        { value: 'AUTO', label: 'Automatisch (LibriVox)' },
+        { value: 'LIBRIVOX', label: 'LibriVox (Hoerbuecher)' },
         { value: 'DEMO', label: 'DEMO-Fallback' },
       ];
     case 'PODCAST':
@@ -83,7 +83,7 @@ export function sourceHintForMediaType(mediaType: MediaType): string {
     case 'GAME':
       return 'RAWG ist als Games-Quelle geplant. Bis zur Implementierung bleibt die Suche beim DEMO-Fallback.';
     case 'AUDIOBOOK':
-      return 'LibriVox ist als Hoerbuch-Quelle geplant. Bis zur Implementierung bleibt die Suche beim DEMO-Fallback.';
+      return 'Hoerbuecher werden ueber LibriVox gesucht. Der Katalog ist auf gemeinfreie Audiobooks begrenzt und benoetigt keinen geheimen API-Key.';
     case 'PODCAST':
       return 'Podcast Index ist als Podcast-Quelle geplant. Episodenimport ist nicht Teil dieses Pakets.';
     case 'VIDEO':

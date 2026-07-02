@@ -15,6 +15,7 @@ import com.moodmatch.entity.ExternalTagMapping;
 import com.moodmatch.entity.Tag;
 import com.moodmatch.entity.TagCategory;
 import com.moodmatch.entity.TagMappingConfidence;
+import com.moodmatch.external.librivox.TestLibriVoxGateway;
 import com.moodmatch.external.openlibrary.TestOpenLibraryGateway;
 import com.moodmatch.repository.ExternalTagMappingRepository;
 import com.moodmatch.repository.TagRepository;
@@ -55,6 +56,7 @@ class ExternalSearchResourceTest {
     private void cleanDatabase() {
         TestCurrentUserProvider.useLocalDemoUser();
         TestOpenLibraryGateway.reset();
+        TestLibriVoxGateway.reset();
         QuarkusTransaction.requiringNew().run(() -> {
             entityManager.createNativeQuery("DELETE FROM media_tags").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM media_external_refs").executeUpdate();
@@ -149,6 +151,24 @@ class ExternalSearchResourceTest {
     }
 
     @Test
+    void shouldSearchAudiobooksThroughLibriVoxByDefault() {
+        given()
+                .when()
+                .get("/api/external/search?query=pride&mediaType=AUDIOBOOK")
+                .then()
+                .statusCode(200)
+                .body("source", is("LIBRIVOX"))
+                .body("warnings.size()", is(0))
+                .body("results.size()", is(1))
+                .body("results[0].title", is("Pride and Prejudice"))
+                .body("results[0].externalId", is("253"))
+                .body("results[0].creatorNames[0]", is("Author: Jane Austen"))
+                .body("results[0].creatorNames[1]", is("Reader: Annie Coleman Rothenberg"))
+                .body("results[0].mediaType", is("AUDIOBOOK"))
+                .body("results[0].attribution", is("LibriVox public domain audiobook catalog"));
+    }
+
+    @Test
     void shouldImportExternalResultsAsUserOwnedMediaAndAllowSameExternalIdForDifferentUsers() {
         QuarkusTransaction.requiringNew().run(() -> {
             Tag tag = new Tag();
@@ -240,6 +260,43 @@ class ExternalSearchResourceTest {
                 .body("media.tags[0].name", is("Politik"));
     }
 
+    @Test
+    void shouldImportLibriVoxResultsAsAudiobooksAndPreserveExternalMetadata() {
+        QuarkusTransaction.requiringNew().run(() -> {
+            Tag tag = new Tag();
+            tag.setId(UUID.fromString("10000000-0000-0000-0000-000000000030"));
+            tag.setName("Romantik");
+            tag.setCategory(TagCategory.GENRE);
+            tagRepository.persist(tag);
+
+            ExternalTagMapping mapping = new ExternalTagMapping();
+            mapping.setSourceName(ExternalSourceName.LIBRIVOX);
+            mapping.setExternalField("genre");
+            mapping.setExternalValue("Romance");
+            mapping.setTag(tag);
+            mapping.setConfidence(TagMappingConfidence.HIGH);
+            externalTagMappingRepository.persist(mapping);
+        });
+
+        TestCurrentUserProvider.useUserA();
+        given()
+                .contentType(io.restassured.http.ContentType.JSON)
+                .body(buildLibriVoxImportPayload())
+                .when()
+                .post("/api/external/import")
+                .then()
+                .statusCode(201)
+                .body("created", is(true))
+                .body("media.title", is("Pride and Prejudice"))
+                .body("media.mediaType", is("AUDIOBOOK"))
+                .body("media.commitmentLevel", is("LONG"))
+                .body("media.externalSourceName", is("LIBRIVOX"))
+                .body("media.externalSourceId", is("253"))
+                .body("media.externalReferences[0].sourceName", is("LIBRIVOX"))
+                .body("media.externalReferences[0].externalId", is("253"))
+                .body("media.tags[0].name", is("Romantik"));
+    }
+
     private Map<String, Object> buildImportPayload() {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("source", "DEMO");
@@ -273,6 +330,24 @@ class ExternalSearchResourceTest {
         payload.put("externalGenres", java.util.List.of());
         payload.put("externalSubjects", java.util.List.of("Politics", "Desert planets"));
         payload.put("attribution", "Metadata from Open Library");
+        return payload;
+    }
+
+    private Map<String, Object> buildLibriVoxImportPayload() {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("source", "LIBRIVOX");
+        payload.put("externalId", "253");
+        payload.put("mediaType", "AUDIOBOOK");
+        payload.put("title", "Pride and Prejudice");
+        payload.put("originalTitle", null);
+        payload.put("creatorNames", java.util.List.of("Author: Jane Austen", "Reader: Annie Coleman Rothenberg"));
+        payload.put("description", "Jane Austen's classic novel about wit, family, and first impressions.");
+        payload.put("releaseYear", 1813);
+        payload.put("coverUrl", "https://archive.org/covers/pride.jpg");
+        payload.put("sourceUrl", "https://librivox.org/pride-and-prejudice-by-jane-austen/");
+        payload.put("externalGenres", java.util.List.of("Romance"));
+        payload.put("externalSubjects", java.util.List.of("English"));
+        payload.put("attribution", "LibriVox public domain audiobook catalog");
         return payload;
     }
 }

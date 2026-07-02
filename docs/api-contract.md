@@ -158,7 +158,9 @@ Search behavior:
 - `FILM` and `SERIES` prefer `TMDB` when `MOODMATCH_TMDB_API_KEY` is configured.
 - If TMDB is not configured, the backend falls back to `DEMO` and returns a warning message.
 - `BOOK` prefers `OPEN_LIBRARY` and does not require a secret.
-- `GAME`, `AUDIOBOOK`, `PODCAST`, and `VIDEO` remain on `DEMO` until their real providers are implemented.
+- `AUDIOBOOK` prefers `LIBRIVOX` and does not require a secret in the current implementation.
+- LibriVox results are limited to public-domain audiobooks in the LibriVox catalog.
+- `GAME`, `PODCAST`, and `VIDEO` remain on `DEMO` until their real providers are implemented.
 - Future provider names are accepted by the enum contract, but requests fail with `Source is not available` until a provider bean exists.
 - AniList anime/manga data will map into `FILM`, `SERIES`, or `BOOK`; there are no core `ANIME` or `MANGA` media types.
 - YouTube is planned only for later URL import, not search.
@@ -169,6 +171,7 @@ Implemented provider/media-type combinations:
 
 - `TMDB` -> `FILM`, `SERIES`
 - `OPEN_LIBRARY` -> `BOOK`
+- `LIBRIVOX` -> `AUDIOBOOK`
 - `DEMO` -> `FILM`, `SERIES`, `BOOK`, `GAME`, `AUDIOBOOK`, `PODCAST`, `VIDEO`
 
 Example response shape:
@@ -243,6 +246,62 @@ Book import request example:
 }
 ```
 
+Audiobook search response example:
+
+```json
+{
+  "query": "pride",
+  "mediaType": "AUDIOBOOK",
+  "source": "LIBRIVOX",
+  "warnings": [],
+  "results": [
+    {
+      "source": "LIBRIVOX",
+      "externalId": "253",
+      "mediaType": "AUDIOBOOK",
+      "title": "Pride and Prejudice",
+      "originalTitle": null,
+      "creatorNames": [
+        "Author: Jane Austen",
+        "Reader: Annie Coleman Rothenberg"
+      ],
+      "description": "Jane Austen's classic novel about wit, family, and first impressions.",
+      "releaseYear": 1813,
+      "coverUrl": "https://archive.org/covers/pride.jpg",
+      "sourceUrl": "https://librivox.org/pride-and-prejudice-by-jane-austen/",
+      "externalGenres": ["Romance"],
+      "externalSubjects": ["English"],
+      "suggestedTags": [],
+      "attribution": "LibriVox public domain audiobook catalog",
+      "warnings": []
+    }
+  ]
+}
+```
+
+Audiobook import request example:
+
+```json
+{
+  "source": "LIBRIVOX",
+  "externalId": "253",
+  "mediaType": "AUDIOBOOK",
+  "title": "Pride and Prejudice",
+  "originalTitle": null,
+  "creatorNames": [
+    "Author: Jane Austen",
+    "Reader: Annie Coleman Rothenberg"
+  ],
+  "description": "Jane Austen's classic novel about wit, family, and first impressions.",
+  "releaseYear": 1813,
+  "coverUrl": "https://archive.org/covers/pride.jpg",
+  "sourceUrl": "https://librivox.org/pride-and-prejudice-by-jane-austen/",
+  "externalGenres": ["Romance"],
+  "externalSubjects": ["English"],
+  "attribution": "LibriVox public domain audiobook catalog"
+}
+```
+
 Import response shape:
 
 ```json
@@ -270,6 +329,7 @@ Notes on book imports:
 
 - `creatorNames` is part of the normalized external contract for display/import, but MoodMatch does not yet persist a dedicated author column on `media_items`.
 - When an imported book has no provider description, the backend keeps a short fallback description so authorship and first-publish-year are not lost immediately after import.
+- Imported LibriVox audiobooks stay `mediaType = AUDIOBOOK`; the prototype does not expose playback, chapters, streaming, or progress tracking.
 
 ## Validation And Error Shape
 

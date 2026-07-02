@@ -40,16 +40,17 @@ describe('ExternalSearchView', () => {
       .find((candidate) => candidate.text().includes('In Mediathek importieren'));
   }
 
-  it('renders the import-first state before a search starts with future providers disabled', async () => {
+  it('enables the audiobook LibriVox option without introducing music UI', async () => {
     const wrapper = mountView();
 
     expect(wrapper.text()).toContain('Externe Medien suchen und importieren');
     expect(wrapper.text()).toContain('Noch keine Suche gestartet');
 
-    await wrapper.get('select[name="mediaType"]').setValue('VIDEO');
+    await wrapper.get('select[name="mediaType"]').setValue('AUDIOBOOK');
 
-    expect(wrapper.text()).toContain('YouTube (URL-Import geplant)');
-    expect(wrapper.get('option[value="YOUTUBE"]').attributes('disabled')).toBeDefined();
+    expect(wrapper.text()).toContain('LibriVox (Hoerbuecher)');
+    expect(wrapper.get('option[value="LIBRIVOX"]').attributes('disabled')).toBeUndefined();
+    expect(wrapper.text()).not.toContain('Spotify');
   });
 
   it('renders search results and the demo fallback message from the normalized response', async () => {
@@ -119,28 +120,28 @@ describe('ExternalSearchView', () => {
     });
   });
 
-  it('imports a book result and shows the library link state', async () => {
+  it('imports an audiobook result and shows the library link state', async () => {
     searchExternalMock.mockResolvedValue({
-      query: 'dune',
-      mediaType: 'BOOK',
-      source: 'OPEN_LIBRARY',
+      query: 'pride',
+      mediaType: 'AUDIOBOOK',
+      source: 'LIBRIVOX',
       warnings: [],
       results: [
         {
-          source: 'OPEN_LIBRARY',
-          externalId: 'OL82563W',
-          mediaType: 'BOOK',
-          title: 'Dune',
+          source: 'LIBRIVOX',
+          externalId: '253',
+          mediaType: 'AUDIOBOOK',
+          title: 'Pride and Prejudice',
           originalTitle: null,
-          creatorNames: ['Frank Herbert'],
-          description: 'Book by Frank Herbert. First published in 1965.',
-          releaseYear: 1965,
-          coverUrl: 'https://covers.openlibrary.org/b/id/987654-M.jpg',
-          sourceUrl: 'https://openlibrary.org/works/OL82563W',
-          externalGenres: [],
-          externalSubjects: ['Politics'],
+          creatorNames: ['Author: Jane Austen', 'Reader: Annie Coleman Rothenberg'],
+          description: 'Jane Austen classic narrated for the public domain catalog.',
+          releaseYear: 1813,
+          coverUrl: 'https://archive.org/covers/pride.jpg',
+          sourceUrl: 'https://librivox.org/pride-and-prejudice-by-jane-austen/',
+          externalGenres: ['Romance'],
+          externalSubjects: ['English'],
           suggestedTags: [],
-          attribution: 'Metadata from Open Library',
+          attribution: 'LibriVox public domain audiobook catalog',
           warnings: [],
         },
       ],
@@ -150,21 +151,21 @@ describe('ExternalSearchView', () => {
       message: 'Imported into your media library.',
       media: {
         id: 'media-1',
-        title: 'Dune',
+        title: 'Pride and Prejudice',
         originalTitle: null,
-        description: 'Book by Frank Herbert. First published in 1965.',
-        mediaType: 'BOOK',
+        description: 'Jane Austen classic narrated for the public domain catalog.',
+        mediaType: 'AUDIOBOOK',
         consumptionStatus: 'WANT_TO_CONSUME',
         isFavourite: false,
         rating: null,
         sourceType: 'EXTERNAL_SEARCH',
-        sourceNote: 'Imported from OPEN_LIBRARY',
+        sourceNote: 'Imported from LIBRIVOX',
         commitmentLevel: 'LONG',
-        releaseYear: 1965,
-        coverUrl: 'https://covers.openlibrary.org/b/id/987654-M.jpg',
-        externalSourceName: 'OPEN_LIBRARY',
-        externalSourceId: 'OL82563W',
-        externalSourceUrl: 'https://openlibrary.org/works/OL82563W',
+        releaseYear: 1813,
+        coverUrl: 'https://archive.org/covers/pride.jpg',
+        externalSourceName: 'LIBRIVOX',
+        externalSourceId: '253',
+        externalSourceUrl: 'https://librivox.org/pride-and-prejudice-by-jane-austen/',
         metadataOrigin: 'IMPORTED',
         tags: [],
         externalReferences: [],
@@ -175,9 +176,9 @@ describe('ExternalSearchView', () => {
 
     const wrapper = mountView();
 
-    await wrapper.get('input[name="query"]').setValue('dune');
-    await wrapper.get('select[name="mediaType"]').setValue('BOOK');
-    await wrapper.get('select[name="source"]').setValue('OPEN_LIBRARY');
+    await wrapper.get('input[name="query"]').setValue('pride');
+    await wrapper.get('select[name="mediaType"]').setValue('AUDIOBOOK');
+    await wrapper.get('select[name="source"]').setValue('LIBRIVOX');
     await wrapper.get('form').trigger('submit');
     await flushPromises();
     const importButton = getImportButton(wrapper);
@@ -186,19 +187,19 @@ describe('ExternalSearchView', () => {
     await flushPromises();
 
     expect(importExternalMediaMock).toHaveBeenCalledWith({
-      source: 'OPEN_LIBRARY',
-      externalId: 'OL82563W',
-      mediaType: 'BOOK',
-      title: 'Dune',
+      source: 'LIBRIVOX',
+      externalId: '253',
+      mediaType: 'AUDIOBOOK',
+      title: 'Pride and Prejudice',
       originalTitle: null,
-      creatorNames: ['Frank Herbert'],
-      description: 'Book by Frank Herbert. First published in 1965.',
-      releaseYear: 1965,
-      coverUrl: 'https://covers.openlibrary.org/b/id/987654-M.jpg',
-      sourceUrl: 'https://openlibrary.org/works/OL82563W',
-      externalGenres: [],
-      externalSubjects: ['Politics'],
-      attribution: 'Metadata from Open Library',
+      creatorNames: ['Author: Jane Austen', 'Reader: Annie Coleman Rothenberg'],
+      description: 'Jane Austen classic narrated for the public domain catalog.',
+      releaseYear: 1813,
+      coverUrl: 'https://archive.org/covers/pride.jpg',
+      sourceUrl: 'https://librivox.org/pride-and-prejudice-by-jane-austen/',
+      externalGenres: ['Romance'],
+      externalSubjects: ['English'],
+      attribution: 'LibriVox public domain audiobook catalog',
     });
     expect(wrapper.text()).toContain('Imported into your media library.');
     expect(wrapper.text()).toContain('In Mediathek ansehen');

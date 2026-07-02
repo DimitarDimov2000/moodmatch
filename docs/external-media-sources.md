@@ -4,12 +4,15 @@
 
 - `TMDB` is the active real provider for `FILM` and `SERIES`.
 - `OPEN_LIBRARY` is the active real provider for `BOOK`.
+- `LIBRIVOX` is the active real provider for `AUDIOBOOK`.
 - `DEMO` remains available as an offline fallback and local test source.
 
 Provider notes:
 
 - `TMDB` requires backend-only configuration through `MOODMATCH_TMDB_API_KEY`.
 - `OPEN_LIBRARY` uses the public Search API and does not require a committed secret.
+- `LIBRIVOX` uses the public catalog API and does not require a committed secret in the current implementation.
+- LibriVox search is intentionally limited to public-domain audiobooks in the catalog.
 - The frontend never stores or sends provider secrets.
 - Tests must not require live external APIs or real API keys.
 
@@ -19,7 +22,7 @@ Provider notes:
 | --- | --- | --- |
 | `TMDB` | `FILM`, `SERIES` | Active |
 | `OPEN_LIBRARY` | `BOOK` | Active |
-| `LIBRIVOX` | `AUDIOBOOK` | Planned for Package 2.6 |
+| `LIBRIVOX` | `AUDIOBOOK` | Active |
 | `RAWG` | `GAME` | Planned |
 | `PODCAST_INDEX` | `PODCAST` | Planned, without episode import for now |
 | `ANILIST` | Anime and manga mapped into `FILM`, `SERIES`, or `BOOK` | Planned |
@@ -34,7 +37,8 @@ AniList does not introduce core `ANIME` or `MANGA` media types. Anime should map
 - When `MOODMATCH_TMDB_API_KEY` is configured, film and series searches default to `TMDB`.
 - When the key is missing, MoodMatch falls back to the offline `DEMO` provider and returns a clear warning in the search response.
 - `BOOK` searches default to `OPEN_LIBRARY`.
-- `GAME`, `AUDIOBOOK`, `PODCAST`, and `VIDEO` currently default to `DEMO` until their real providers are implemented.
+- `AUDIOBOOK` searches default to `LIBRIVOX`.
+- `GAME`, `PODCAST`, and `VIDEO` currently default to `DEMO` until their real providers are implemented.
 - `DEMO` remains available for local development and tests.
 
 ## Search And Import Mapping
@@ -57,6 +61,19 @@ Open Library book mapping decisions:
 - `sourceUrl`: prefer the Open Library work page, otherwise the edition page
 - `description`: Open Library `first_sentence` when present, otherwise a short fallback such as `Book by Frank Herbert. First published in 1965.`
 
+LibriVox audiobook mapping decisions:
+
+- `externalId`: LibriVox audiobook `id`
+- `title`: LibriVox `title`
+- `creatorNames`: normalized author and reader summary strings, for example `Author: Jane Austen` and `Reader: Annie Coleman Rothenberg`
+- `description`: LibriVox `description` with HTML stripped into plain text when present
+- `releaseYear`: parsed from LibriVox `copyright_year` when numeric
+- `coverUrl`: prefer `coverart_jpg`, otherwise `coverart_thumbnail`
+- `sourceUrl`: LibriVox `url_librivox`
+- `externalGenres`: LibriVox `genres`
+- `externalSubjects`: current implementation preserves audiobook language, for example `English`
+- `attribution`: `LibriVox public domain audiobook catalog`
+
 Imports create a normal user-owned `media_items` row with:
 
 - `source_type = EXTERNAL_SEARCH`
@@ -69,6 +86,7 @@ Imports create a normal user-owned `media_items` row with:
 
 - `TMDB` search results map directly to `external_source_name = TMDB`.
 - `OPEN_LIBRARY` search results map directly to `external_source_name = OPEN_LIBRARY`.
+- `LIBRIVOX` search results map directly to `external_source_name = LIBRIVOX`.
 - `DEMO` imports preserve `external_source_name = DEMO`.
 - `DEMO` tag suggestions reuse provider-specific mapping sources:
   - `FILM` and `SERIES` -> `TMDB`
@@ -85,4 +103,5 @@ Imports create a normal user-owned `media_items` row with:
 - Do not implement YouTube search; keep YouTube scoped to future URL import.
 - Do not import podcast episodes in the current provider plan.
 - Do not build audio or video players as part of provider integration.
+- Do not add audiobook playback, progress tracking, chapter state, or streaming UI in this prototype.
 - Keep provider-specific HTTP clients behind the backend adapter boundary.

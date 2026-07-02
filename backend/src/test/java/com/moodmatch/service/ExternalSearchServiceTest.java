@@ -20,6 +20,7 @@ import com.moodmatch.entity.ExternalTagMapping;
 import com.moodmatch.entity.Tag;
 import com.moodmatch.entity.TagCategory;
 import com.moodmatch.entity.TagMappingConfidence;
+import com.moodmatch.external.librivox.TestLibriVoxGateway;
 import com.moodmatch.external.openlibrary.TestOpenLibraryGateway;
 import com.moodmatch.repository.ExternalTagMappingRepository;
 import com.moodmatch.repository.TagRepository;
@@ -56,6 +57,7 @@ class ExternalSearchServiceTest {
     private void cleanDatabase() {
         TestCurrentUserProvider.useLocalDemoUser();
         TestOpenLibraryGateway.reset();
+        TestLibriVoxGateway.reset();
         QuarkusTransaction.requiringNew().run(() -> {
             entityManager.createNativeQuery("DELETE FROM media_tags").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM media_external_refs").executeUpdate();
@@ -145,10 +147,30 @@ class ExternalSearchServiceTest {
     }
 
     @Test
-    void shouldAcceptFutureMediaTypesThroughDemoFallbackWhenNoProviderIsRegisteredYet() {
-        ExternalSearchResponse response = externalSearchService.search("chapter", "AUDIOBOOK", null, 5);
+    void shouldPreferLibriVoxForAudiobookSearchesWhenNoSourceIsSpecified() {
+        ExternalSearchResponse response = externalSearchService.search("pride", "AUDIOBOOK", null, 5);
 
         assertEquals("AUDIOBOOK", response.mediaType().name());
+        assertEquals("LIBRIVOX", response.source().name());
+        assertEquals(1, response.results().size());
+        assertEquals("Pride and Prejudice", response.results().getFirst().title());
+        assertEquals("LIBRIVOX", response.results().getFirst().source().name());
+        assertTrue(response.warnings().isEmpty());
+    }
+
+    @Test
+    void shouldAcceptExplicitLibriVoxSourceNames() {
+        ExternalSearchResponse response = externalSearchService.search("pride", "AUDIOBOOK", "LIBRIVOX", 5);
+
+        assertEquals("LIBRIVOX", response.source().name());
+        assertEquals("LIBRIVOX", response.results().getFirst().source().name());
+    }
+
+    @Test
+    void shouldKeepDemoFallbackForFutureMediaTypesWithoutARealProvider() {
+        ExternalSearchResponse response = externalSearchService.search("episode", "PODCAST", null, 5);
+
+        assertEquals("PODCAST", response.mediaType().name());
         assertEquals("DEMO", response.source().name());
         assertTrue(response.results().isEmpty());
         assertTrue(response.warnings().isEmpty());

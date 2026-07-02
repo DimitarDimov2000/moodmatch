@@ -200,7 +200,7 @@ interface ImportState {
 
     <AppMessage
       title="Provider-Verhalten"
-      description="TMDB und Open Library bleiben aktiv. Weitere Quellen sind als Provider-Optionen vorbereitet und nutzen bis zur Umsetzung den DEMO-Fallback."
+      description="TMDB, Open Library und LibriVox sind aktiv. Weitere Quellen bleiben vorbereitet und nutzen bis zu ihrer Umsetzung den DEMO-Fallback."
       tone="info"
     />
 

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import ExternalSearchResultCard from '@/components/external/ExternalSearchResultCard.vue';
 
 describe('ExternalSearchResultCard', () => {
-  it('renders normalized result fields, warnings, and import actions', async () => {
+  it('renders normalized audiobook result fields and import actions', async () => {
     const wrapper = mount(ExternalSearchResultCard, {
       global: {
         stubs: {
@@ -15,29 +15,29 @@ describe('ExternalSearchResultCard', () => {
       },
       props: {
         result: {
-          source: 'OPEN_LIBRARY',
-          externalId: 'OL82563W',
-          mediaType: 'BOOK',
-          title: 'Dune',
+          source: 'LIBRIVOX',
+          externalId: '253',
+          mediaType: 'AUDIOBOOK',
+          title: 'Pride and Prejudice',
           originalTitle: null,
-          creatorNames: ['Frank Herbert'],
-          description: 'Book by Frank Herbert. First published in 1965.',
-          releaseYear: 1965,
-          coverUrl: 'https://covers.openlibrary.org/b/id/987654-M.jpg',
-          sourceUrl: 'https://openlibrary.org/works/OL82563W',
-          externalGenres: [],
-          externalSubjects: ['Politics', 'Desert planets'],
+          creatorNames: ['Author: Jane Austen', 'Reader: Annie Coleman Rothenberg'],
+          description: 'Jane Austen classic narrated for the public domain catalog.',
+          releaseYear: 1813,
+          coverUrl: 'https://archive.org/covers/pride.jpg',
+          sourceUrl: 'https://librivox.org/pride-and-prejudice-by-jane-austen/',
+          externalGenres: ['Romance'],
+          externalSubjects: ['English'],
           suggestedTags: [
             {
               tagId: 'tag-1',
-              tagName: 'Politik',
-              tagCategory: 'THEME',
-              sourceValue: 'Politics',
-              reason: 'Mapped from external subject value.',
+              tagName: 'Romantik',
+              tagCategory: 'GENRE',
+              sourceValue: 'Romance',
+              reason: 'Mapped from external genre value.',
               confidence: 'HIGH',
             },
           ],
-          attribution: 'Metadata from Open Library',
+          attribution: 'LibriVox public domain audiobook catalog',
           warnings: [],
         },
         importMessage: 'Imported into your media library.',
@@ -45,17 +45,21 @@ describe('ExternalSearchResultCard', () => {
       },
     });
 
-    expect(wrapper.text()).toContain('Dune');
-    expect(wrapper.text()).toContain('Open Library');
-    expect(wrapper.text()).toContain('Autor:innen');
-    expect(wrapper.text()).toContain('Frank Herbert');
-    expect(wrapper.text()).toContain('Politics');
-    expect(wrapper.text()).toContain('Politik - HIGH');
-    expect(wrapper.text()).toContain('Metadata from Open Library');
+    expect(wrapper.text()).toContain('Pride and Prejudice');
+    expect(wrapper.text()).toContain('LibriVox');
+    expect(wrapper.text()).toContain('Autor:in / Sprecher:in');
+    expect(wrapper.text()).toContain('Author: Jane Austen');
+    expect(wrapper.text()).toContain('Reader: Annie Coleman Rothenberg');
+    expect(wrapper.text()).toContain('Romance');
+    expect(wrapper.text()).toContain('English');
+    expect(wrapper.text()).toContain('Quelle');
+    expect(wrapper.text()).toContain('LibriVox Audiobook Catalog');
+    expect(wrapper.text()).toContain('Romantik - HIGH');
+    expect(wrapper.text()).toContain('LibriVox public domain audiobook catalog');
     expect(wrapper.text()).toContain('Imported into your media library.');
     expect(wrapper.text()).toContain('In Mediathek ansehen');
     expect(wrapper.get('a').attributes('href')).toBe(
-      'https://openlibrary.org/works/OL82563W',
+      'https://librivox.org/pride-and-prejudice-by-jane-austen/',
     );
   });
 

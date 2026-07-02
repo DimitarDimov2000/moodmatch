@@ -166,6 +166,7 @@ Ownership note:
 - external reference access is enforced through the owning `media_items` row
 - the same external id can now be imported by different users without cross-user collisions
 - imported Open Library books therefore store `OPEN_LIBRARY` in both `media_items.external_source_name` and `media_external_refs.source_name`
+- imported LibriVox audiobooks store `LIBRIVOX` in both `media_items.external_source_name` and `media_external_refs.source_name`
 
 ### `external_tag_mappings`
 
@@ -254,6 +255,7 @@ TVMAZE
 Transport-level note:
 
 - The normalized external search/import API now includes optional `creatorNames` for multi-source book metadata, but there is still no dedicated persisted author column on `media_items`.
+- The same `creatorNames` transport field is also reused for audiobook author and reader summaries from LibriVox.
 
 ### `tag_category`
 

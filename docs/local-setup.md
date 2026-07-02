@@ -93,11 +93,24 @@ Notes:
 - Do not commit any personal contact header or experimental credentials to the repository.
 - If you need endpoint overrides for debugging, they should stay local-only and out of committed secrets.
 
+## LibriVox Provider Setup
+
+LibriVox is the active real provider for `AUDIOBOOK` searches in Package 2.6.
+
+Optional local variables:
+
+- `MOODMATCH_LIBRIVOX_BASE_URL`
+
+Notes:
+
+- No secret or paid API key is required for the implemented public catalog integration.
+- The LibriVox catalog only covers public-domain audiobooks, so missing modern titles are expected.
+- The current prototype imports metadata only. It does not build playback, chapters, streaming, or progress tracking.
+
 ## Future Provider Configuration
 
 These names are reserved for later provider packages. They are not required for the current app and should only be set once the matching provider is implemented:
 
-- `MOODMATCH_LIBRIVOX_BASE_URL`
 - `MOODMATCH_RAWG_API_KEY`
 - `MOODMATCH_RAWG_BASE_URL`
 - `MOODMATCH_PODCAST_INDEX_API_KEY`
@@ -109,7 +122,6 @@ These names are reserved for later provider packages. They are not required for 
 
 Provider scope notes:
 
-- LibriVox is planned for `AUDIOBOOK`.
 - RAWG is planned for `GAME`.
 - Podcast Index is planned for `PODCAST`; podcast episode import is out of scope.
 - AniList is planned for anime/manga metadata mapped into `FILM`, `SERIES`, or `BOOK`.

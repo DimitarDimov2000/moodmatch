@@ -19,7 +19,15 @@ const emit = defineEmits<{
 }>();
 
 const sourceLabel = computed(() => externalSourceLabels[props.result.source]);
-const creatorLabel = computed(() => (props.result.mediaType === 'BOOK' ? 'Autor:innen' : 'Mitwirkende'));
+const creatorLabel = computed(() => {
+  if (props.result.mediaType === 'BOOK') {
+    return 'Autor:innen';
+  }
+  if (props.result.mediaType === 'AUDIOBOOK') {
+    return 'Autor:in / Sprecher:in';
+  }
+  return 'Mitwirkende';
+});
 const subtitle = computed(() => {
   const parts = [mediaTypeLabels[props.result.mediaType]];
   if (props.result.releaseYear) {
@@ -55,6 +63,18 @@ const subtitle = computed(() => {
           </p>
           <p class="body-muted">
             {{ result.creatorNames.join(', ') }}
+          </p>
+        </div>
+
+        <div
+          v-if="result.mediaType === 'AUDIOBOOK'"
+          class="external-result-card__section"
+        >
+          <p class="external-result-card__section-label">
+            Quelle
+          </p>
+          <p class="body-muted">
+            {{ sourceLabel }} Audiobook Catalog
           </p>
         </div>
 
