@@ -23,16 +23,22 @@ public class ExternalReferenceService {
     @Inject
     MediaExternalRefMapper mediaExternalRefMapper;
 
+    @Inject
+    CurrentUserProvider currentUserProvider;
+
     @Transactional(TxType.SUPPORTS)
     public Optional<ExternalReferenceResponse> findBySourceAndExternalId(
             ExternalSourceName sourceName, String externalId) {
-        return mediaExternalRefRepository.findBySourceNameAndExternalId(sourceName, externalId)
+        return mediaExternalRefRepository
+                .findBySourceNameAndExternalId(currentUserProvider.getCurrentUser().getId(), sourceName, externalId)
                 .map(mediaExternalRefMapper::toResponse);
     }
 
     @Transactional(TxType.SUPPORTS)
     public List<ExternalReferenceResponse> listByMediaId(UUID mediaId) {
-        return mediaExternalRefRepository.findByMediaId(mediaId).stream()
+        return mediaExternalRefRepository
+                .findByMediaId(currentUserProvider.getCurrentUser().getId(), mediaId)
+                .stream()
                 .map(mediaExternalRefMapper::toResponse)
                 .toList();
     }

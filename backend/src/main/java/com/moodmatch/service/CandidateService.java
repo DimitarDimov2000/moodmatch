@@ -22,10 +22,14 @@ public class CandidateService {
     @Inject
     MatchingMapper matchingMapper;
 
+    @Inject
+    CurrentUserProvider currentUserProvider;
+
     @Transactional(TxType.SUPPORTS)
     public CandidateSelectionResponse listCandidates() {
         List<CandidateMediaResponse> candidates = mediaItemRepository
-                .listByConsumptionStatusWithTags(ConsumptionStatus.WANT_TO_CONSUME)
+                .listByConsumptionStatusWithTags(
+                        currentUserProvider.getCurrentUser().getId(), ConsumptionStatus.WANT_TO_CONSUME)
                 .stream()
                 .map(mediaItem -> new CandidateMediaResponse(
                         matchingMapper.toMatchingMediaResponse(mediaItem),

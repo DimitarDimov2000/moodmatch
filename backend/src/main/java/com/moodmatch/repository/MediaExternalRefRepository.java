@@ -14,11 +14,16 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class MediaExternalRefRepository implements PanacheRepositoryBase<MediaExternalRef, UUID> {
 
     public Optional<MediaExternalRef> findBySourceNameAndExternalId(
-            ExternalSourceName sourceName, String externalId) {
-        return find("sourceName = ?1 and externalId = ?2", sourceName, externalId).firstResultOptional();
+            UUID userId, ExternalSourceName sourceName, String externalId) {
+        return find(
+                        "mediaItem.owner.id = ?1 and sourceName = ?2 and externalId = ?3",
+                        userId,
+                        sourceName,
+                        externalId)
+                .firstResultOptional();
     }
 
-    public List<MediaExternalRef> findByMediaId(UUID mediaId) {
-        return list("mediaItem.id", mediaId);
+    public List<MediaExternalRef> findByMediaId(UUID userId, UUID mediaId) {
+        return list("mediaItem.owner.id = ?1 and mediaItem.id = ?2", userId, mediaId);
     }
 }

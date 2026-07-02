@@ -50,10 +50,14 @@ public class InterestProfileService {
     @Inject
     MatchingMapper matchingMapper;
 
+    @Inject
+    CurrentUserProvider currentUserProvider;
+
     @Transactional(TxType.SUPPORTS)
     public InterestProfileResponse calculateInterestProfile() {
         List<com.moodmatch.entity.MediaItem> relevantMedia = mediaItemRepository
-                .listByConsumptionStatusWithTags(ConsumptionStatus.CONSUMED)
+                .listByConsumptionStatusWithTags(
+                        currentUserProvider.getCurrentUser().getId(), ConsumptionStatus.CONSUMED)
                 .stream()
                 .filter(this::isProfileRelevant)
                 .toList();

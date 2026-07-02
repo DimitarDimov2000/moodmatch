@@ -13,36 +13,40 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class MediaItemRepository implements PanacheRepositoryBase<MediaItem, UUID> {
 
-    public List<MediaItem> findByConsumptionStatus(ConsumptionStatus consumptionStatus) {
-        return list("consumptionStatus", consumptionStatus);
+    public List<MediaItem> findByConsumptionStatus(UUID userId, ConsumptionStatus consumptionStatus) {
+        return list("owner.id = ?1 and consumptionStatus = ?2", userId, consumptionStatus);
     }
 
-    public List<MediaItem> listByConsumptionStatusWithTags(ConsumptionStatus consumptionStatus) {
+    public List<MediaItem> listByConsumptionStatusWithTags(UUID userId, ConsumptionStatus consumptionStatus) {
         return list(
                 "select distinct mediaItem from MediaItem mediaItem "
                         + "left join fetch mediaItem.mediaTags mediaTags "
                         + "left join fetch mediaTags.tag "
-                        + "where mediaItem.consumptionStatus = ?1 "
+                        + "where mediaItem.owner.id = ?1 and mediaItem.consumptionStatus = ?2 "
                         + "order by mediaItem.createdAt asc, mediaItem.id asc",
+                userId,
                 consumptionStatus);
     }
 
-    public List<MediaItem> listAllWithAssociations() {
+    public List<MediaItem> listAllWithAssociations(UUID userId) {
         return list(
                 "select distinct mediaItem from MediaItem mediaItem "
                         + "left join fetch mediaItem.mediaTags mediaTags "
                         + "left join fetch mediaTags.tag "
                         + "left join fetch mediaItem.externalReferences "
-                        + "order by mediaItem.title asc, mediaItem.id asc");
+                        + "where mediaItem.owner.id = ?1 "
+                        + "order by mediaItem.title asc, mediaItem.id asc",
+                userId);
     }
 
-    public Optional<MediaItem> findByIdWithAssociations(UUID id) {
+    public Optional<MediaItem> findByIdWithAssociations(UUID userId, UUID id) {
         return find(
                         "select distinct mediaItem from MediaItem mediaItem "
                                 + "left join fetch mediaItem.mediaTags mediaTags "
                                 + "left join fetch mediaTags.tag "
                                 + "left join fetch mediaItem.externalReferences "
-                                + "where mediaItem.id = ?1",
+                                + "where mediaItem.owner.id = ?1 and mediaItem.id = ?2",
+                        userId,
                         id)
                 .list()
                 .stream()

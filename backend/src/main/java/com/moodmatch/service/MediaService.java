@@ -35,11 +35,15 @@ public class MediaService {
     @Inject
     MediaTagService mediaTagService;
 
+    @Inject
+    CurrentUserProvider currentUserProvider;
+
     @Transactional
     public MediaResponse createMedia(CreateMediaRequest request) {
         Objects.requireNonNull(request, "Create media request must not be null.");
 
         MediaItem mediaItem = new MediaItem();
+        mediaItem.setOwner(currentUserProvider.getCurrentUser());
         applyMediaFields(mediaItem, request);
         mediaItemRepository.persist(mediaItem);
         return mediaItemMapper.toResponse(mediaItem);
@@ -47,7 +51,9 @@ public class MediaService {
 
     @Transactional(TxType.SUPPORTS)
     public List<MediaResponse> listMedia() {
-        return mediaItemRepository.listAllWithAssociations().stream().map(mediaItemMapper::toResponse).toList();
+        return mediaItemRepository.listAllWithAssociations(currentUserProvider.getCurrentUser().getId()).stream()
+                .map(mediaItemMapper::toResponse)
+                .toList();
     }
 
     @Transactional(TxType.SUPPORTS)
@@ -117,7 +123,7 @@ public class MediaService {
     private MediaItem getMediaEntity(UUID id) {
         Objects.requireNonNull(id, "Media id must not be null.");
         return mediaItemRepository
-                .findByIdWithAssociations(id)
+                .findByIdWithAssociations(currentUserProvider.getCurrentUser().getId(), id)
                 .orElseThrow(() -> new ResourceNotFoundException("Media item not found: " + id));
     }
 

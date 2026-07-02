@@ -28,6 +28,7 @@ class StarterTagMigrationTest {
         try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "sa");
                 Statement statement = connection.createStatement()) {
             assertEquals(23, countRows(statement, "SELECT COUNT(*) FROM tags"));
+            assertEquals(1, countRows(statement, "SELECT COUNT(*) FROM app_users"));
             assertEquals(5, countRows(statement, "SELECT COUNT(*) FROM tags WHERE category = 'GENRE'"));
             assertEquals(5, countRows(statement, "SELECT COUNT(*) FROM tags WHERE category = 'THEME'"));
             assertEquals(5, countRows(statement, "SELECT COUNT(*) FROM tags WHERE category = 'TONE'"));
@@ -38,6 +39,9 @@ class StarterTagMigrationTest {
             assertTrue(exists(statement, "SELECT 1 FROM tags WHERE name = 'Thoughtful' AND category = 'TONE'"));
             assertTrue(exists(statement, "SELECT 1 FROM tags WHERE name = 'Future' AND category = 'SETTING'"));
             assertTrue(exists(statement, "SELECT 1 FROM tags WHERE name = 'Relaxing' AND category = 'EXPERIENCE'"));
+            assertTrue(exists(
+                    statement,
+                    "SELECT 1 FROM app_users WHERE provider = 'LOCAL' AND provider_subject = 'local-demo-user'"));
         }
     }
 

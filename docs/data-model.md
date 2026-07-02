@@ -10,16 +10,18 @@ Implemented migrations:
 
 - `V1__init_schema.sql`
 - `V2__seed_starter_tags.sql`
+- `V3__add_app_users_and_media_ownership.sql`
 
 ## Tables
 
 ### `media_items`
 
-Stores local media entries across films, series, books, and games.
+Stores local media entries across films, series, books, and games. Each media item now belongs to exactly one app user.
 
 | Column | Notes |
 | --- | --- |
 | `id` | UUID primary key |
+| `user_id` | Required FK to `app_users` |
 | `title` | Required display title |
 | `original_title` | Optional original title |
 | `description` | Optional description |
@@ -42,6 +44,37 @@ Stores local media entries across films, series, books, and games.
 Important constraint:
 
 - `is_favourite = true` is only valid when `consumption_status = CONSUMED` and `rating >= 4`
+- `user_id` is required so media/profile/candidate/match data can be scoped per user
+
+Index:
+
+- `idx_media_items_user_id`
+
+### `app_users`
+
+Stores MoodMatch's internal user records. This is the ownership anchor for private media data and is intentionally separate from future external authentication provider details.
+
+| Column | Notes |
+| --- | --- |
+| `id` | UUID primary key |
+| `provider` | Required auth provider key like `LOCAL`, `GOOGLE`, or `OIDC` |
+| `provider_subject` | Required stable provider-side user identifier |
+| `email` | Optional email address |
+| `display_name` | Optional display name |
+| `avatar_url` | Optional avatar URL |
+| `created_at` | Required timestamp |
+| `updated_at` | Required timestamp |
+
+Unique constraint:
+
+```text
+(provider, provider_subject)
+```
+
+Current transitional behavior:
+
+- the migration ensures a local/demo user exists with `provider = LOCAL` and `provider_subject = local-demo-user`
+- current backend services resolve that demo user automatically until real OIDC/Google auth is implemented
 
 ### `tags`
 
@@ -77,6 +110,11 @@ Primary key:
 (media_id, tag_id)
 ```
 
+Ownership note:
+
+- `media_tags` stay indirectly user-owned through `media_items.user_id`
+- starter tags remain global and `tags` does not gain a `user_id` column in this phase
+
 ### `media_external_refs`
 
 Stores external identities linked to local media.
@@ -98,6 +136,10 @@ Unique constraint:
 ```text
 (source_name, external_id)
 ```
+
+Ownership note:
+
+- external reference access is enforced through the owning `media_items` row
 
 ### `external_tag_mappings`
 

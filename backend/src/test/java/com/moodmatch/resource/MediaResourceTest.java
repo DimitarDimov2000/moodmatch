@@ -21,6 +21,7 @@ import com.moodmatch.dto.tag.CreateTagRequest;
 import com.moodmatch.dto.tag.TagResponse;
 import com.moodmatch.entity.TagCategory;
 import com.moodmatch.service.TagService;
+import com.moodmatch.service.TestCurrentUserProvider;
 
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
@@ -49,12 +50,14 @@ class MediaResourceTest {
     }
 
     private void cleanDatabase() {
+        TestCurrentUserProvider.useLocalDemoUser();
         QuarkusTransaction.requiringNew().run(() -> {
             entityManager.createNativeQuery("DELETE FROM media_tags").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM media_external_refs").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM media_items").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM external_tag_mappings").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM tags").executeUpdate();
+            entityManager.createNativeQuery("DELETE FROM app_users").executeUpdate();
         });
     }
 

@@ -24,14 +24,14 @@ Example response:
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| GET | `/media` | List all media items |
-| GET | `/media/{id}` | Get one media item by id |
-| POST | `/media` | Create a media item |
-| PUT | `/media/{id}` | Replace a media item |
-| DELETE | `/media/{id}` | Delete a media item |
-| PATCH | `/media/{id}/status` | Update only consumption status and status-related fields |
-| PATCH | `/media/{id}/favorite` | Update only the favourite flag |
-| PUT | `/media/{id}/tags` | Replace the full confirmed tag list |
+| GET | `/media` | List the current user's media items |
+| GET | `/media/{id}` | Get one current-user media item by id |
+| POST | `/media` | Create a media item for the current user |
+| PUT | `/media/{id}` | Replace one current-user media item |
+| DELETE | `/media/{id}` | Delete one current-user media item |
+| PATCH | `/media/{id}/status` | Update only the consumption status for one current-user media item |
+| PATCH | `/media/{id}/favorite` | Update only the favourite flag for one current-user media item |
+| PUT | `/media/{id}/tags` | Replace the full confirmed tag list for one current-user media item |
 
 Notes:
 
@@ -39,6 +39,8 @@ Notes:
 - `PUT /media/{id}/tags` replaces the full confirmed tag set for the item.
 - `PATCH /media/{id}/status` may also clear rating and favourite when leaving `CONSUMED`.
 - `PATCH /media/{id}/favorite` updates only `isFavourite`.
+- The frontend does not send a `user_id`; the backend resolves the current user internally.
+- In the current local prototype phase, the backend resolves a temporary local/demo user until real OIDC/Google auth is implemented.
 
 ### Tags
 
@@ -54,7 +56,7 @@ Notes:
 
 Profile behavior:
 
-- Uses only consumed media with rating 4 or 5 and at least one confirmed local tag.
+- Uses only the current user's consumed media with rating 4 or 5 and at least one confirmed local tag.
 - Returns readiness information and explanation text.
 - Suppresses meaningful matching until enough profile-relevant media exist.
 
@@ -66,7 +68,7 @@ Profile behavior:
 
 Candidate behavior:
 
-- Candidates are items with `consumptionStatus = WANT_TO_CONSUME`.
+- Candidates are the current user's items with `consumptionStatus = WANT_TO_CONSUME`.
 - Each candidate includes `isCompleteForMatching`.
 
 ### Matches
@@ -77,7 +79,7 @@ Candidate behavior:
 
 Match behavior:
 
-- Scores are based on deterministic weighted tag overlap plus precision adjustment.
+- Scores are based on deterministic weighted tag overlap plus precision adjustment over the current user's profile and candidates.
 - `relativeScore` may be `null` when comparisons are not meaningful yet.
 - `scoresSuppressed` may be `true` when the profile is not ready.
 - Explanations distinguish incomplete candidates from no-overlap candidates.

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import com.moodmatch.dto.external.ExternalReferenceResponse;
@@ -35,10 +36,19 @@ class ExternalReferenceServiceTest {
     @Inject
     MediaExternalRefRepository mediaExternalRefRepository;
 
+    @Inject
+    CurrentUserProvider currentUserProvider;
+
+    @AfterEach
+    void resetCurrentUser() {
+        TestCurrentUserProvider.useLocalDemoUser();
+    }
+
     @Test
     @TestTransaction
     void shouldLookupExternalReferencesBySourceAndMedia() {
         MediaItem mediaItem = new MediaItem();
+        mediaItem.setOwner(currentUserProvider.getCurrentUser());
         mediaItem.setTitle("Control");
         mediaItem.setMediaType(MediaType.GAME);
         mediaItem.setConsumptionStatus(ConsumptionStatus.CONSUMED);
@@ -68,5 +78,36 @@ class ExternalReferenceServiceTest {
         assertEquals(1, byMedia.size());
         assertEquals(lookedUp.id(), byMedia.getFirst().id());
         assertTrue(externalReferenceService.findBySourceAndExternalId(ExternalSourceName.TMDB, "missing").isEmpty());
+    }
+
+    @Test
+    @TestTransaction
+    void shouldScopeExternalReferencesByCurrentUser() {
+        TestCurrentUserProvider.useUserA();
+
+        MediaItem mediaItem = new MediaItem();
+        mediaItem.setOwner(currentUserProvider.getCurrentUser());
+        mediaItem.setTitle("Alan Wake 2");
+        mediaItem.setMediaType(MediaType.GAME);
+        mediaItem.setConsumptionStatus(ConsumptionStatus.WANT_TO_CONSUME);
+        mediaItem.setSourceType(SourceType.EXTERNAL_SEARCH);
+        mediaItem.setCommitmentLevel(CommitmentLevel.MEDIUM);
+        mediaItem.setMetadataOrigin(MetadataOrigin.IMPORTED);
+        mediaItemRepository.persist(mediaItem);
+
+        MediaExternalRef externalRef = new MediaExternalRef();
+        externalRef.setMediaItem(mediaItem);
+        externalRef.setSourceName(ExternalSourceName.RAWG);
+        externalRef.setExternalId("rawg-alan-wake-2");
+        externalRef.setExternalUrl("https://rawg.io/games/alan-wake-2");
+        mediaExternalRefRepository.persist(externalRef);
+
+        TestCurrentUserProvider.useUserB();
+
+        assertTrue(externalReferenceService
+                .findBySourceAndExternalId(ExternalSourceName.RAWG, "rawg-alan-wake-2")
+                .isEmpty());
+        assertTrue(externalReferenceService.listByMediaId(mediaItem.getId()).isEmpty());
+
     }
 }

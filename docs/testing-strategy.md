@@ -14,6 +14,7 @@ Current backend tests cover:
 - media and tag services
 - interest profile calculation
 - deterministic matching
+- user-isolation behavior for media/profile/candidates/matches
 - DTO/entity mappers
 - starter tag migration behavior
 - DEMO external search provider behavior
@@ -64,12 +65,14 @@ npm run typecheck
 ## What The Current Checkpoint Verifies
 
 - Media CRUD remains stable
+- Current-user ownership rules prevent cross-user media access at the service layer
 - Tag replacement continues to work
 - Status and favourite rules stay enforced
 - Flyway migrations remain valid
 - Seeded starter tags stay deterministic
 - Profile readiness and weighted contributions stay deterministic
 - Match scoring and explanation states stay deterministic
+- Profile, candidate, and match calculations stay scoped to the resolved current user
 - External DEMO preview stays normalized and offline
 - Swipe mode semantics stay unchanged
 - Frontend route-level views still build and render against the typed API layer

@@ -52,12 +52,14 @@ class ExternalSearchServiceTest {
     }
 
     private void cleanDatabase() {
+        TestCurrentUserProvider.useLocalDemoUser();
         QuarkusTransaction.requiringNew().run(() -> {
             entityManager.createNativeQuery("DELETE FROM media_tags").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM media_external_refs").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM media_items").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM external_tag_mappings").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM tags").executeUpdate();
+            entityManager.createNativeQuery("DELETE FROM app_users").executeUpdate();
         });
     }
 
