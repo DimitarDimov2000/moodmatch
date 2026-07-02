@@ -166,7 +166,7 @@ Notes:
 
 ## YouTube Provider Setup
 
-YouTube URL import is active in Package 2.10.
+YouTube query search and URL import are active in Package 2.10B.
 
 Required local variable for the backend only:
 
@@ -175,9 +175,9 @@ Required local variable for the backend only:
 Notes:
 
 - Keep this key in the backend environment only. Do not expose it in the frontend and do not commit real keys.
-- MoodMatch uses the official YouTube Data API metadata flow for URL/video-id resolution.
+- MoodMatch uses the official YouTube Data API only. Query search goes through `search.list` with `type=video`, and URL/video-id resolution uses the video metadata flow.
 - Supported inputs are normal watch URLs, `youtu.be` links, Shorts URLs, and raw video ids.
-- YouTube is scoped to `VIDEO` URL import only in this package. There is no YouTube text search UI.
+- Normal `VIDEO` external search can target YouTube explicitly, and the separate URL-import UI still works for known links or raw ids.
 - Thumbnail metadata is mapped into the normalized `coverUrl` field and then reused as the local media cover on import.
 - Music remains out of scope.
 

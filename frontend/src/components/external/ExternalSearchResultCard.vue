@@ -110,6 +110,9 @@ const hasTrimmedDescription = computed(
 const visibleGenres = computed(() => props.result.externalGenres.slice(0, 8));
 const visibleSubjects = computed(() => props.result.externalSubjects.slice(0, 10));
 const coverFallback = computed(() => fallbackForMediaType(props.result.mediaType));
+const coverClass = computed(() => ({
+  'external-result-card__cover--video-thumbnail': props.result.mediaType === 'VIDEO',
+}));
 
 function trimText(value: string | null, maxLength: number): string {
   const normalized = value?.trim();
@@ -358,10 +361,11 @@ function fallbackForMediaType(mediaType: ExternalSearchResultResponse['mediaType
           :src="result.coverUrl"
           :alt="`Cover von ${result.title}`"
           class="external-result-card__cover"
+          :class="coverClass"
           loading="lazy"
           decoding="async"
-          width="160"
-          height="200"
+          :width="result.mediaType === 'VIDEO' ? 224 : 160"
+          :height="result.mediaType === 'VIDEO' ? 126 : 200"
         >
         <div
           v-else
@@ -544,6 +548,12 @@ function fallbackForMediaType(mediaType: ExternalSearchResultResponse['mediaType
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
   background: var(--color-surface-secondary);
+}
+
+.external-result-card__cover--video-thumbnail {
+  width: 14rem;
+  min-width: 14rem;
+  aspect-ratio: 16 / 9;
 }
 
 .external-result-card__cover--fallback {

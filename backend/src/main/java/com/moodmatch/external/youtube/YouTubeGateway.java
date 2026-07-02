@@ -5,6 +5,8 @@ import java.util.Optional;
 
 public interface YouTubeGateway {
 
+    List<YouTubeVideo> searchVideos(String apiKey, String query, int maxResults, String order);
+
     Optional<YouTubeVideo> fetchVideo(String apiKey, String videoId);
 
     Optional<String> fetchCategoryLabel(String apiKey, String categoryId);

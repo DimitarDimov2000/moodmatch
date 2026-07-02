@@ -66,10 +66,15 @@ export function sourceOptionsForMediaType(
       ];
     case 'VIDEO':
       return [
-        { value: 'AUTO', label: 'Automatisch (noch keine aktive Suche)' },
-        { value: 'DEMO', label: 'DEMO-Fallback' },
+        { value: 'YOUTUBE', label: 'YouTube (offizielle Videosuche)' },
       ];
   }
+}
+
+export function defaultSourceSelectionForMediaType(
+  mediaType: MediaType,
+): ExternalSourceSelection {
+  return sourceOptionsForMediaType(mediaType)[0]?.value ?? 'AUTO';
 }
 
 export function isSourceSelectionValid(
@@ -93,6 +98,6 @@ export function sourceHintForMediaType(mediaType: MediaType): string {
     case 'PODCAST':
       return 'Automatisch durchsucht alle passenden Provider fuer den gewaehlten Medientyp: Podcast Index. Einzelne Episoden werden nicht importiert.';
     case 'VIDEO':
-      return 'Normale Videosuche bleibt ausserhalb des Scopes. Fuer YouTube-Videos nutze den separaten URL-Import unten.';
+      return 'YouTube-Suche nutzt die offizielle YouTube Data API fuer Video-Treffer. Fuer bekannte Links oder rohe IDs bleibt der separate YouTube-URL-Import darunter verfuegbar.';
   }
 }

@@ -36,7 +36,7 @@ const sourceHint = computed(() => sourceHintForMediaType(props.mediaType));
     <div class="external-search-form__grid">
       <FormField
         label="Suchbegriff"
-        hint="Suche nach Filmen, Serien, Buechern oder Demo-Treffern und importiere sie direkt in deine Mediathek."
+        hint="Suche nach Filmen, Serien, Buechern, Videos oder anderen unterstuetzten Treffern und importiere sie direkt in deine Mediathek."
         required
       >
         <input
@@ -45,7 +45,7 @@ const sourceHint = computed(() => sourceHintForMediaType(props.mediaType));
           type="text"
           name="query"
           maxlength="200"
-          placeholder="z. B. Arrival, Dark oder Dune"
+          placeholder="z. B. Arrival, Dark, Dune oder AI tutorial"
           @input="emit('update:query', ($event.target as HTMLInputElement).value)"
         >
       </FormField>

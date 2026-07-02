@@ -28,16 +28,23 @@ public class TestYouTubeGateway implements YouTubeGateway {
 
     private static final AtomicReference<Optional<YouTubeVideo>> VIDEO =
             new AtomicReference<>(Optional.of(DEFAULT_VIDEO));
+    private static final AtomicReference<java.util.List<YouTubeVideo>> SEARCH_RESULTS =
+            new AtomicReference<>(java.util.List.of(DEFAULT_VIDEO));
     private static final AtomicReference<Map<String, String>> CATEGORY_LABELS =
             new AtomicReference<>(Map.of("27", "Education"));
 
     public static void reset() {
         VIDEO.set(Optional.of(DEFAULT_VIDEO));
+        SEARCH_RESULTS.set(java.util.List.of(DEFAULT_VIDEO));
         CATEGORY_LABELS.set(Map.of("27", "Education"));
     }
 
     public static void useVideo(YouTubeVideo video) {
         VIDEO.set(Optional.ofNullable(video));
+    }
+
+    public static void useSearchResults(java.util.List<YouTubeVideo> results) {
+        SEARCH_RESULTS.set(java.util.List.copyOf(results));
     }
 
     public static void useMissingVideo() {
@@ -51,6 +58,11 @@ public class TestYouTubeGateway implements YouTubeGateway {
     @Override
     public Optional<YouTubeVideo> fetchVideo(String apiKey, String videoId) {
         return VIDEO.get().filter(video -> videoId.equals(video.id()));
+    }
+
+    @Override
+    public java.util.List<YouTubeVideo> searchVideos(String apiKey, String query, int maxResults, String order) {
+        return SEARCH_RESULTS.get().stream().limit(maxResults).toList();
     }
 
     @Override

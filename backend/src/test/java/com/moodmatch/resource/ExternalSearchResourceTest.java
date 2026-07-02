@@ -263,6 +263,31 @@ class ExternalSearchResourceTest {
     }
 
     @Test
+    void shouldSearchYoutubeVideosByQueryThroughTheOfficialProvider() {
+        given()
+                .queryParam("query", "ai tutorial")
+                .queryParam("mediaType", "VIDEO")
+                .queryParam("source", "YOUTUBE")
+                .when()
+                .get("/api/external/search")
+                .then()
+                .statusCode(200)
+                .body("query", is("ai tutorial"))
+                .body("source", is("YOUTUBE"))
+                .body("warnings.size()", is(0))
+                .body("results.size()", is(1))
+                .body("results[0].source", is("YOUTUBE"))
+                .body("results[0].externalId", is("abc123XYZ_0"))
+                .body("results[0].mediaType", is("VIDEO"))
+                .body("results[0].title", is("VueConf 2024 Keynote"))
+                .body("results[0].creatorNames[0]", is("MoodMatch Dev"))
+                .body("results[0].coverUrl", is("https://img.youtube.test/maxres.jpg"))
+                .body("results[0].sourceUrl", is("https://www.youtube.com/watch?v=abc123XYZ_0"))
+                .body("results[0].externalSubjects[0]", is("Vue 3"))
+                .body("results[0].attribution", is("Metadata from YouTube"));
+    }
+
+    @Test
     void shouldResolveYoutubeUrlsIntoNormalizedPreviewResults() {
         given()
                 .contentType(io.restassured.http.ContentType.JSON)

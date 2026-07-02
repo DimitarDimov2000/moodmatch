@@ -226,6 +226,46 @@ describe('ExternalSearchResultCard', () => {
     expect(wrapper.text()).toContain('Format: MANGA');
   });
 
+  it('renders youtube video metadata with a landscape thumbnail', () => {
+    const wrapper = mount(ExternalSearchResultCard, {
+      global: {
+        stubs: {
+          RouterLink: {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+      props: {
+        result: {
+          source: 'YOUTUBE',
+          externalId: 'abc123XYZ_0',
+          mediaType: 'VIDEO',
+          title: 'AI Tutorial for Builders',
+          originalTitle: null,
+          creatorNames: ['MoodMatch Dev'],
+          description: 'Build better search imports with the official YouTube API.',
+          releaseYear: 2024,
+          coverUrl: 'https://img.youtube.test/high.jpg',
+          sourceUrl: 'https://www.youtube.com/watch?v=abc123XYZ_0',
+          externalGenres: [],
+          externalSubjects: ['Channel: MoodMatch Dev'],
+          suggestedTags: [],
+          attribution: 'Metadata from YouTube',
+          warnings: [],
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain('AI Tutorial for Builders');
+    expect(wrapper.text()).toContain('Video · YouTube');
+    expect(wrapper.text()).toContain('Channel');
+    expect(wrapper.text()).toContain('MoodMatch Dev');
+    expect(wrapper.get('img').attributes('src')).toBe('https://img.youtube.test/high.jpg');
+    expect(wrapper.get('img').attributes('width')).toBe('224');
+    expect(wrapper.get('img').attributes('height')).toBe('126');
+    expect(wrapper.get('img').classes()).toContain('external-result-card__cover--video-thumbnail');
+  });
+
   it('renders Podcast Index podcast metadata clearly', () => {
     const wrapper = mount(ExternalSearchResultCard, {
       global: {

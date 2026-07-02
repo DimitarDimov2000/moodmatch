@@ -81,7 +81,7 @@ describe('ExternalSearchView', () => {
     expect(wrapper.text()).not.toContain('Music');
   });
 
-  it('renders a dedicated youtube url field without exposing youtube in normal search source options', async () => {
+  it('enables normal youtube query search for videos while keeping the dedicated url import lane', async () => {
     const wrapper = mountView();
 
     expect(wrapper.text()).toContain('YouTube-Video per URL oder ID importieren');
@@ -89,8 +89,78 @@ describe('ExternalSearchView', () => {
 
     await wrapper.get('select[name="mediaType"]').setValue('VIDEO');
 
-    expect(wrapper.find('option[value="YOUTUBE"]').exists()).toBe(false);
-    expect(wrapper.text()).toContain('separaten URL-Import');
+    expect(wrapper.get('option[value="YOUTUBE"]').text()).toContain('offizielle Videosuche');
+    expect((wrapper.get('select[name="source"]').element as HTMLSelectElement).value).toBe('YOUTUBE');
+    expect(wrapper.text()).toContain('separate YouTube-URL-Import');
+  });
+
+  it('searches youtube videos through the normal external search form and renders thumbnails', async () => {
+    searchExternalMock.mockResolvedValue({
+      query: 'ai tutorial',
+      mediaType: 'VIDEO',
+      source: 'YOUTUBE',
+      warnings: [],
+      results: [
+        {
+          source: 'YOUTUBE',
+          externalId: 'abc123XYZ_0',
+          mediaType: 'VIDEO',
+          title: 'AI Tutorial for Builders',
+          originalTitle: null,
+          creatorNames: ['MoodMatch Dev'],
+          description: 'Build better search imports with the official YouTube API.',
+          releaseYear: 2024,
+          coverUrl: 'https://img.youtube.test/high.jpg',
+          sourceUrl: 'https://www.youtube.com/watch?v=abc123XYZ_0',
+          externalGenres: [],
+          externalSubjects: ['Channel: MoodMatch Dev'],
+          suggestedTags: [],
+          attribution: 'Metadata from YouTube',
+          warnings: [],
+        },
+      ],
+    });
+
+    const wrapper = mountView();
+
+    await wrapper.get('select[name="mediaType"]').setValue('VIDEO');
+    await wrapper.get('input[name="query"]').setValue('ai tutorial');
+    await wrapper.get('form.external-search-form').trigger('submit');
+    await flushPromises();
+
+    expect(searchExternalMock).toHaveBeenCalledWith({
+      query: 'ai tutorial',
+      mediaType: 'VIDEO',
+      source: 'YOUTUBE',
+    });
+    expect(wrapper.text()).toContain('AI Tutorial for Builders');
+    expect(wrapper.text()).toContain('YouTube');
+    expect(wrapper.text()).toContain('Video');
+    expect(wrapper.text()).toContain('MoodMatch Dev');
+    expect(wrapper.get('img').attributes('src')).toBe('https://img.youtube.test/high.jpg');
+  });
+
+  it('shows a clear warning when youtube query search is selected without a backend api key', async () => {
+    searchExternalMock.mockRejectedValue(
+      new ApiRequestError(
+        'YouTube provider is not configured. Set MOODMATCH_YOUTUBE_API_KEY in the backend environment.',
+        {
+          status: 400,
+          code: 'BUSINESS_RULE_VIOLATION',
+        },
+      ),
+    );
+
+    const wrapper = mountView();
+
+    await wrapper.get('select[name="mediaType"]').setValue('VIDEO');
+    await wrapper.get('input[name="query"]').setValue('AI tutorial');
+    await wrapper.get('form.external-search-form').trigger('submit');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Provider-Hinweis');
+    expect(wrapper.text()).toContain('MOODMATCH_YOUTUBE_API_KEY');
+    expect(wrapper.text()).not.toContain('Suche konnte nicht abgeschlossen werden');
   });
 
   it('resolves a valid youtube url into a preview card with thumbnail metadata', async () => {
@@ -223,6 +293,73 @@ describe('ExternalSearchView', () => {
       sourceUrl: 'https://www.youtube.com/watch?v=abc123XYZ_0',
       externalGenres: ['Education'],
       externalSubjects: ['Vue 3', 'Tutorial', 'Channel: MoodMatch Dev'],
+      attribution: 'Metadata from YouTube',
+    });
+    expect(wrapper.text()).toContain('Imported into your media library.');
+  });
+
+  it('imports a searched youtube result through the existing import flow', async () => {
+    searchExternalMock.mockResolvedValue({
+      query: 'ai tutorial',
+      mediaType: 'VIDEO',
+      source: 'YOUTUBE',
+      warnings: [],
+      results: [
+        {
+          source: 'YOUTUBE',
+          externalId: 'abc123XYZ_0',
+          mediaType: 'VIDEO',
+          title: 'AI Tutorial for Builders',
+          originalTitle: null,
+          creatorNames: ['MoodMatch Dev'],
+          description: 'Build better search imports with the official YouTube API.',
+          releaseYear: 2024,
+          coverUrl: 'https://img.youtube.test/high.jpg',
+          sourceUrl: 'https://www.youtube.com/watch?v=abc123XYZ_0',
+          externalGenres: [],
+          externalSubjects: ['Channel: MoodMatch Dev'],
+          suggestedTags: [],
+          attribution: 'Metadata from YouTube',
+          warnings: [],
+        },
+      ],
+    });
+    importExternalMediaMock.mockResolvedValue({
+      created: true,
+      message: 'Imported into your media library.',
+      media: {
+        id: 'media-youtube-search-1',
+        title: 'AI Tutorial for Builders',
+        sourceNote: 'Imported from YOUTUBE',
+      },
+    });
+
+    const wrapper = mountView();
+
+    await wrapper.get('select[name="mediaType"]').setValue('VIDEO');
+    await wrapper.get('input[name="query"]').setValue('ai tutorial');
+    await wrapper.get('form.external-search-form').trigger('submit');
+    await flushPromises();
+
+    const importButton = getImportButton(wrapper);
+    expect(importButton).toBeDefined();
+
+    await importButton?.trigger('click');
+    await flushPromises();
+
+    expect(importExternalMediaMock).toHaveBeenCalledWith({
+      source: 'YOUTUBE',
+      externalId: 'abc123XYZ_0',
+      mediaType: 'VIDEO',
+      title: 'AI Tutorial for Builders',
+      originalTitle: null,
+      creatorNames: ['MoodMatch Dev'],
+      description: 'Build better search imports with the official YouTube API.',
+      releaseYear: 2024,
+      coverUrl: 'https://img.youtube.test/high.jpg',
+      sourceUrl: 'https://www.youtube.com/watch?v=abc123XYZ_0',
+      externalGenres: [],
+      externalSubjects: ['Channel: MoodMatch Dev'],
       attribution: 'Metadata from YouTube',
     });
     expect(wrapper.text()).toContain('Imported into your media library.');

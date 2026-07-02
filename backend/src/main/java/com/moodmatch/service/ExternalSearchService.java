@@ -17,6 +17,7 @@ import com.moodmatch.external.adapter.ExternalSearchProvider;
 import com.moodmatch.external.adapter.ExternalSearchRequest;
 import com.moodmatch.external.adapter.ExternalSearchResult;
 import com.moodmatch.external.adapter.ExternalSearchSourceName;
+import com.moodmatch.external.youtube.YouTubeExternalSearchProvider;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
@@ -41,7 +42,7 @@ public class ExternalSearchService {
     public ExternalSearchResponse search(String query, String mediaTypeRaw, String sourceRaw, Integer limit) {
         String normalizedQuery = normalizeQuery(query);
         MediaType mediaType = parseMediaType(mediaTypeRaw);
-        int safeLimit = toSafeLimit(limit);
+        int safeLimit = toSafeLimit(limit, sourceRaw);
 
         if (isAutomaticSearch(sourceRaw)) {
             return searchAutomatically(normalizedQuery, mediaType, safeLimit);
@@ -91,12 +92,22 @@ public class ExternalSearchService {
         }
     }
 
-    private int toSafeLimit(Integer limit) {
+    private int toSafeLimit(Integer limit, String sourceRaw) {
         if (limit == null) {
-            return DEFAULT_LIMIT;
+            return defaultLimitFor(sourceRaw);
         }
 
         return Math.min(limit, MAX_LIMIT);
+    }
+
+    private int defaultLimitFor(String sourceRaw) {
+        if (sourceRaw == null || sourceRaw.isBlank()) {
+            return DEFAULT_LIMIT;
+        }
+
+        return parseSource(sourceRaw) == ExternalSearchSourceName.YOUTUBE
+                ? YouTubeExternalSearchProvider.DEFAULT_MAX_RESULTS
+                : DEFAULT_LIMIT;
     }
 
     private boolean isAutomaticSearch(String sourceRaw) {

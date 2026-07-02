@@ -5,6 +5,7 @@ import { RouterLink } from 'vue-router';
 import { importExternalMedia, resolveExternalUrl, searchExternal } from '@/api/external';
 import { ApiRequestError } from '@/api/client';
 import {
+  defaultSourceSelectionForMediaType,
   externalSourceLabels,
   isSourceSelectionValid,
   type ExternalSourceSelection,
@@ -27,6 +28,7 @@ const source = ref<ExternalSourceSelection>('AUTO');
 const loading = ref(false);
 const hasSearched = ref(false);
 const errorMessage = ref('');
+const warningOnlyMessage = ref('');
 const searchResponse = ref<ExternalSearchResponse | null>(null);
 const importStates = ref<Record<string, ImportState>>({});
 const youTubeUrl = ref('');
@@ -102,6 +104,7 @@ async function runSearch() {
   const trimmedQuery = query.value.trim();
   hasSearched.value = true;
   errorMessage.value = '';
+  warningOnlyMessage.value = '';
   importStates.value = {};
   providerFilter.value = 'ALL';
   resultMediaTypeFilter.value = 'ALL';
@@ -122,6 +125,10 @@ async function runSearch() {
     });
   } catch (error) {
     searchResponse.value = null;
+    if (error instanceof ApiRequestError && isProviderConfigurationMessage(error.message)) {
+      warningOnlyMessage.value = error.message;
+      return;
+    }
     errorMessage.value = toUserMessage(error);
   } finally {
     loading.value = false;
@@ -131,7 +138,7 @@ async function runSearch() {
 function updateMediaType(value: MediaType) {
   mediaType.value = value;
   if (!isSourceSelectionValid(value, source.value)) {
-    source.value = 'AUTO';
+    source.value = defaultSourceSelectionForMediaType(value);
   }
 }
 
@@ -219,6 +226,10 @@ function toResolveUserMessage(error: unknown): string {
   return 'Die YouTube-URL konnte gerade nicht aufgeloest werden.';
 }
 
+function isProviderConfigurationMessage(message: string): boolean {
+  return message.includes('provider is not configured');
+}
+
 function resultKey(result: ExternalSearchResultResponse) {
   return `${result.source}:${result.externalId}`;
 }
@@ -288,7 +299,7 @@ interface ImportState {
 
     <AppMessage
       title="Provider-Verhalten"
-      description="TMDB, Open Library, LibriVox, RAWG und AniList sind aktiv. Podcast Index ist fuer Podcast-Shows verfuegbar, sobald Backend-Key und Backend-Secret gesetzt sind. AniList bleibt eine Quelle fuer Anime/Manga; importierte Anime-Filme, Anime-Serien und Manga landen als Film, Serie oder Buch in deiner Mediathek. YouTube ist in diesem Paket nur als URL-Import fuer Videos verfuegbar, nicht als normale Textsuche."
+      description="TMDB, Open Library, LibriVox, RAWG und AniList sind aktiv. Podcast Index ist fuer Podcast-Shows verfuegbar, sobald Backend-Key und Backend-Secret gesetzt sind. AniList bleibt eine Quelle fuer Anime/Manga; importierte Anime-Filme, Anime-Serien und Manga landen als Film, Serie oder Buch in deiner Mediathek. YouTube unterstuetzt jetzt offizielle Videosuche per Suchbegriff und weiterhin den separaten URL-Import fuer bekannte Links oder IDs."
       tone="info"
     />
 
@@ -358,6 +369,13 @@ interface ImportState {
       title="Externe Suche wird ausgefuehrt"
       description="MoodMatch laedt gerade normalisierte Provider-Treffer fuer die UI."
       tone="info"
+    />
+
+    <AppMessage
+      v-else-if="warningOnlyMessage"
+      title="Provider-Hinweis"
+      :description="warningOnlyMessage"
+      tone="warning"
     />
 
     <AppMessage

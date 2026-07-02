@@ -167,13 +167,14 @@ Search behavior:
 - Automatic `PODCAST` searches query `PODCAST_INDEX` when `MOODMATCH_PODCASTINDEX_KEY` and `MOODMATCH_PODCASTINDEX_SECRET` are configured.
 - If Podcast Index is not configured, automatic podcast search returns an empty result set plus a warning. Explicit `source=PODCAST_INDEX` returns `Podcast Index provider is not configured. Set MOODMATCH_PODCASTINDEX_KEY and MOODMATCH_PODCASTINDEX_SECRET.`
 - Podcast Index imports podcast shows/feeds only, never episode rows.
-- `VIDEO` has no active automatic text-search provider in this package and returns a clear empty response.
+- Explicit `source=YOUTUBE` searches use the official YouTube Data API `search.list` endpoint with `part=snippet`, `type=video`, `order=relevance`, and a backend default of `maxResults=10`.
+- `VIDEO` still has no active automatic multi-provider text-search provider in this package. Use explicit `source=YOUTUBE` for query search.
 - Anime movie results from AniList map to `FILM`; anime TV/OVA/ONA/special/short results map to `SERIES`; manga/light novel/novel/one-shot results map to `BOOK`.
 - Automatic responses use response-level `"source": "AUTOMATIC"` and preserve the real provider on every result in `results[*].source`.
 - In automatic mode, the capped `limit` is applied per provider before merging so one provider cannot hide another provider's results.
 - Response-level `warnings` are non-blocking partial-result notices for skipped or unavailable providers.
 - Future provider names are accepted by the enum contract, but requests fail with `Source is not available` until a provider bean exists.
-- YouTube is available only through `/external/resolve-url` in this package, not through text search.
+- YouTube is available through both `/external/search` with explicit `source=YOUTUBE` and `/external/resolve-url`.
 - Suggested tags are derived from `external_tag_mappings`.
 - Requires bearer authentication in `local-password` mode.
 
@@ -185,6 +186,7 @@ Implemented provider/media-type combinations:
 - `RAWG` -> `GAME`
 - `PODCAST_INDEX` -> `PODCAST`
 - `ANILIST` -> `FILM`, `SERIES`, `BOOK`
+- `YOUTUBE` -> `VIDEO`
 - `DEMO` -> `FILM`, `SERIES`, `BOOK`, `GAME`, `AUDIOBOOK`, `PODCAST`, `VIDEO`
 
 Example response shape:
@@ -213,6 +215,36 @@ Example response shape:
       "externalSubjects": ["Format: MOVIE", "Status: FINISHED"],
       "suggestedTags": [],
       "attribution": "Metadata from AniList",
+      "warnings": []
+    }
+  ]
+}
+```
+
+Example YouTube query-search response:
+
+```json
+{
+  "query": "ai tutorial",
+  "mediaType": "VIDEO",
+  "source": "YOUTUBE",
+  "warnings": [],
+  "results": [
+    {
+      "source": "YOUTUBE",
+      "externalId": "abc123XYZ_0",
+      "mediaType": "VIDEO",
+      "title": "AI Tutorial for Builders",
+      "originalTitle": null,
+      "creatorNames": ["MoodMatch Dev"],
+      "description": "Build better search imports with the official YouTube API.",
+      "releaseYear": 2024,
+      "coverUrl": "https://i.ytimg.com/vi/abc123XYZ_0/hqdefault.jpg",
+      "sourceUrl": "https://www.youtube.com/watch?v=abc123XYZ_0",
+      "externalGenres": [],
+      "externalSubjects": ["Channel: MoodMatch Dev"],
+      "suggestedTags": [],
+      "attribution": "Metadata from YouTube",
       "warnings": []
     }
   ]

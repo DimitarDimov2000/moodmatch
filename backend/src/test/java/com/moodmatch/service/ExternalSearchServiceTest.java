@@ -25,6 +25,7 @@ import com.moodmatch.external.librivox.TestLibriVoxGateway;
 import com.moodmatch.external.openlibrary.TestOpenLibraryGateway;
 import com.moodmatch.external.podcastindex.TestPodcastIndexGateway;
 import com.moodmatch.external.rawg.TestRawgGateway;
+import com.moodmatch.external.youtube.TestYouTubeGateway;
 import com.moodmatch.repository.ExternalTagMappingRepository;
 import com.moodmatch.repository.TagRepository;
 
@@ -64,6 +65,7 @@ class ExternalSearchServiceTest {
         TestRawgGateway.reset();
         TestAniListGateway.reset();
         TestPodcastIndexGateway.reset();
+        TestYouTubeGateway.reset();
         QuarkusTransaction.requiringNew().run(() -> {
             entityManager.createNativeQuery("DELETE FROM media_tags").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM media_external_refs").executeUpdate();
@@ -220,6 +222,46 @@ class ExternalSearchServiceTest {
         assertEquals(
                 List.of("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Provider skipped in automatic search."),
                 response.warnings());
+    }
+
+    @Test
+    void shouldSearchYoutubeVideosExplicitlyForVideoResults() {
+        ExternalSearchResponse response = externalSearchService.search("ai tutorial", "VIDEO", "YOUTUBE", null);
+
+        assertEquals("YOUTUBE", response.source().name());
+        assertEquals(1, response.results().size());
+        assertEquals("VueConf 2024 Keynote", response.results().getFirst().title());
+        assertEquals("MoodMatch Dev", response.results().getFirst().creatorNames().getFirst());
+        assertEquals("VIDEO", response.results().getFirst().mediaType().name());
+        assertEquals("YOUTUBE", response.results().getFirst().source().name());
+        assertEquals("https://img.youtube.test/maxres.jpg", response.results().getFirst().coverUrl());
+        assertTrue(response.warnings().isEmpty());
+    }
+
+    @Test
+    void shouldUseYoutubeDefaultLimitOfTenWhenExplicitVideoSearchOmitsLimit() {
+        TestYouTubeGateway.useSearchResults(java.util.stream.IntStream.rangeClosed(1, 12)
+                .mapToObj(index -> new com.moodmatch.external.youtube.YouTubeGateway.YouTubeVideo(
+                        "video0000" + String.format("%02d", index),
+                        "YouTube Result " + index,
+                        "Description " + index,
+                        "MoodMatch Dev",
+                        "2024-05-20T10:30:00Z",
+                        null,
+                        java.util.List.of(),
+                        new com.moodmatch.external.youtube.YouTubeGateway.ThumbnailSet(
+                                null,
+                                null,
+                                "https://img.youtube.test/" + index + ".jpg",
+                                null,
+                                null)))
+                .toList());
+
+        ExternalSearchResponse response = externalSearchService.search("ai tutorial", "VIDEO", "YOUTUBE", null);
+
+        assertEquals(10, response.results().size());
+        assertEquals("YouTube Result 1", response.results().getFirst().title());
+        assertEquals("YouTube Result 10", response.results().get(9).title());
     }
 
     @Test

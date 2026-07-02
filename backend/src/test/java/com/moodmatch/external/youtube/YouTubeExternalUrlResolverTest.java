@@ -67,6 +67,11 @@ class YouTubeExternalUrlResolverTest {
     private static final class FakeYouTubeGateway implements YouTubeGateway {
 
         @Override
+        public java.util.List<YouTubeVideo> searchVideos(String apiKey, String query, int maxResults, String order) {
+            return java.util.List.of();
+        }
+
+        @Override
         public java.util.Optional<YouTubeVideo> fetchVideo(String apiKey, String videoId) {
             assertEquals("test-key", apiKey);
             assertEquals("abc123XYZ_0", videoId);
@@ -94,6 +99,11 @@ class YouTubeExternalUrlResolverTest {
     }
 
     private static final class MissingVideoGateway implements YouTubeGateway {
+
+        @Override
+        public java.util.List<YouTubeVideo> searchVideos(String apiKey, String query, int maxResults, String order) {
+            return java.util.List.of();
+        }
 
         @Override
         public java.util.Optional<YouTubeVideo> fetchVideo(String apiKey, String videoId) {

@@ -30,4 +30,17 @@ class ExternalResolveUrlMissingConfigResourceTest {
                         "message",
                         is("YouTube provider is not configured. Set MOODMATCH_YOUTUBE_API_KEY in the backend environment."));
     }
+
+    @org.junit.jupiter.api.Test
+    void shouldReturnClearErrorsForYoutubeSearchWhenProviderIsNotConfigured() {
+        given()
+                .when()
+                .get("/api/external/search?query=ai%20tutorial&mediaType=VIDEO&source=YOUTUBE")
+                .then()
+                .statusCode(400)
+                .body("code", is("BUSINESS_RULE_VIOLATION"))
+                .body(
+                        "message",
+                        is("YouTube provider is not configured. Set MOODMATCH_YOUTUBE_API_KEY in the backend environment."));
+    }
 }

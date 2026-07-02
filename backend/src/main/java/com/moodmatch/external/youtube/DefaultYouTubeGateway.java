@@ -24,6 +24,8 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class DefaultYouTubeGateway implements YouTubeGateway {
 
+    private static final String DEFAULT_ORDER = "relevance";
+
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
     @Inject
@@ -31,6 +33,26 @@ public class DefaultYouTubeGateway implements YouTubeGateway {
 
     @ConfigProperty(name = "moodmatch.external.youtube.base-url", defaultValue = "https://www.googleapis.com/youtube/v3")
     String baseUrl;
+
+    @Override
+    public List<YouTubeVideo> searchVideos(String apiKey, String query, int maxResults, String order) {
+        JsonNode root = readJson("/search", Map.of(
+                "part", "snippet",
+                "q", query,
+                "type", "video",
+                "maxResults", String.valueOf(maxResults),
+                "order", order == null || order.isBlank() ? DEFAULT_ORDER : order,
+                "key", apiKey));
+
+        JsonNode items = root.path("items");
+        if (!items.isArray() || items.size() == 0) {
+            return List.of();
+        }
+
+        return java.util.stream.StreamSupport.stream(items.spliterator(), false)
+                .map(this::toSearchVideo)
+                .toList();
+    }
 
     @Override
     public Optional<YouTubeVideo> fetchVideo(String apiKey, String videoId) {
@@ -107,6 +129,20 @@ public class DefaultYouTubeGateway implements YouTubeGateway {
             builder.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
         }
         return URI.create(builder.toString());
+    }
+
+    private YouTubeVideo toSearchVideo(JsonNode node) {
+        JsonNode snippetNode = node.path("snippet");
+        JsonNode idNode = node.path("id");
+        return new YouTubeVideo(
+                textValue(idNode, "videoId"),
+                textValue(snippetNode, "title"),
+                textValue(snippetNode, "description"),
+                textValue(snippetNode, "channelTitle"),
+                textValue(snippetNode, "publishedAt"),
+                null,
+                List.of(),
+                thumbnails(snippetNode.path("thumbnails")));
     }
 
     private YouTubeVideo toVideo(JsonNode node) {
