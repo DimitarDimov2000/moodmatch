@@ -30,9 +30,19 @@ Google OAuth/OIDC is not the normal local path anymore. It was explored, but dis
 
 - local auth API client
 - Pinia auth store login/register/logout actions
+- prototype session persistence in `localStorage` under a single auth-session record
+- startup restore flow that rehydrates the stored token/user, then verifies the session with `GET /api/auth/me`
 - login/create-account UI in `LoginView`
 - protected route behavior based on local-password token state
 - bearer header attachment in the shared API client
+
+## Prototype Persistence Note
+
+For local university-demo usability, the frontend persists the backend-issued bearer token plus safe user display data in `localStorage` so a browser refresh does not immediately sign the user out.
+
+This is intentionally a prototype tradeoff, not the production recommendation.
+
+For production, MoodMatch should move session handling to secure HTTP-only cookies so JavaScript cannot read the session token directly.
 
 ## Deferred
 

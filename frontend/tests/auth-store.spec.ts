@@ -1,8 +1,9 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { login, logout, register } from '@/api/auth';
-import { useAuthStore } from '@/stores/auth';
+import { getCurrentUser, login, logout, register } from '@/api/auth';
+import { ApiRequestError } from '@/api/client';
+import { AUTH_SESSION_STORAGE_KEY, useAuthStore } from '@/stores/auth';
 
 vi.mock('@/api/auth', () => ({
   getCurrentUser: vi.fn(),
@@ -11,17 +12,25 @@ vi.mock('@/api/auth', () => ({
   register: vi.fn(),
 }));
 
+const getCurrentUserMock = vi.mocked(getCurrentUser);
 const loginMock = vi.mocked(login);
 const logoutMock = vi.mocked(logout);
 const registerMock = vi.mocked(register);
 
+function readStoredSession() {
+  const rawValue = window.localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
+  return rawValue ? JSON.parse(rawValue) : null;
+}
+
 describe('auth store', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    window.localStorage.clear();
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
   });
 
   it('starts with a safe logged-out local-password default state', () => {
@@ -65,6 +74,14 @@ describe('auth store', () => {
     expect(authStore.token).toBe('local-token');
     expect(authStore.userDisplayName).toBe('Melli Example');
     expect(authStore.canAccessProtectedRoutes).toBe(true);
+    expect(readStoredSession()).toEqual({
+      token: 'local-token',
+      user: {
+        id: 'user-id',
+        email: 'melli@example.com',
+        displayName: 'Melli Example',
+      },
+    });
   });
 
   it('registers a new account and trims optional display name', async () => {
@@ -92,6 +109,83 @@ describe('auth store', () => {
     });
     expect(authStore.token).toBe('register-token');
     expect(authStore.user?.email).toBe('student@example.com');
+    expect(readStoredSession()).toEqual({
+      token: 'register-token',
+      user: {
+        id: 'user-id',
+        email: 'student@example.com',
+        displayName: 'Student',
+      },
+    });
+  });
+
+  it('restores a stored session and verifies it through /auth/me', async () => {
+    window.localStorage.setItem(
+      AUTH_SESSION_STORAGE_KEY,
+      JSON.stringify({
+        token: 'restored-token',
+        user: {
+          id: 'stored-id',
+          email: 'stored@example.com',
+          displayName: 'Stored User',
+        },
+      }),
+    );
+    getCurrentUserMock.mockResolvedValue({
+      id: 'verified-id',
+      email: 'verified@example.com',
+      displayName: 'Verified User',
+    });
+
+    const authStore = useAuthStore();
+    await authStore.initialize();
+
+    expect(getCurrentUserMock).toHaveBeenCalledTimes(1);
+    expect(authStore.isInitialized).toBe(true);
+    expect(authStore.isAuthenticated).toBe(true);
+    expect(authStore.token).toBe('restored-token');
+    expect(authStore.user).toEqual({
+      id: 'verified-id',
+      email: 'verified@example.com',
+      displayName: 'Verified User',
+    });
+    expect(readStoredSession()).toEqual({
+      token: 'restored-token',
+      user: {
+        id: 'verified-id',
+        email: 'verified@example.com',
+        displayName: 'Verified User',
+      },
+    });
+  });
+
+  it('clears an invalid stored session when /auth/me rejects it', async () => {
+    window.localStorage.setItem(
+      AUTH_SESSION_STORAGE_KEY,
+      JSON.stringify({
+        token: 'expired-token',
+        user: {
+          id: 'stored-id',
+          email: 'stored@example.com',
+          displayName: 'Stored User',
+        },
+      }),
+    );
+    getCurrentUserMock.mockRejectedValue(
+      new ApiRequestError('Unauthorized', {
+        status: 401,
+        code: 'UNAUTHORIZED',
+      }),
+    );
+
+    const authStore = useAuthStore();
+    await authStore.initialize();
+
+    expect(authStore.isInitialized).toBe(true);
+    expect(authStore.isAuthenticated).toBe(false);
+    expect(authStore.token).toBeNull();
+    expect(authStore.user).toBeNull();
+    expect(window.localStorage.getItem(AUTH_SESSION_STORAGE_KEY)).toBeNull();
   });
 
   it('clears the session on logout', async () => {
@@ -110,5 +204,6 @@ describe('auth store', () => {
     expect(authStore.isAuthenticated).toBe(false);
     expect(authStore.token).toBeNull();
     expect(authStore.user).toBeNull();
+    expect(window.localStorage.getItem(AUTH_SESSION_STORAGE_KEY)).toBeNull();
   });
 });

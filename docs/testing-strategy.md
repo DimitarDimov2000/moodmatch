@@ -28,8 +28,8 @@ The backend test suite uses Quarkus tests plus H2 in PostgreSQL compatibility mo
 Current frontend tests cover:
 
 - API client/config helpers
-- auth store defaults and login/logout state transitions
-- protected-route guard behavior in `local-demo` vs `local-password`
+- auth store defaults, `localStorage` persistence, restore verification, and login/logout state transitions
+- protected-route guard behavior in `local-demo` vs `local-password`, including pending restore timing
 - login view and app-shell auth UI basics
 - dashboard view behavior
 - external search view and result card
@@ -86,6 +86,13 @@ npm run typecheck
 - Swipe mode semantics stay unchanged
 - Frontend route-level views still build and render against the typed API layer
 - Frontend auth mode state, bearer-header attachment, and route protection remain wired correctly without Google credentials
+- Prototype refresh persistence keeps local email/password sessions usable during demos while still clearing invalid stored tokens on startup verification
+
+## Prototype Session Note
+
+For the university prototype, frontend auth persistence uses `localStorage` so refreshes keep the demo session alive until backend verification fails.
+
+Production should replace this with secure HTTP-only cookies rather than leaving bearer tokens readable from browser JavaScript.
 
 ## Manual Checkpoint Smoke Test
 
@@ -96,11 +103,12 @@ For a presentation or final checkpoint pass:
 3. Start the frontend with `npm run dev`.
 4. Create a MoodMatch account with email/password.
 5. Log out and log back in with the same account.
-6. Open the dashboard and confirm the summary cards load.
-7. Create or edit media, then confirm tags and status/favourite rules still behave as documented.
-8. Open profile and matches to confirm profile readiness and score explanations.
-9. Open swipe mode and verify local like/skip vs persistent reject.
-10. Open external search and confirm DEMO preview results render without import behavior.
+6. Refresh the browser and confirm the session is restored without a login/dashboard flicker.
+7. Open the dashboard and confirm the summary cards load.
+8. Create or edit media, then confirm tags and status/favourite rules still behave as documented.
+9. Open profile and matches to confirm profile readiness and score explanations.
+10. Open swipe mode and verify local like/skip vs persistent reject.
+11. Open external search and confirm DEMO preview results render without import behavior.
 
 ## Future Work
 

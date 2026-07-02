@@ -134,9 +134,9 @@ export function createAppRouter({ history = createWebHistory(), pinia }: CreateA
     },
   });
 
-  router.beforeEach((to) => {
+  router.beforeEach(async (to) => {
     const authStore = useAuthStore(pinia);
-    authStore.initialize();
+    await authStore.initialize();
 
     if (to.meta.requiresAuth && !authStore.canAccessProtectedRoutes) {
       return {

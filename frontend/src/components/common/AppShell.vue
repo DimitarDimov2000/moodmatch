@@ -41,7 +41,7 @@ const authStatusDescription = computed(() => {
 });
 
 async function handleLogout() {
-  authStore.logout();
+  await authStore.logout();
   await router.push({ name: 'login' });
 }
 </script>

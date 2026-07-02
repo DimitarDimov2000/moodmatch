@@ -22,6 +22,8 @@ export interface AuthSession {
 
 export type AuthProviderSetupState = 'idle' | 'not-needed' | 'ready' | 'error';
 
+export const AUTH_SESSION_STORAGE_KEY = 'moodmatch.auth.session';
+
 interface AuthState {
   mode: AuthMode;
   provider: AuthProvider;
@@ -31,6 +33,7 @@ interface AuthState {
   isInitialized: boolean;
   providerSetupState: AuthProviderSetupState;
   providerError: string | null;
+  initializationPromise: Promise<void> | null;
 }
 
 function normalizeUser(user: Partial<AuthUserDisplayInfo>): AuthUserDisplayInfo {
@@ -49,6 +52,74 @@ function toAuthErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+function normalizeSession(session: AuthSession): AuthSession {
+  return {
+    token: session.token,
+    user: normalizeUser(session.user),
+  };
+}
+
+function getStorage(): Storage | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function persistSession(session: AuthSession) {
+  try {
+    getStorage()?.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(normalizeSession(session)));
+  } catch {
+    // Demo persistence is best-effort; auth state still stays in memory for the current tab.
+  }
+}
+
+function clearPersistedSession() {
+  try {
+    getStorage()?.removeItem(AUTH_SESSION_STORAGE_KEY);
+  } catch {
+    // Ignore storage cleanup failures and still clear the in-memory session.
+  }
+}
+
+function parseStoredSession(rawValue: string): AuthSession | null {
+  try {
+    const parsed = JSON.parse(rawValue) as Partial<AuthSession> | null;
+
+    if (!parsed || typeof parsed !== 'object' || typeof parsed.token !== 'string') {
+      return null;
+    }
+
+    return normalizeSession({
+      token: parsed.token,
+      user: typeof parsed.user === 'object' && parsed.user !== null ? parsed.user : {},
+    });
+  } catch {
+    return null;
+  }
+}
+
+function readStoredSession(): AuthSession | null {
+  const rawValue = getStorage()?.getItem(AUTH_SESSION_STORAGE_KEY);
+
+  if (!rawValue) {
+    return null;
+  }
+
+  const session = parseStoredSession(rawValue);
+
+  if (!session) {
+    clearPersistedSession();
+  }
+
+  return session;
+}
+
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     mode: AUTH_MODE,
@@ -59,6 +130,7 @@ export const useAuthStore = defineStore('auth', {
     isInitialized: false,
     providerSetupState: 'idle',
     providerError: null,
+    initializationPromise: null,
   }),
   getters: {
     isAuthenticated: (state) => Boolean(state.token),
@@ -70,15 +142,25 @@ export const useAuthStore = defineStore('auth', {
     providerLabel: (state) => (state.provider === 'local-demo' ? 'Local Demo' : 'Email/password'),
   },
   actions: {
-    initialize() {
-      if (this.isInitialized || this.isLoading) {
-        return;
+    initialize(): Promise<void> {
+      if (this.isInitialized) {
+        return Promise.resolve();
       }
 
-      this.providerSetupState = this.isAuthRequiredMode ? 'ready' : 'not-needed';
+      if (this.initializationPromise) {
+        return this.initializationPromise;
+      }
+
       this.providerError = null;
-      this.isInitialized = true;
-      this.isLoading = false;
+      this.isLoading = true;
+      this.providerSetupState = this.isAuthRequiredMode ? 'ready' : 'not-needed';
+
+      this.initializationPromise = this.restoreSession()
+        .finally(() => {
+          this.initializationPromise = null;
+        });
+
+      return this.initializationPromise;
     },
     setAuthMode(mode: AuthMode, provider?: AuthProvider) {
       this.mode = mode;
@@ -87,18 +169,59 @@ export const useAuthStore = defineStore('auth', {
       this.providerError = null;
       this.isInitialized = false;
       this.isLoading = false;
+      this.initializationPromise = null;
     },
-    setAuthenticatedSession(session: AuthSession) {
-      this.token = session.token;
-      this.user = normalizeUser(session.user);
+    setAuthenticatedSession(session: AuthSession, persist = true) {
+      const normalizedSession = normalizeSession(session);
+
+      this.token = normalizedSession.token;
+      this.user = normalizeUser(normalizedSession.user);
       this.providerSetupState = this.isAuthRequiredMode ? 'ready' : this.providerSetupState;
       this.providerError = null;
       this.isInitialized = true;
       this.isLoading = false;
+
+      if (persist) {
+        persistSession(normalizedSession);
+      }
     },
     clearSession() {
       this.token = null;
       this.user = null;
+      clearPersistedSession();
+    },
+    async restoreSession() {
+      if (!this.isAuthRequiredMode) {
+        this.isInitialized = true;
+        this.isLoading = false;
+        return;
+      }
+
+      const storedSession = readStoredSession();
+
+      if (!storedSession) {
+        this.clearSession();
+        this.isInitialized = true;
+        this.isLoading = false;
+        return;
+      }
+
+      this.token = storedSession.token;
+      this.user = normalizeUser(storedSession.user);
+
+      try {
+        const verifiedUser = normalizeUser(await getCurrentUser());
+        this.user = verifiedUser;
+        persistSession({
+          token: storedSession.token,
+          user: verifiedUser,
+        });
+      } catch {
+        this.clearSession();
+      } finally {
+        this.isInitialized = true;
+        this.isLoading = false;
+      }
     },
     async loginWithPassword(email: string, password: string): Promise<boolean> {
       this.isLoading = true;
@@ -138,7 +261,12 @@ export const useAuthStore = defineStore('auth', {
       }
 
       try {
-        this.user = normalizeUser(await getCurrentUser());
+        const refreshedUser = normalizeUser(await getCurrentUser());
+        this.user = refreshedUser;
+        persistSession({
+          token: this.token,
+          user: refreshedUser,
+        });
         return true;
       } catch {
         this.clearSession();
@@ -147,6 +275,8 @@ export const useAuthStore = defineStore('auth', {
     },
     handleUnauthorized() {
       this.clearSession();
+      this.isInitialized = true;
+      this.isLoading = false;
     },
     async logout() {
       if (this.token) {
