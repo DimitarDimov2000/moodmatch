@@ -11,12 +11,14 @@ public final class ExternalSourceMappings {
         return switch (source) {
             case DEMO -> ExternalSourceName.DEMO;
             case TMDB -> ExternalSourceName.TMDB;
+            case OPEN_LIBRARY -> ExternalSourceName.OPEN_LIBRARY;
         };
     }
 
     public static ExternalSourceName toMappingSource(ExternalSearchSourceName source, MediaType mediaType) {
         return switch (source) {
             case TMDB -> ExternalSourceName.TMDB;
+            case OPEN_LIBRARY -> ExternalSourceName.OPEN_LIBRARY;
             case DEMO -> switch (mediaType) {
                 case FILM, SERIES -> ExternalSourceName.TMDB;
                 case BOOK -> ExternalSourceName.OPEN_LIBRARY;

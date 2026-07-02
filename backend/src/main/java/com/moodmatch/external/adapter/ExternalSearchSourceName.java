@@ -2,5 +2,6 @@ package com.moodmatch.external.adapter;
 
 public enum ExternalSearchSourceName {
     DEMO,
-    TMDB
+    TMDB,
+    OPEN_LIBRARY
 }

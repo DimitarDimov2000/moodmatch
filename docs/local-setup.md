@@ -82,6 +82,16 @@ export MOODMATCH_TMDB_API_KEY=your_tmdb_api_key
 
 If `MOODMATCH_TMDB_API_KEY` is missing, MoodMatch keeps the offline `DEMO` provider active as a fallback. No real API key is committed in this repository, and the frontend never receives the TMDB key directly.
 
+## Open Library Provider Setup
+
+Open Library is the active real provider for `BOOK` searches in Package 2.
+
+Notes:
+
+- No secret or paid API key is required for the implemented public search flow.
+- Do not commit any personal contact header or experimental credentials to the repository.
+- If you need endpoint overrides for debugging, they should stay local-only and out of committed secrets.
+
 ## Optional IntelliJ / PostgreSQL Inspection
 
 This is optional and not required to run the app.
@@ -201,4 +211,4 @@ npm run typecheck
 2. Start the backend with `cd backend && ./mvnw quarkus:dev`.
 3. Start the frontend with `cd frontend && npm run dev`.
 4. Open the frontend and inspect the dashboard, media flows, profile, matches, swipe mode, and external search preview.
-5. Log in, search external media, import one result, and verify it appears in the media library.
+5. Log in, search films/series and books, import one result, and verify it appears in the media library.

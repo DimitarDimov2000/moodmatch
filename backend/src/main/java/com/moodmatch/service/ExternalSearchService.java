@@ -119,7 +119,8 @@ public class ExternalSearchService {
     private Optional<ExternalSearchProvider> preferredProviderFor(MediaType mediaType) {
         return switch (mediaType) {
             case FILM, SERIES -> findProvider(ExternalSearchSourceName.TMDB);
-            case BOOK, GAME -> Optional.empty();
+            case BOOK -> findProvider(ExternalSearchSourceName.OPEN_LIBRARY);
+            case GAME -> Optional.empty();
         };
     }
 
@@ -149,6 +150,7 @@ public class ExternalSearchService {
                 result.mediaType(),
                 result.title(),
                 result.originalTitle(),
+                result.creatorNames(),
                 result.description(),
                 result.releaseYear(),
                 result.coverUrl(),
@@ -167,6 +169,7 @@ public class ExternalSearchService {
                 result.mediaType(),
                 result.title(),
                 result.originalTitle(),
+                List.copyOf(result.creatorNames()),
                 result.description(),
                 result.releaseYear(),
                 result.coverUrl(),

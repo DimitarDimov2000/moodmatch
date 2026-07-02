@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 
+import { externalSourceLabels } from '@/components/external/external-options';
+import { mediaTypeLabels } from '@/components/media/media-options';
 import type { ExternalSearchResultResponse } from '@/types/api';
 
 const props = defineProps<{
@@ -14,6 +17,16 @@ const props = defineProps<{
 const emit = defineEmits<{
   import: [result: ExternalSearchResultResponse];
 }>();
+
+const sourceLabel = computed(() => externalSourceLabels[props.result.source]);
+const creatorLabel = computed(() => (props.result.mediaType === 'BOOK' ? 'Autor:innen' : 'Mitwirkende'));
+const subtitle = computed(() => {
+  const parts = [mediaTypeLabels[props.result.mediaType]];
+  if (props.result.releaseYear) {
+    parts.push(String(props.result.releaseYear));
+  }
+  return parts.join(' • ');
+});
 </script>
 
 <template>
@@ -22,7 +35,7 @@ const emit = defineEmits<{
       <div class="external-result-card__copy">
         <div class="external-result-card__eyebrow-row">
           <span class="eyebrow">External Preview</span>
-          <span class="external-result-card__source-badge">{{ result.source }}</span>
+          <span class="external-result-card__source-badge">{{ sourceLabel }}</span>
         </div>
 
         <h2 class="external-result-card__title">
@@ -30,8 +43,20 @@ const emit = defineEmits<{
         </h2>
 
         <p class="body-muted">
-          {{ result.mediaType }}<span v-if="result.releaseYear"> • {{ result.releaseYear }}</span>
+          {{ subtitle }}
         </p>
+
+        <div
+          v-if="result.creatorNames.length > 0"
+          class="external-result-card__section"
+        >
+          <p class="external-result-card__section-label">
+            {{ creatorLabel }}
+          </p>
+          <p class="body-muted">
+            {{ result.creatorNames.join(', ') }}
+          </p>
+        </div>
 
         <p
           v-if="result.description"
@@ -84,7 +109,7 @@ const emit = defineEmits<{
             v-if="result.suggestedTags.length === 0"
             class="body-muted"
           >
-            Fuer dieses Demo-Ergebnis liegen noch keine gemappten Tag-Vorschlaege vor.
+            Fuer dieses Ergebnis liegen noch keine gemappten Tag-Vorschlaege vor.
           </p>
           <div
             v-else

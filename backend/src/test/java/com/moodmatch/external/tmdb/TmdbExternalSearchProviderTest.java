@@ -33,6 +33,7 @@ class TmdbExternalSearchProviderTest {
         assertEquals("11", result.externalId());
         assertEquals("Arrival", result.title());
         assertEquals("Arrival Original", result.originalTitle());
+        assertTrue(result.creatorNames().isEmpty());
         assertEquals(2016, result.releaseYear());
         assertEquals(List.of("Science Fiction", "Drama"), result.externalGenres());
         assertTrue(result.externalSubjects().isEmpty());

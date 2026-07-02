@@ -1,7 +1,7 @@
 import type { MediaType, TagCategory } from './api-common';
 import type { MediaResponse } from './media';
 
-export type ExternalSearchSourceName = 'DEMO' | 'TMDB';
+export type ExternalSearchSourceName = 'DEMO' | 'TMDB' | 'OPEN_LIBRARY';
 
 export interface ExternalSearchQuery {
   query: string;
@@ -25,6 +25,7 @@ export interface ExternalSearchResultResponse {
   mediaType: MediaType;
   title: string;
   originalTitle: string | null;
+  creatorNames: string[];
   description: string | null;
   releaseYear: number | null;
   coverUrl: string | null;
@@ -50,6 +51,7 @@ export interface ExternalImportRequest {
   mediaType: MediaType;
   title: string;
   originalTitle: string | null;
+  creatorNames: string[];
   description: string | null;
   releaseYear: number | null;
   coverUrl: string | null;

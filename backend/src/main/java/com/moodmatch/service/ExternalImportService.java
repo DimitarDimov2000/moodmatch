@@ -72,7 +72,7 @@ public class ExternalImportService {
         mediaItem.setOwner(currentUserProvider.getCurrentUser());
         mediaItem.setTitle(request.title().trim());
         mediaItem.setOriginalTitle(blankToNull(request.originalTitle()));
-        mediaItem.setDescription(blankToNull(request.description()));
+        mediaItem.setDescription(resolveImportedDescription(request));
         mediaItem.setMediaType(request.mediaType());
         mediaItem.setConsumptionStatus(ConsumptionStatus.WANT_TO_CONSUME);
         mediaItem.setFavourite(false);
@@ -116,6 +116,7 @@ public class ExternalImportService {
                 request.mediaType(),
                 request.title().trim(),
                 blankToNull(request.originalTitle()),
+                safeList(request.creatorNames()),
                 blankToNull(request.description()),
                 request.releaseYear(),
                 blankToNull(request.coverUrl()),
@@ -149,6 +150,7 @@ public class ExternalImportService {
                 request.externalId().trim(),
                 request.mediaType().name(),
                 request.title().trim(),
+                String.join("|", safeList(request.creatorNames())),
                 String.valueOf(request.releaseYear()),
                 String.join("|", safeList(request.externalGenres())),
                 String.join("|", safeList(request.externalSubjects())),
@@ -171,6 +173,29 @@ public class ExternalImportService {
             case FILM -> CommitmentLevel.MEDIUM;
             case SERIES, BOOK, GAME -> CommitmentLevel.LONG;
         };
+    }
+
+    private String resolveImportedDescription(ExternalImportRequest request) {
+        String description = blankToNull(request.description());
+        if (description != null) {
+            return description;
+        }
+        if (request.mediaType() != MediaType.BOOK) {
+            return null;
+        }
+
+        List<String> creatorNames = safeList(request.creatorNames());
+        if (!creatorNames.isEmpty() && request.releaseYear() != null) {
+            return "Book by %s. First published in %s."
+                    .formatted(String.join(", ", creatorNames), request.releaseYear());
+        }
+        if (!creatorNames.isEmpty()) {
+            return "Book by %s.".formatted(String.join(", ", creatorNames));
+        }
+        if (request.releaseYear() != null) {
+            return "Book first published in %s.".formatted(request.releaseYear());
+        }
+        return "Book imported from %s.".formatted(request.source());
     }
 
     private String blankToNull(String value) {

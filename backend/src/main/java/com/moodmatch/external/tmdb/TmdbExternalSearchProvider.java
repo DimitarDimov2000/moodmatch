@@ -89,6 +89,7 @@ public class TmdbExternalSearchProvider implements ExternalSearchProvider {
                 mediaType,
                 item.title(),
                 item.originalTitle(),
+                List.of(),
                 blankToNull(item.overview()),
                 parseReleaseYear(item.releaseDate()),
                 buildCoverUrl(item.posterPath()),

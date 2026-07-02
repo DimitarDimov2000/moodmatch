@@ -15,6 +15,7 @@ public record ExternalImportRequest(
         @NotNull MediaType mediaType,
         @NotBlank @Size(max = 255) String title,
         @Size(max = 255) String originalTitle,
+        List<@Size(max = 255) String> creatorNames,
         String description,
         Integer releaseYear,
         @Size(max = 4000) String coverUrl,

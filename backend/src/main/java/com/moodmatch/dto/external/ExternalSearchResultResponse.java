@@ -11,6 +11,7 @@ public record ExternalSearchResultResponse(
         MediaType mediaType,
         String title,
         String originalTitle,
+        List<String> creatorNames,
         String description,
         Integer releaseYear,
         String coverUrl,

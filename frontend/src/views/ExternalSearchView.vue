@@ -4,6 +4,11 @@ import { RouterLink } from 'vue-router';
 
 import { importExternalMedia, searchExternal } from '@/api/external';
 import { ApiRequestError } from '@/api/client';
+import {
+  externalSourceLabels,
+  isSourceSelectionValid,
+  type ExternalSourceSelection,
+} from '@/components/external/external-options';
 import ExternalSearchForm from '@/components/external/ExternalSearchForm.vue';
 import ExternalSearchResultCard from '@/components/external/ExternalSearchResultCard.vue';
 import AppMessage from '@/components/common/AppMessage.vue';
@@ -16,6 +21,7 @@ import type {
 
 const query = ref('');
 const mediaType = ref<MediaType>('FILM');
+const source = ref<ExternalSourceSelection>('AUTO');
 const loading = ref(false);
 const hasSearched = ref(false);
 const errorMessage = ref('');
@@ -28,6 +34,14 @@ const fallbackMessage = computed(() => {
   }
 
   return searchResponse.value.warnings.join(' ');
+});
+
+const resolvedSourceLabel = computed(() => {
+  if (!searchResponse.value) {
+    return '';
+  }
+
+  return externalSourceLabels[searchResponse.value.source];
 });
 
 async function runSearch() {
@@ -48,12 +62,20 @@ async function runSearch() {
     searchResponse.value = await searchExternal({
       query: trimmedQuery,
       mediaType: mediaType.value,
+      source: source.value === 'AUTO' ? undefined : source.value,
     });
   } catch (error) {
     searchResponse.value = null;
     errorMessage.value = toUserMessage(error);
   } finally {
     loading.value = false;
+  }
+}
+
+function updateMediaType(value: MediaType) {
+  mediaType.value = value;
+  if (!isSourceSelectionValid(value, source.value)) {
+    source.value = 'AUTO';
   }
 }
 
@@ -131,6 +153,7 @@ function toImportRequest(result: ExternalSearchResultResponse): ExternalImportRe
     mediaType: result.mediaType,
     title: result.title,
     originalTitle: result.originalTitle,
+    creatorNames: result.creatorNames,
     description: result.description,
     releaseYear: result.releaseYear,
     coverUrl: result.coverUrl,
@@ -177,7 +200,7 @@ interface ImportState {
 
     <AppMessage
       title="Provider-Verhalten"
-      description="Filme und Serien nutzen automatisch TMDB, sobald das Backend mit einem API-Key konfiguriert ist. Ohne Key oder fuer andere Typen bleibt der DEMO-Provider als Fallback aktiv."
+      description="Filme und Serien koennen TMDB nutzen, Buecher laufen ueber Open Library, und DEMO bleibt als Fallback fuer Entwicklung sowie nicht konfigurierte Flows erhalten."
       tone="info"
     />
 
@@ -190,8 +213,10 @@ interface ImportState {
 
     <ExternalSearchForm
       v-model:query="query"
-      v-model:media-type="mediaType"
+      v-model:source="source"
+      :media-type="mediaType"
       :submitting="loading"
+      @update:media-type="updateMediaType"
       @search="runSearch"
     />
 
@@ -240,7 +265,7 @@ interface ImportState {
           <p class="eyebrow">
             Resultate
           </p>
-          <h2>{{ searchResponse.results.length }} Treffer aus {{ searchResponse.source }}</h2>
+          <h2>{{ searchResponse.results.length }} Treffer aus {{ resolvedSourceLabel }}</h2>
           <p class="body-muted">
             Importiere einen Treffer, um ihn sofort als eigenes Medium weiterzuverwenden.
           </p>

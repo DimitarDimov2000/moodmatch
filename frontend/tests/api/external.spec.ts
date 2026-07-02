@@ -12,9 +12,9 @@ describe('external api', () => {
     const fetchSpy = vi.spyOn(window, 'fetch').mockResolvedValue(
       new Response(
         JSON.stringify({
-          query: 'arrival',
-          mediaType: 'FILM',
-          source: 'DEMO',
+          query: 'dune',
+          mediaType: 'BOOK',
+          source: 'OPEN_LIBRARY',
           results: [],
           warnings: [],
         }),
@@ -28,15 +28,15 @@ describe('external api', () => {
     );
 
     await searchExternal({
-      query: 'arrival',
-      mediaType: 'FILM',
-      source: 'DEMO',
+      query: 'dune',
+      mediaType: 'BOOK',
+      source: 'OPEN_LIBRARY',
       limit: 3,
     });
 
     expect(fetchSpy).toHaveBeenCalledWith(
       new URL(
-        `${API_BASE_URL}/external/search?query=arrival&mediaType=FILM&source=DEMO&limit=3`,
+        `${API_BASE_URL}/external/search?query=dune&mediaType=BOOK&source=OPEN_LIBRARY&limit=3`,
         window.location.origin,
       ).toString(),
       expect.objectContaining({
@@ -63,18 +63,19 @@ describe('external api', () => {
     );
 
     await importExternalMedia({
-      source: 'TMDB',
-      externalId: '11',
-      mediaType: 'FILM',
-      title: 'Arrival',
+      source: 'OPEN_LIBRARY',
+      externalId: 'OL82563W',
+      mediaType: 'BOOK',
+      title: 'Dune',
       originalTitle: null,
-      description: 'First contact changes everything.',
-      releaseYear: 2016,
-      coverUrl: 'https://image.tmdb.org/t/p/w342/poster.jpg',
-      sourceUrl: 'https://www.themoviedb.org/movie/11',
-      externalGenres: ['Science Fiction'],
-      externalSubjects: [],
-      attribution: 'Metadata from TMDB',
+      creatorNames: ['Frank Herbert'],
+      description: 'Book by Frank Herbert. First published in 1965.',
+      releaseYear: 1965,
+      coverUrl: 'https://covers.openlibrary.org/b/id/987654-M.jpg',
+      sourceUrl: 'https://openlibrary.org/works/OL82563W',
+      externalGenres: [],
+      externalSubjects: ['Politics'],
+      attribution: 'Metadata from Open Library',
     });
 
     expect(fetchSpy).toHaveBeenCalledWith(
@@ -82,18 +83,19 @@ describe('external api', () => {
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
-          source: 'TMDB',
-          externalId: '11',
-          mediaType: 'FILM',
-          title: 'Arrival',
+          source: 'OPEN_LIBRARY',
+          externalId: 'OL82563W',
+          mediaType: 'BOOK',
+          title: 'Dune',
           originalTitle: null,
-          description: 'First contact changes everything.',
-          releaseYear: 2016,
-          coverUrl: 'https://image.tmdb.org/t/p/w342/poster.jpg',
-          sourceUrl: 'https://www.themoviedb.org/movie/11',
-          externalGenres: ['Science Fiction'],
-          externalSubjects: [],
-          attribution: 'Metadata from TMDB',
+          creatorNames: ['Frank Herbert'],
+          description: 'Book by Frank Herbert. First published in 1965.',
+          releaseYear: 1965,
+          coverUrl: 'https://covers.openlibrary.org/b/id/987654-M.jpg',
+          sourceUrl: 'https://openlibrary.org/works/OL82563W',
+          externalGenres: [],
+          externalSubjects: ['Politics'],
+          attribution: 'Metadata from Open Library',
         }),
       }),
     );

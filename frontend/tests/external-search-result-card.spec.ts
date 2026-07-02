@@ -15,29 +15,30 @@ describe('ExternalSearchResultCard', () => {
       },
       props: {
         result: {
-          source: 'DEMO',
-          externalId: 'demo-book-dune',
+          source: 'OPEN_LIBRARY',
+          externalId: 'OL82563W',
           mediaType: 'BOOK',
           title: 'Dune',
           originalTitle: null,
-          description: 'A sprawling desert saga.',
+          creatorNames: ['Frank Herbert'],
+          description: 'Book by Frank Herbert. First published in 1965.',
           releaseYear: 1965,
-          coverUrl: 'https://demo.moodmatch.local/covers/dune.jpg',
-          sourceUrl: 'https://demo.moodmatch.local/items/demo-book-dune',
-          externalGenres: ['Science-Fiction', 'Adventure'],
-          externalSubjects: ['Macht', 'Ueberleben'],
+          coverUrl: 'https://covers.openlibrary.org/b/id/987654-M.jpg',
+          sourceUrl: 'https://openlibrary.org/works/OL82563W',
+          externalGenres: [],
+          externalSubjects: ['Politics', 'Desert planets'],
           suggestedTags: [
             {
               tagId: 'tag-1',
-              tagName: 'Entdeckung',
+              tagName: 'Politik',
               tagCategory: 'THEME',
-              sourceValue: 'Macht',
+              sourceValue: 'Politics',
               reason: 'Mapped from external subject value.',
               confidence: 'HIGH',
             },
           ],
-          attribution: 'MoodMatch Demo Provider (offline)',
-          warnings: ['Demo fallback active.'],
+          attribution: 'Metadata from Open Library',
+          warnings: [],
         },
         importMessage: 'Imported into your media library.',
         importedMediaId: 'media-1',
@@ -45,16 +46,16 @@ describe('ExternalSearchResultCard', () => {
     });
 
     expect(wrapper.text()).toContain('Dune');
-    expect(wrapper.text()).toContain('DEMO');
-    expect(wrapper.text()).toContain('Science-Fiction');
-    expect(wrapper.text()).toContain('Macht');
-    expect(wrapper.text()).toContain('Entdeckung - HIGH');
-    expect(wrapper.text()).toContain('MoodMatch Demo Provider (offline)');
-    expect(wrapper.text()).toContain('Demo fallback active.');
+    expect(wrapper.text()).toContain('Open Library');
+    expect(wrapper.text()).toContain('Autor:innen');
+    expect(wrapper.text()).toContain('Frank Herbert');
+    expect(wrapper.text()).toContain('Politics');
+    expect(wrapper.text()).toContain('Politik - HIGH');
+    expect(wrapper.text()).toContain('Metadata from Open Library');
     expect(wrapper.text()).toContain('Imported into your media library.');
     expect(wrapper.text()).toContain('In Mediathek ansehen');
     expect(wrapper.get('a').attributes('href')).toBe(
-      'https://demo.moodmatch.local/items/demo-book-dune',
+      'https://openlibrary.org/works/OL82563W',
     );
   });
 
@@ -74,6 +75,7 @@ describe('ExternalSearchResultCard', () => {
           mediaType: 'FILM',
           title: 'Arrival',
           originalTitle: null,
+          creatorNames: [],
           description: 'First contact changes everything.',
           releaseYear: 2016,
           coverUrl: null,

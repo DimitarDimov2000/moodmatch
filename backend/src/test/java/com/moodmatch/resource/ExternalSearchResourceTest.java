@@ -15,6 +15,7 @@ import com.moodmatch.entity.ExternalTagMapping;
 import com.moodmatch.entity.Tag;
 import com.moodmatch.entity.TagCategory;
 import com.moodmatch.entity.TagMappingConfidence;
+import com.moodmatch.external.openlibrary.TestOpenLibraryGateway;
 import com.moodmatch.repository.ExternalTagMappingRepository;
 import com.moodmatch.repository.TagRepository;
 import jakarta.inject.Inject;
@@ -53,6 +54,7 @@ class ExternalSearchResourceTest {
 
     private void cleanDatabase() {
         TestCurrentUserProvider.useLocalDemoUser();
+        TestOpenLibraryGateway.reset();
         QuarkusTransaction.requiringNew().run(() -> {
             entityManager.createNativeQuery("DELETE FROM media_tags").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM media_external_refs").executeUpdate();
@@ -130,6 +132,23 @@ class ExternalSearchResourceTest {
     }
 
     @Test
+    void shouldSearchBooksThroughOpenLibraryByDefault() {
+        given()
+                .when()
+                .get("/api/external/search?query=dune&mediaType=BOOK")
+                .then()
+                .statusCode(200)
+                .body("source", is("OPEN_LIBRARY"))
+                .body("warnings.size()", is(0))
+                .body("results.size()", is(1))
+                .body("results[0].title", is("Dune"))
+                .body("results[0].externalId", is("OL12345W"))
+                .body("results[0].creatorNames[0]", is("Frank Herbert"))
+                .body("results[0].mediaType", is("BOOK"))
+                .body("results[0].attribution", is("Metadata from Open Library"));
+    }
+
+    @Test
     void shouldImportExternalResultsAsUserOwnedMediaAndAllowSameExternalIdForDifferentUsers() {
         QuarkusTransaction.requiringNew().run(() -> {
             Tag tag = new Tag();
@@ -183,6 +202,44 @@ class ExternalSearchResourceTest {
         });
     }
 
+    @Test
+    void shouldImportOpenLibraryResultsAsBooksAndPreserveExternalMetadata() {
+        QuarkusTransaction.requiringNew().run(() -> {
+            Tag tag = new Tag();
+            tag.setId(UUID.fromString("10000000-0000-0000-0000-000000000020"));
+            tag.setName("Politik");
+            tag.setCategory(TagCategory.THEME);
+            tagRepository.persist(tag);
+
+            ExternalTagMapping mapping = new ExternalTagMapping();
+            mapping.setSourceName(ExternalSourceName.OPEN_LIBRARY);
+            mapping.setExternalField("subject");
+            mapping.setExternalValue("Politics");
+            mapping.setTag(tag);
+            mapping.setConfidence(TagMappingConfidence.HIGH);
+            externalTagMappingRepository.persist(mapping);
+        });
+
+        TestCurrentUserProvider.useUserA();
+        given()
+                .contentType(io.restassured.http.ContentType.JSON)
+                .body(buildOpenLibraryImportPayload())
+                .when()
+                .post("/api/external/import")
+                .then()
+                .statusCode(201)
+                .body("created", is(true))
+                .body("media.title", is("Dune"))
+                .body("media.mediaType", is("BOOK"))
+                .body("media.commitmentLevel", is("LONG"))
+                .body("media.description", is("Book by Frank Herbert. First published in 1965."))
+                .body("media.externalSourceName", is("OPEN_LIBRARY"))
+                .body("media.externalSourceId", is("OL12345W"))
+                .body("media.externalReferences[0].sourceName", is("OPEN_LIBRARY"))
+                .body("media.externalReferences[0].externalId", is("OL12345W"))
+                .body("media.tags[0].name", is("Politik"));
+    }
+
     private Map<String, Object> buildImportPayload() {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("source", "DEMO");
@@ -190,6 +247,7 @@ class ExternalSearchResourceTest {
         payload.put("mediaType", "FILM");
         payload.put("title", "Arrival");
         payload.put("originalTitle", null);
+        payload.put("creatorNames", java.util.List.of());
         payload.put("description", "A linguist races to understand visitors.");
         payload.put("releaseYear", 2016);
         payload.put("coverUrl", "https://demo.moodmatch.local/covers/arrival.jpg");
@@ -197,6 +255,24 @@ class ExternalSearchResourceTest {
         payload.put("externalGenres", java.util.List.of("Science-Fiction", "Drama"));
         payload.put("externalSubjects", java.util.List.of("Zeit", "Entdeckung"));
         payload.put("attribution", "MoodMatch Demo Provider (offline)");
+        return payload;
+    }
+
+    private Map<String, Object> buildOpenLibraryImportPayload() {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("source", "OPEN_LIBRARY");
+        payload.put("externalId", "OL12345W");
+        payload.put("mediaType", "BOOK");
+        payload.put("title", "Dune");
+        payload.put("originalTitle", null);
+        payload.put("creatorNames", java.util.List.of("Frank Herbert"));
+        payload.put("description", null);
+        payload.put("releaseYear", 1965);
+        payload.put("coverUrl", "https://covers.openlibrary.org/b/id/12345-M.jpg");
+        payload.put("sourceUrl", "https://openlibrary.org/works/OL12345W");
+        payload.put("externalGenres", java.util.List.of());
+        payload.put("externalSubjects", java.util.List.of("Politics", "Desert planets"));
+        payload.put("attribution", "Metadata from Open Library");
         return payload;
     }
 }

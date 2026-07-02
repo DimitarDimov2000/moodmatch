@@ -19,8 +19,8 @@ describe('ExternalSearchView', () => {
     importExternalMediaMock.mockReset();
   });
 
-  it('renders the import-first state before a search starts and keeps YouTube out of the UI', () => {
-    const wrapper = mount(ExternalSearchView, {
+  function mountView() {
+    return mount(ExternalSearchView, {
       global: {
         stubs: {
           AppMessage: false,
@@ -32,17 +32,21 @@ describe('ExternalSearchView', () => {
         },
       },
     });
-
-    expect(wrapper.text()).toContain('Externe Medien suchen und importieren');
-    expect(wrapper.text()).toContain('Noch keine Suche gestartet');
-    expect(wrapper.text()).not.toContain('YouTube');
-  });
+  }
 
   function getImportButton(wrapper: ReturnType<typeof mount>) {
     return wrapper
       .findAll('button')
       .find((candidate) => candidate.text().includes('In Mediathek importieren'));
   }
+
+  it('renders the import-first state before a search starts and keeps YouTube out of the UI', () => {
+    const wrapper = mountView();
+
+    expect(wrapper.text()).toContain('Externe Medien suchen und importieren');
+    expect(wrapper.text()).toContain('Noch keine Suche gestartet');
+    expect(wrapper.text()).not.toContain('YouTube');
+  });
 
   it('renders search results and the demo fallback message from the normalized response', async () => {
     searchExternalMock.mockResolvedValue({
@@ -57,6 +61,7 @@ describe('ExternalSearchView', () => {
           mediaType: 'FILM',
           title: 'Arrival',
           originalTitle: null,
+          creatorNames: [],
           description: 'A linguist races to understand visitors.',
           releaseYear: 2016,
           coverUrl: null,
@@ -70,53 +75,68 @@ describe('ExternalSearchView', () => {
       ],
     });
 
-    const wrapper = mount(ExternalSearchView, {
-      global: {
-        stubs: {
-          AppMessage: false,
-          ExternalSearchForm: false,
-          ExternalSearchResultCard: false,
-          RouterLink: {
-            template: '<a><slot /></a>',
-          },
-        },
-      },
-    });
+    const wrapper = mountView();
 
-    await wrapper.get('input').setValue('arrival');
+    await wrapper.get('input[name="query"]').setValue('arrival');
     await wrapper.get('form').trigger('submit');
     await flushPromises();
 
     expect(searchExternalMock).toHaveBeenCalledWith({
       query: 'arrival',
       mediaType: 'FILM',
+      source: undefined,
     });
     expect(wrapper.text()).toContain('1 Treffer aus DEMO');
     expect(wrapper.text()).toContain('Arrival');
     expect(wrapper.text()).toContain('DEMO-Fallback aktiv');
   });
 
-  it('imports a result and shows the library link state', async () => {
+  it('passes the selected book source through the search request', async () => {
     searchExternalMock.mockResolvedValue({
-      query: 'arrival',
-      mediaType: 'FILM',
-      source: 'TMDB',
+      query: 'dune',
+      mediaType: 'BOOK',
+      source: 'OPEN_LIBRARY',
+      warnings: [],
+      results: [],
+    });
+
+    const wrapper = mountView();
+
+    await wrapper.get('input[name="query"]').setValue('dune');
+    await wrapper.get('select[name="mediaType"]').setValue('BOOK');
+    await wrapper.get('select[name="source"]').setValue('OPEN_LIBRARY');
+    await wrapper.get('form').trigger('submit');
+    await flushPromises();
+
+    expect(searchExternalMock).toHaveBeenCalledWith({
+      query: 'dune',
+      mediaType: 'BOOK',
+      source: 'OPEN_LIBRARY',
+    });
+  });
+
+  it('imports a book result and shows the library link state', async () => {
+    searchExternalMock.mockResolvedValue({
+      query: 'dune',
+      mediaType: 'BOOK',
+      source: 'OPEN_LIBRARY',
       warnings: [],
       results: [
         {
-          source: 'TMDB',
-          externalId: '11',
-          mediaType: 'FILM',
-          title: 'Arrival',
+          source: 'OPEN_LIBRARY',
+          externalId: 'OL82563W',
+          mediaType: 'BOOK',
+          title: 'Dune',
           originalTitle: null,
-          description: 'First contact changes everything.',
-          releaseYear: 2016,
-          coverUrl: null,
-          sourceUrl: 'https://www.themoviedb.org/movie/11',
-          externalGenres: ['Science Fiction'],
-          externalSubjects: [],
+          creatorNames: ['Frank Herbert'],
+          description: 'Book by Frank Herbert. First published in 1965.',
+          releaseYear: 1965,
+          coverUrl: 'https://covers.openlibrary.org/b/id/987654-M.jpg',
+          sourceUrl: 'https://openlibrary.org/works/OL82563W',
+          externalGenres: [],
+          externalSubjects: ['Politics'],
           suggestedTags: [],
-          attribution: 'Metadata from TMDB',
+          attribution: 'Metadata from Open Library',
           warnings: [],
         },
       ],
@@ -126,21 +146,21 @@ describe('ExternalSearchView', () => {
       message: 'Imported into your media library.',
       media: {
         id: 'media-1',
-        title: 'Arrival',
+        title: 'Dune',
         originalTitle: null,
-        description: 'First contact changes everything.',
-        mediaType: 'FILM',
+        description: 'Book by Frank Herbert. First published in 1965.',
+        mediaType: 'BOOK',
         consumptionStatus: 'WANT_TO_CONSUME',
         isFavourite: false,
         rating: null,
         sourceType: 'EXTERNAL_SEARCH',
-        sourceNote: 'Imported from TMDB',
-        commitmentLevel: 'MEDIUM',
-        releaseYear: 2016,
-        coverUrl: null,
-        externalSourceName: 'TMDB',
-        externalSourceId: '11',
-        externalSourceUrl: 'https://www.themoviedb.org/movie/11',
+        sourceNote: 'Imported from OPEN_LIBRARY',
+        commitmentLevel: 'LONG',
+        releaseYear: 1965,
+        coverUrl: 'https://covers.openlibrary.org/b/id/987654-M.jpg',
+        externalSourceName: 'OPEN_LIBRARY',
+        externalSourceId: 'OL82563W',
+        externalSourceUrl: 'https://openlibrary.org/works/OL82563W',
         metadataOrigin: 'IMPORTED',
         tags: [],
         externalReferences: [],
@@ -149,20 +169,11 @@ describe('ExternalSearchView', () => {
       },
     });
 
-    const wrapper = mount(ExternalSearchView, {
-      global: {
-        stubs: {
-          AppMessage: false,
-          ExternalSearchForm: false,
-          ExternalSearchResultCard: false,
-          RouterLink: {
-            template: '<a><slot /></a>',
-          },
-        },
-      },
-    });
+    const wrapper = mountView();
 
-    await wrapper.get('input').setValue('arrival');
+    await wrapper.get('input[name="query"]').setValue('dune');
+    await wrapper.get('select[name="mediaType"]').setValue('BOOK');
+    await wrapper.get('select[name="source"]').setValue('OPEN_LIBRARY');
     await wrapper.get('form').trigger('submit');
     await flushPromises();
     const importButton = getImportButton(wrapper);
@@ -171,18 +182,19 @@ describe('ExternalSearchView', () => {
     await flushPromises();
 
     expect(importExternalMediaMock).toHaveBeenCalledWith({
-      source: 'TMDB',
-      externalId: '11',
-      mediaType: 'FILM',
-      title: 'Arrival',
+      source: 'OPEN_LIBRARY',
+      externalId: 'OL82563W',
+      mediaType: 'BOOK',
+      title: 'Dune',
       originalTitle: null,
-      description: 'First contact changes everything.',
-      releaseYear: 2016,
-      coverUrl: null,
-      sourceUrl: 'https://www.themoviedb.org/movie/11',
-      externalGenres: ['Science Fiction'],
-      externalSubjects: [],
-      attribution: 'Metadata from TMDB',
+      creatorNames: ['Frank Herbert'],
+      description: 'Book by Frank Herbert. First published in 1965.',
+      releaseYear: 1965,
+      coverUrl: 'https://covers.openlibrary.org/b/id/987654-M.jpg',
+      sourceUrl: 'https://openlibrary.org/works/OL82563W',
+      externalGenres: [],
+      externalSubjects: ['Politics'],
+      attribution: 'Metadata from Open Library',
     });
     expect(wrapper.text()).toContain('Imported into your media library.');
     expect(wrapper.text()).toContain('In Mediathek ansehen');
@@ -197,21 +209,10 @@ describe('ExternalSearchView', () => {
       results: [],
     });
 
-    const wrapper = mount(ExternalSearchView, {
-      global: {
-        stubs: {
-          AppMessage: false,
-          ExternalSearchForm: false,
-          ExternalSearchResultCard: false,
-          RouterLink: {
-            template: '<a><slot /></a>',
-          },
-        },
-      },
-    });
+    const wrapper = mountView();
 
-    await wrapper.get('input').setValue('missing');
-    await wrapper.get('select').setValue('GAME');
+    await wrapper.get('input[name="query"]').setValue('missing');
+    await wrapper.get('select[name="mediaType"]').setValue('GAME');
     await wrapper.get('form').trigger('submit');
     await flushPromises();
 
@@ -221,20 +222,9 @@ describe('ExternalSearchView', () => {
   it('renders an error state when the API call fails', async () => {
     searchExternalMock.mockRejectedValue(new Error('boom'));
 
-    const wrapper = mount(ExternalSearchView, {
-      global: {
-        stubs: {
-          AppMessage: false,
-          ExternalSearchForm: false,
-          ExternalSearchResultCard: false,
-          RouterLink: {
-            template: '<a><slot /></a>',
-          },
-        },
-      },
-    });
+    const wrapper = mountView();
 
-    await wrapper.get('input').setValue('arrival');
+    await wrapper.get('input[name="query"]').setValue('arrival');
     await wrapper.get('form').trigger('submit');
     await flushPromises();
 
@@ -255,6 +245,7 @@ describe('ExternalSearchView', () => {
           mediaType: 'FILM',
           title: 'Arrival',
           originalTitle: null,
+          creatorNames: [],
           description: 'First contact changes everything.',
           releaseYear: 2016,
           coverUrl: null,
@@ -269,20 +260,9 @@ describe('ExternalSearchView', () => {
     });
     importExternalMediaMock.mockRejectedValue(new Error('boom'));
 
-    const wrapper = mount(ExternalSearchView, {
-      global: {
-        stubs: {
-          AppMessage: false,
-          ExternalSearchForm: false,
-          ExternalSearchResultCard: false,
-          RouterLink: {
-            template: '<a><slot /></a>',
-          },
-        },
-      },
-    });
+    const wrapper = mountView();
 
-    await wrapper.get('input').setValue('arrival');
+    await wrapper.get('input[name="query"]').setValue('arrival');
     await wrapper.get('form').trigger('submit');
     await flushPromises();
     const importButton = getImportButton(wrapper);

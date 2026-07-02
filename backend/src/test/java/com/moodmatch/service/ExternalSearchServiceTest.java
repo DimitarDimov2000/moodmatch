@@ -19,6 +19,7 @@ import com.moodmatch.entity.ExternalTagMapping;
 import com.moodmatch.entity.Tag;
 import com.moodmatch.entity.TagCategory;
 import com.moodmatch.entity.TagMappingConfidence;
+import com.moodmatch.external.openlibrary.TestOpenLibraryGateway;
 import com.moodmatch.repository.ExternalTagMappingRepository;
 import com.moodmatch.repository.TagRepository;
 
@@ -53,6 +54,7 @@ class ExternalSearchServiceTest {
 
     private void cleanDatabase() {
         TestCurrentUserProvider.useLocalDemoUser();
+        TestOpenLibraryGateway.reset();
         QuarkusTransaction.requiringNew().run(() -> {
             entityManager.createNativeQuery("DELETE FROM media_tags").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM media_external_refs").executeUpdate();
@@ -119,5 +121,25 @@ class ExternalSearchServiceTest {
         }
 
         throw new AssertionError("Expected TMDB configuration error.");
+    }
+
+    @Test
+    void shouldPreferOpenLibraryForBookSearchesWhenNoSourceIsSpecified() {
+        ExternalSearchResponse response = externalSearchService.search("dune", "BOOK", null, 5);
+
+        assertEquals("OPEN_LIBRARY", response.source().name());
+        assertEquals(1, response.results().size());
+        assertEquals("Dune", response.results().getFirst().title());
+        assertEquals(List.of("Frank Herbert"), response.results().getFirst().creatorNames());
+        assertEquals("OL12345W", response.results().getFirst().externalId());
+        assertTrue(response.warnings().isEmpty());
+    }
+
+    @Test
+    void shouldAcceptExplicitOpenLibrarySourceNames() {
+        ExternalSearchResponse response = externalSearchService.search("dune", "BOOK", "OPEN_LIBRARY", 5);
+
+        assertEquals("OPEN_LIBRARY", response.source().name());
+        assertEquals("OPEN_LIBRARY", response.results().getFirst().source().name());
     }
 }

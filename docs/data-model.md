@@ -12,6 +12,7 @@ Implemented migrations:
 - `V2__seed_starter_tags.sql`
 - `V3__add_app_users_and_media_ownership.sql`
 - `V4__add_local_password_auth.sql`
+- `V5__add_external_import_support.sql`
 
 ## Tables
 
@@ -163,6 +164,7 @@ Ownership note:
 
 - external reference access is enforced through the owning `media_items` row
 - the same external id can now be imported by different users without cross-user collisions
+- imported Open Library books therefore store `OPEN_LIBRARY` in both `media_items.external_source_name` and `media_external_refs.source_name`
 
 ### `external_tag_mappings`
 
@@ -240,6 +242,10 @@ IGDB
 GOOGLE_BOOKS
 TVMAZE
 ```
+
+Transport-level note:
+
+- The normalized external search/import API now includes optional `creatorNames` for multi-source book metadata, but there is still no dedicated persisted author column on `media_items`.
 
 ### `tag_category`
 

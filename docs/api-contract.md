@@ -150,16 +150,23 @@ Query parameters:
 | --- | --- | --- | --- |
 | `query` | yes | string | Trimmed server-side |
 | `mediaType` | yes | enum | `FILM`, `SERIES`, `BOOK`, `GAME` |
-| `source` | no | enum | `TMDB` or `DEMO`; omit to let the backend choose the best active provider |
+| `source` | no | enum | `TMDB`, `OPEN_LIBRARY`, or `DEMO`; omit to let the backend choose the best active provider |
 | `limit` | no | integer | Positive integer, capped by backend safety rules |
 
 Search behavior:
 
 - `FILM` and `SERIES` prefer `TMDB` when `MOODMATCH_TMDB_API_KEY` is configured.
 - If TMDB is not configured, the backend falls back to `DEMO` and returns a warning message.
-- `BOOK` and `GAME` remain on `DEMO` for now.
+- `BOOK` prefers `OPEN_LIBRARY` and does not require a secret.
+- `GAME` remains on `DEMO` for now.
 - Suggested tags are derived from `external_tag_mappings`.
 - Requires bearer authentication in `local-password` mode.
+
+Implemented provider/media-type combinations:
+
+- `TMDB` -> `FILM`, `SERIES`
+- `OPEN_LIBRARY` -> `BOOK`
+- `DEMO` -> `FILM`, `SERIES`, `BOOK`, `GAME`
 
 Example response shape:
 
@@ -178,6 +185,7 @@ Example response shape:
       "mediaType": "FILM",
       "title": "Arrival",
       "originalTitle": null,
+      "creatorNames": [],
       "description": "A normalized preview description.",
       "releaseYear": 2016,
       "coverUrl": "https://demo.moodmatch.local/covers/arrival.jpg",
@@ -201,6 +209,7 @@ Import request shape:
   "mediaType": "FILM",
   "title": "Arrival",
   "originalTitle": null,
+  "creatorNames": [],
   "description": "First contact changes everything.",
   "releaseYear": 2016,
   "coverUrl": "https://image.tmdb.org/t/p/w342/poster.jpg",
@@ -208,6 +217,26 @@ Import request shape:
   "externalGenres": ["Science Fiction"],
   "externalSubjects": [],
   "attribution": "Metadata from TMDB"
+}
+```
+
+Book import request example:
+
+```json
+{
+  "source": "OPEN_LIBRARY",
+  "externalId": "OL82563W",
+  "mediaType": "BOOK",
+  "title": "Dune",
+  "originalTitle": null,
+  "creatorNames": ["Frank Herbert"],
+  "description": "Book by Frank Herbert. First published in 1965.",
+  "releaseYear": 1965,
+  "coverUrl": "https://covers.openlibrary.org/b/id/987654-M.jpg",
+  "sourceUrl": "https://openlibrary.org/works/OL82563W",
+  "externalGenres": [],
+  "externalSubjects": ["Politics", "Desert planets"],
+  "attribution": "Metadata from Open Library"
 }
 ```
 
@@ -233,6 +262,11 @@ Import response shape:
   }
 }
 ```
+
+Notes on book imports:
+
+- `creatorNames` is part of the normalized external contract for display/import, but MoodMatch does not yet persist a dedicated author column on `media_items`.
+- When an imported book has no provider description, the backend keeps a short fallback description so authorship and first-publish-year are not lost immediately after import.
 
 ## Validation And Error Shape
 
