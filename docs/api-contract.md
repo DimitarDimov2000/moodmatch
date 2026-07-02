@@ -158,13 +158,14 @@ Search behavior:
 - `FILM` and `SERIES` prefer `TMDB` when `MOODMATCH_TMDB_API_KEY` is configured.
 - If TMDB is not configured, the backend falls back to `DEMO` and returns a warning message.
 - `BOOK` prefers `OPEN_LIBRARY` and does not require a secret.
+- `ANILIST` can be selected explicitly for `FILM`, `SERIES`, and `BOOK`; it uses AniList GraphQL and does not require an API key.
 - `AUDIOBOOK` prefers `LIBRIVOX` and does not require a secret in the current implementation.
 - LibriVox results are limited to public-domain audiobooks in the LibriVox catalog.
 - `GAME` prefers `RAWG` when `MOODMATCH_RAWG_API_KEY` is configured.
 - If RAWG is not configured, automatic game search falls back to `DEMO` with a warning. Explicit `source=RAWG` returns `RAWG provider is not configured. Set MOODMATCH_RAWG_API_KEY.`
 - `PODCAST` and `VIDEO` remain on `DEMO` until their real providers are implemented.
+- Anime movie results from AniList map to `FILM`; anime TV/OVA/ONA/special/short results map to `SERIES`; manga/light novel/novel/one-shot results map to `BOOK`.
 - Future provider names are accepted by the enum contract, but requests fail with `Source is not available` until a provider bean exists.
-- AniList anime/manga data will map into `FILM`, `SERIES`, or `BOOK`; there are no core `ANIME` or `MANGA` media types.
 - YouTube is planned only for later URL import, not search.
 - Suggested tags are derived from `external_tag_mappings`.
 - Requires bearer authentication in `local-password` mode.
@@ -175,6 +176,7 @@ Implemented provider/media-type combinations:
 - `OPEN_LIBRARY` -> `BOOK`
 - `LIBRIVOX` -> `AUDIOBOOK`
 - `RAWG` -> `GAME`
+- `ANILIST` -> `FILM`, `SERIES`, `BOOK`
 - `DEMO` -> `FILM`, `SERIES`, `BOOK`, `GAME`, `AUDIOBOOK`, `PODCAST`, `VIDEO`
 
 Example response shape:
@@ -361,6 +363,56 @@ Game import request example:
 }
 ```
 
+AniList anime series search response example:
+
+```json
+{
+  "query": "attack on titan",
+  "mediaType": "SERIES",
+  "source": "ANILIST",
+  "warnings": [],
+  "results": [
+    {
+      "source": "ANILIST",
+      "externalId": "16498",
+      "mediaType": "SERIES",
+      "title": "Shingeki no Kyojin",
+      "originalTitle": "進撃の巨人",
+      "creatorNames": ["Wit Studio"],
+      "description": "Humanity fights titans beyond the walls.",
+      "releaseYear": 2013,
+      "coverUrl": "https://img.anilist.co/aot-large.jpg",
+      "sourceUrl": "https://anilist.co/anime/16498",
+      "externalGenres": ["Action", "Drama"],
+      "externalSubjects": ["Format: TV", "Status: FINISHED", "Season: SPRING 2013", "Survival"],
+      "suggestedTags": [],
+      "attribution": "Metadata from AniList",
+      "warnings": []
+    }
+  ]
+}
+```
+
+AniList manga import request example:
+
+```json
+{
+  "source": "ANILIST",
+  "externalId": "30002",
+  "mediaType": "BOOK",
+  "title": "Berserk",
+  "originalTitle": "ベルセルク",
+  "creatorNames": ["Kentaro Miura"],
+  "description": "A dark fantasy manga.",
+  "releaseYear": 1989,
+  "coverUrl": "https://img.anilist.co/berserk-large.jpg",
+  "sourceUrl": "https://anilist.co/manga/30002",
+  "externalGenres": ["Action", "Fantasy"],
+  "externalSubjects": ["Format: MANGA", "Status: RELEASING", "Seinen"],
+  "attribution": "Metadata from AniList"
+}
+```
+
 Import response shape:
 
 ```json
@@ -390,6 +442,7 @@ Notes on book imports:
 - When an imported book has no provider description, the backend keeps a short fallback description so authorship and first-publish-year are not lost immediately after import.
 - Imported LibriVox audiobooks stay `mediaType = AUDIOBOOK`; the prototype does not expose playback, chapters, streaming, or progress tracking.
 - Imported RAWG games stay `mediaType = GAME`; this package does not add game-specific recommendation or matching logic.
+- Imported AniList anime and manga stay in the existing model as `FILM`, `SERIES`, or `BOOK`; the API does not expose core `ANIME` or `MANGA` media types.
 
 ## Validation And Error Shape
 

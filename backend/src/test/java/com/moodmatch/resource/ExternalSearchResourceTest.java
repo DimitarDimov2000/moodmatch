@@ -15,6 +15,7 @@ import com.moodmatch.entity.ExternalTagMapping;
 import com.moodmatch.entity.Tag;
 import com.moodmatch.entity.TagCategory;
 import com.moodmatch.entity.TagMappingConfidence;
+import com.moodmatch.external.anilist.TestAniListGateway;
 import com.moodmatch.external.librivox.TestLibriVoxGateway;
 import com.moodmatch.external.openlibrary.TestOpenLibraryGateway;
 import com.moodmatch.external.rawg.TestRawgGateway;
@@ -59,6 +60,7 @@ class ExternalSearchResourceTest {
         TestOpenLibraryGateway.reset();
         TestLibriVoxGateway.reset();
         TestRawgGateway.reset();
+        TestAniListGateway.reset();
         QuarkusTransaction.requiringNew().run(() -> {
             entityManager.createNativeQuery("DELETE FROM media_tags").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM media_external_refs").executeUpdate();
@@ -168,6 +170,35 @@ class ExternalSearchResourceTest {
                 .body("results[0].creatorNames[1]", is("Reader: Annie Coleman Rothenberg"))
                 .body("results[0].mediaType", is("AUDIOBOOK"))
                 .body("results[0].attribution", is("LibriVox public domain audiobook catalog"));
+    }
+
+    @Test
+    void shouldSearchAniListWhenExplicitlySelectedForAnimeAndManga() {
+        given()
+                .when()
+                .get("/api/external/search?query=attack%20on%20titan&mediaType=SERIES&source=ANILIST")
+                .then()
+                .statusCode(200)
+                .body("source", is("ANILIST"))
+                .body("warnings.size()", is(0))
+                .body("results.size()", is(1))
+                .body("results[0].title", is("Shingeki no Kyojin"))
+                .body("results[0].originalTitle", is("進撃の巨人"))
+                .body("results[0].creatorNames[0]", is("Wit Studio"))
+                .body("results[0].mediaType", is("SERIES"))
+                .body("results[0].externalSubjects[0]", is("Format: TV"))
+                .body("results[0].attribution", is("Metadata from AniList"));
+
+        given()
+                .when()
+                .get("/api/external/search?query=berserk&mediaType=BOOK&source=ANILIST")
+                .then()
+                .statusCode(200)
+                .body("source", is("ANILIST"))
+                .body("results.size()", is(1))
+                .body("results[0].title", is("Berserk"))
+                .body("results[0].creatorNames[0]", is("Kentaro Miura"))
+                .body("results[0].mediaType", is("BOOK"));
     }
 
     @Test
@@ -336,6 +367,43 @@ class ExternalSearchResourceTest {
                 .body("media.tags[0].name", is("Open World"));
     }
 
+    @Test
+    void shouldImportAniListResultsAndPreserveExternalMetadata() {
+        QuarkusTransaction.requiringNew().run(() -> {
+            Tag tag = new Tag();
+            tag.setId(UUID.fromString("10000000-0000-0000-0000-000000000050"));
+            tag.setName("Survival");
+            tag.setCategory(TagCategory.THEME);
+            tagRepository.persist(tag);
+
+            ExternalTagMapping mapping = new ExternalTagMapping();
+            mapping.setSourceName(ExternalSourceName.ANILIST);
+            mapping.setExternalField("subject");
+            mapping.setExternalValue("Survival");
+            mapping.setTag(tag);
+            mapping.setConfidence(TagMappingConfidence.HIGH);
+            externalTagMappingRepository.persist(mapping);
+        });
+
+        TestCurrentUserProvider.useUserA();
+        given()
+                .contentType(io.restassured.http.ContentType.JSON)
+                .body(buildAniListImportPayload())
+                .when()
+                .post("/api/external/import")
+                .then()
+                .statusCode(201)
+                .body("created", is(true))
+                .body("media.title", is("Shingeki no Kyojin"))
+                .body("media.mediaType", is("SERIES"))
+                .body("media.externalSourceName", is("ANILIST"))
+                .body("media.externalSourceId", is("16498"))
+                .body("media.externalReferences[0].sourceName", is("ANILIST"))
+                .body("media.externalReferences[0].externalId", is("16498"))
+                .body("media.externalReferences[0].attributionText", is("Metadata from AniList"))
+                .body("media.tags[0].name", is("Survival"));
+    }
+
     private Map<String, Object> buildImportPayload() {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("source", "DEMO");
@@ -407,6 +475,24 @@ class ExternalSearchResourceTest {
         payload.put("externalGenres", java.util.List.of("Action", "RPG"));
         payload.put("externalSubjects", java.util.List.of("PC", "PlayStation 5", "Open World"));
         payload.put("attribution", "Metadata from RAWG. View source on RAWG for full provider details.");
+        return payload;
+    }
+
+    private Map<String, Object> buildAniListImportPayload() {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("source", "ANILIST");
+        payload.put("externalId", "16498");
+        payload.put("mediaType", "SERIES");
+        payload.put("title", "Shingeki no Kyojin");
+        payload.put("originalTitle", "進撃の巨人");
+        payload.put("creatorNames", java.util.List.of("Wit Studio"));
+        payload.put("description", "Humanity fights titans beyond the walls.");
+        payload.put("releaseYear", 2013);
+        payload.put("coverUrl", "https://img.anilist.co/aot-large.jpg");
+        payload.put("sourceUrl", "https://anilist.co/anime/16498");
+        payload.put("externalGenres", java.util.List.of("Action", "Drama"));
+        payload.put("externalSubjects", java.util.List.of("Format: TV", "Status: FINISHED", "Survival"));
+        payload.put("attribution", "Metadata from AniList");
         return payload;
     }
 }

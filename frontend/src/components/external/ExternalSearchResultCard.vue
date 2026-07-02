@@ -20,6 +20,9 @@ const emit = defineEmits<{
 
 const sourceLabel = computed(() => externalSourceLabels[props.result.source]);
 const creatorLabel = computed(() => {
+  if (props.result.source === 'ANILIST' && props.result.mediaType !== 'BOOK') {
+    return 'Studios';
+  }
   if (props.result.mediaType === 'BOOK') {
     return 'Autor:innen';
   }
@@ -32,6 +35,9 @@ const creatorLabel = computed(() => {
   return 'Mitwirkende';
 });
 const subjectsLabel = computed(() => {
+  if (props.result.source === 'ANILIST') {
+    return 'Format / Status / Tags';
+  }
   if (props.result.mediaType === 'GAME') {
     return 'Platforms / Tags';
   }
@@ -61,6 +67,13 @@ const subtitle = computed(() => {
 
         <p class="body-muted">
           {{ subtitle }}
+        </p>
+
+        <p
+          v-if="result.originalTitle"
+          class="body-muted"
+        >
+          Originaltitel: {{ result.originalTitle }}
         </p>
 
         <div

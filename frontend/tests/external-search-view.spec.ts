@@ -65,6 +65,22 @@ describe('ExternalSearchView', () => {
     expect(wrapper.text()).not.toContain('Music');
   });
 
+  it('enables AniList for anime and manga without exposing anime or manga core media types', async () => {
+    const wrapper = mountView();
+
+    expect(wrapper.text()).toContain('AniList (Anime)');
+    expect(wrapper.get('option[value="ANILIST"]').attributes('disabled')).toBeUndefined();
+
+    await wrapper.get('select[name="mediaType"]').setValue('BOOK');
+
+    expect(wrapper.text()).toContain('AniList (Manga/Light Novels)');
+    expect(wrapper.get('option[value="ANILIST"]').attributes('disabled')).toBeUndefined();
+    expect(wrapper.find('option[value="ANIME"]').exists()).toBe(false);
+    expect(wrapper.find('option[value="MANGA"]').exists()).toBe(false);
+    expect(wrapper.text()).not.toContain('Spotify');
+    expect(wrapper.text()).not.toContain('Music');
+  });
+
   it('renders search results and the demo fallback message from the normalized response', async () => {
     searchExternalMock.mockResolvedValue({
       query: 'arrival',
@@ -310,6 +326,176 @@ describe('ExternalSearchView', () => {
       attribution: 'Metadata from RAWG. View source on RAWG for full provider details.',
     });
     expect(wrapper.text()).toContain('In Mediathek ansehen');
+  });
+
+  it('renders and imports an AniList anime series as a series result', async () => {
+    searchExternalMock.mockResolvedValue({
+      query: 'attack on titan',
+      mediaType: 'SERIES',
+      source: 'ANILIST',
+      warnings: [],
+      results: [
+        {
+          source: 'ANILIST',
+          externalId: '16498',
+          mediaType: 'SERIES',
+          title: 'Shingeki no Kyojin',
+          originalTitle: '進撃の巨人',
+          creatorNames: ['Wit Studio'],
+          description: 'Humanity fights titans beyond the walls.',
+          releaseYear: 2013,
+          coverUrl: 'https://img.anilist.co/aot-large.jpg',
+          sourceUrl: 'https://anilist.co/anime/16498',
+          externalGenres: ['Action', 'Drama'],
+          externalSubjects: ['Format: TV', 'Status: FINISHED', 'Season: SPRING 2013'],
+          suggestedTags: [],
+          attribution: 'Metadata from AniList',
+          warnings: [],
+        },
+      ],
+    });
+    importExternalMediaMock.mockResolvedValue({
+      created: true,
+      message: 'Imported into your media library.',
+      media: {
+        id: 'anime-series-1',
+        title: 'Shingeki no Kyojin',
+        originalTitle: '進撃の巨人',
+        description: 'Humanity fights titans beyond the walls.',
+        mediaType: 'SERIES',
+        consumptionStatus: 'WANT_TO_CONSUME',
+        isFavourite: false,
+        rating: null,
+        sourceType: 'EXTERNAL_SEARCH',
+        sourceNote: 'Imported from ANILIST',
+        commitmentLevel: 'LONG',
+        releaseYear: 2013,
+        coverUrl: 'https://img.anilist.co/aot-large.jpg',
+        externalSourceName: 'ANILIST',
+        externalSourceId: '16498',
+        externalSourceUrl: 'https://anilist.co/anime/16498',
+        metadataOrigin: 'IMPORTED',
+        tags: [],
+        externalReferences: [],
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
+    });
+
+    const wrapper = mountView();
+
+    await wrapper.get('input[name="query"]').setValue('attack on titan');
+    await wrapper.get('select[name="mediaType"]').setValue('SERIES');
+    await wrapper.get('select[name="source"]').setValue('ANILIST');
+    await wrapper.get('form').trigger('submit');
+    await flushPromises();
+
+    expect(searchExternalMock).toHaveBeenCalledWith({
+      query: 'attack on titan',
+      mediaType: 'SERIES',
+      source: 'ANILIST',
+    });
+    expect(wrapper.text()).toContain('1 Treffer aus AniList');
+    expect(wrapper.text()).toContain('Shingeki no Kyojin');
+    expect(wrapper.text()).toContain('Serie • 2013');
+    expect(wrapper.text()).toContain('Originaltitel: 進撃の巨人');
+    expect(wrapper.text()).toContain('Format / Status / Tags');
+
+    const importButton = getImportButton(wrapper);
+    expect(importButton).toBeTruthy();
+    await importButton!.trigger('click');
+    await flushPromises();
+
+    expect(importExternalMediaMock).toHaveBeenCalledWith({
+      source: 'ANILIST',
+      externalId: '16498',
+      mediaType: 'SERIES',
+      title: 'Shingeki no Kyojin',
+      originalTitle: '進撃の巨人',
+      creatorNames: ['Wit Studio'],
+      description: 'Humanity fights titans beyond the walls.',
+      releaseYear: 2013,
+      coverUrl: 'https://img.anilist.co/aot-large.jpg',
+      sourceUrl: 'https://anilist.co/anime/16498',
+      externalGenres: ['Action', 'Drama'],
+      externalSubjects: ['Format: TV', 'Status: FINISHED', 'Season: SPRING 2013'],
+      attribution: 'Metadata from AniList',
+    });
+    expect(wrapper.text()).toContain('In Mediathek ansehen');
+  });
+
+  it('renders AniList anime movie and manga mappings from normalized results', async () => {
+    searchExternalMock.mockResolvedValueOnce({
+      query: 'spirited away',
+      mediaType: 'FILM',
+      source: 'ANILIST',
+      warnings: [],
+      results: [
+        {
+          source: 'ANILIST',
+          externalId: '199',
+          mediaType: 'FILM',
+          title: 'Sen to Chihiro no Kamikakushi',
+          originalTitle: '千と千尋の神隠し',
+          creatorNames: ['Studio Ghibli'],
+          description: 'A young girl enters a world of spirits.',
+          releaseYear: 2001,
+          coverUrl: 'https://img.anilist.co/spirited-away.jpg',
+          sourceUrl: 'https://anilist.co/anime/199',
+          externalGenres: ['Adventure'],
+          externalSubjects: ['Format: MOVIE', 'Status: FINISHED'],
+          suggestedTags: [],
+          attribution: 'Metadata from AniList',
+          warnings: [],
+        },
+      ],
+    });
+
+    const wrapper = mountView();
+
+    await wrapper.get('input[name="query"]').setValue('spirited away');
+    await wrapper.get('select[name="source"]').setValue('ANILIST');
+    await wrapper.get('form').trigger('submit');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Sen to Chihiro no Kamikakushi');
+    expect(wrapper.text()).toContain('Film • 2001');
+
+    searchExternalMock.mockResolvedValueOnce({
+      query: 'berserk',
+      mediaType: 'BOOK',
+      source: 'ANILIST',
+      warnings: [],
+      results: [
+        {
+          source: 'ANILIST',
+          externalId: '30002',
+          mediaType: 'BOOK',
+          title: 'Berserk',
+          originalTitle: 'ベルセルク',
+          creatorNames: ['Kentaro Miura'],
+          description: 'A dark fantasy manga.',
+          releaseYear: 1989,
+          coverUrl: 'https://img.anilist.co/berserk.jpg',
+          sourceUrl: 'https://anilist.co/manga/30002',
+          externalGenres: ['Action'],
+          externalSubjects: ['Format: MANGA', 'Status: RELEASING'],
+          suggestedTags: [],
+          attribution: 'Metadata from AniList',
+          warnings: [],
+        },
+      ],
+    });
+
+    await wrapper.get('input[name="query"]').setValue('berserk');
+    await wrapper.get('select[name="mediaType"]').setValue('BOOK');
+    await wrapper.get('select[name="source"]').setValue('ANILIST');
+    await wrapper.get('form').trigger('submit');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Berserk');
+    expect(wrapper.text()).toContain('Buch • 1989');
+    expect(wrapper.text()).toContain('Format: MANGA');
   });
 
   it('renders an empty state when the search succeeds without matches', async () => {

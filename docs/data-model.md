@@ -168,6 +168,7 @@ Ownership note:
 - imported Open Library books therefore store `OPEN_LIBRARY` in both `media_items.external_source_name` and `media_external_refs.source_name`
 - imported LibriVox audiobooks store `LIBRIVOX` in both `media_items.external_source_name` and `media_external_refs.source_name`
 - imported RAWG games store `RAWG` in both `media_items.external_source_name` and `media_external_refs.source_name`
+- imported AniList anime/manga store `ANILIST` in both `media_items.external_source_name` and `media_external_refs.source_name`, while `media_items.media_type` remains `FILM`, `SERIES`, or `BOOK`
 
 ### `external_tag_mappings`
 
@@ -258,6 +259,7 @@ Transport-level note:
 - The normalized external search/import API now includes optional `creatorNames` for multi-source book metadata, but there is still no dedicated persisted author column on `media_items`.
 - The same `creatorNames` transport field is also reused for audiobook author and reader summaries from LibriVox.
 - RAWG game imports also reuse `creatorNames` for developer and publisher summaries; no dedicated developer or publisher columns are persisted.
+- AniList demonstrates the source/provider versus media-type distinction: the source can be `ANILIST`, but the core media type is still one of the existing values. Anime movies are `FILM`, anime series-style formats are `SERIES`, and manga/light novels are `BOOK`; there are no core `ANIME` or `MANGA` enum values.
 
 ### `tag_category`
 

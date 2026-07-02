@@ -20,6 +20,7 @@ import com.moodmatch.entity.ExternalTagMapping;
 import com.moodmatch.entity.Tag;
 import com.moodmatch.entity.TagCategory;
 import com.moodmatch.entity.TagMappingConfidence;
+import com.moodmatch.external.anilist.TestAniListGateway;
 import com.moodmatch.external.librivox.TestLibriVoxGateway;
 import com.moodmatch.external.openlibrary.TestOpenLibraryGateway;
 import com.moodmatch.external.rawg.TestRawgGateway;
@@ -60,6 +61,7 @@ class ExternalSearchServiceTest {
         TestOpenLibraryGateway.reset();
         TestLibriVoxGateway.reset();
         TestRawgGateway.reset();
+        TestAniListGateway.reset();
         QuarkusTransaction.requiringNew().run(() -> {
             entityManager.createNativeQuery("DELETE FROM media_tags").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM media_external_refs").executeUpdate();
@@ -146,6 +148,20 @@ class ExternalSearchServiceTest {
 
         assertEquals("OPEN_LIBRARY", response.source().name());
         assertEquals("OPEN_LIBRARY", response.results().getFirst().source().name());
+    }
+
+    @Test
+    void shouldAcceptExplicitAniListSourceNamesForAnimeAndManga() {
+        ExternalSearchResponse animeResponse = externalSearchService.search("attack on titan", "SERIES", "ANILIST", 5);
+        ExternalSearchResponse mangaResponse = externalSearchService.search("berserk", "BOOK", "ANILIST", 5);
+
+        assertEquals("ANILIST", animeResponse.source().name());
+        assertEquals("ANILIST", animeResponse.results().getFirst().source().name());
+        assertEquals("SERIES", animeResponse.results().getFirst().mediaType().name());
+        assertEquals("Shingeki no Kyojin", animeResponse.results().getFirst().title());
+        assertEquals("ANILIST", mangaResponse.source().name());
+        assertEquals("BOOK", mangaResponse.results().getFirst().mediaType().name());
+        assertEquals("Berserk", mangaResponse.results().getFirst().title());
     }
 
     @Test

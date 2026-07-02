@@ -29,14 +29,14 @@ export function sourceOptionsForMediaType(
       return [
         { value: 'AUTO', label: 'Automatisch (TMDB, sonst DEMO)' },
         { value: 'TMDB', label: 'TMDB (Filme/Serien)' },
-        { value: 'ANILIST', label: 'AniList (Anime geplant)', disabled: true },
+        { value: 'ANILIST', label: 'AniList (Anime)' },
         { value: 'DEMO', label: 'DEMO-Fallback' },
       ];
     case 'BOOK':
       return [
         { value: 'AUTO', label: 'Automatisch (Open Library)' },
         { value: 'OPEN_LIBRARY', label: 'Open Library (Buecher)' },
-        { value: 'ANILIST', label: 'AniList (Manga geplant)', disabled: true },
+        { value: 'ANILIST', label: 'AniList (Manga/Light Novels)' },
         { value: 'DEMO', label: 'DEMO-Fallback' },
       ];
     case 'GAME':
@@ -77,9 +77,9 @@ export function sourceHintForMediaType(mediaType: MediaType): string {
   switch (mediaType) {
     case 'FILM':
     case 'SERIES':
-      return 'Filme und Serien bevorzugen TMDB, wenn das Backend mit einem API-Key konfiguriert ist. Sonst faellt MoodMatch auf DEMO zurueck.';
+      return 'Filme und Serien bevorzugen TMDB. Waehle AniList explizit fuer Anime; Anime-Filme bleiben Film, Anime-Serien bleiben Serie.';
     case 'BOOK':
-      return 'Buecher werden ueber Open Library gesucht. Dafuer ist kein geheimer API-Key noetig.';
+      return 'Buecher werden automatisch ueber Open Library gesucht. Waehle AniList explizit fuer Manga und Light Novels; sie werden als Buch importiert.';
     case 'GAME':
       return 'Games bevorzugen RAWG, wenn das Backend mit einem API-Key konfiguriert ist. Sonst faellt MoodMatch auf DEMO zurueck.';
     case 'AUDIOBOOK':

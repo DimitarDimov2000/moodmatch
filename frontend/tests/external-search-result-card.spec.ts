@@ -138,4 +138,81 @@ describe('ExternalSearchResultCard', () => {
     expect(wrapper.text()).toContain('PlayStation 5');
     expect(wrapper.get('img').attributes('src')).toBe('https://media.rawg.io/media/games/elden-ring.jpg');
   });
+
+  it('renders AniList anime movie metadata as a film result', () => {
+    const wrapper = mount(ExternalSearchResultCard, {
+      global: {
+        stubs: {
+          RouterLink: {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+      props: {
+        result: {
+          source: 'ANILIST',
+          externalId: '199',
+          mediaType: 'FILM',
+          title: 'Sen to Chihiro no Kamikakushi',
+          originalTitle: '千と千尋の神隠し',
+          creatorNames: ['Studio Ghibli'],
+          description: 'A young girl enters a world of spirits.',
+          releaseYear: 2001,
+          coverUrl: 'https://img.anilist.co/spirited-away.jpg',
+          sourceUrl: 'https://anilist.co/anime/199',
+          externalGenres: ['Adventure', 'Fantasy'],
+          externalSubjects: ['Format: MOVIE', 'Status: FINISHED'],
+          suggestedTags: [],
+          attribution: 'Metadata from AniList',
+          warnings: [],
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain('Sen to Chihiro no Kamikakushi');
+    expect(wrapper.text()).toContain('AniList');
+    expect(wrapper.text()).toContain('Film • 2001');
+    expect(wrapper.text()).toContain('Originaltitel: 千と千尋の神隠し');
+    expect(wrapper.text()).toContain('Studios');
+    expect(wrapper.text()).toContain('Studio Ghibli');
+    expect(wrapper.text()).toContain('Format / Status / Tags');
+    expect(wrapper.text()).toContain('Format: MOVIE');
+  });
+
+  it('renders AniList manga metadata as a book result', () => {
+    const wrapper = mount(ExternalSearchResultCard, {
+      global: {
+        stubs: {
+          RouterLink: {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+      props: {
+        result: {
+          source: 'ANILIST',
+          externalId: '30002',
+          mediaType: 'BOOK',
+          title: 'Berserk',
+          originalTitle: 'ベルセルク',
+          creatorNames: ['Kentaro Miura'],
+          description: 'A dark fantasy manga.',
+          releaseYear: 1989,
+          coverUrl: 'https://img.anilist.co/berserk.jpg',
+          sourceUrl: 'https://anilist.co/manga/30002',
+          externalGenres: ['Action', 'Fantasy'],
+          externalSubjects: ['Format: MANGA', 'Status: RELEASING'],
+          suggestedTags: [],
+          attribution: 'Metadata from AniList',
+          warnings: [],
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain('Berserk');
+    expect(wrapper.text()).toContain('Buch • 1989');
+    expect(wrapper.text()).toContain('Autor:innen');
+    expect(wrapper.text()).toContain('Kentaro Miura');
+    expect(wrapper.text()).toContain('Format: MANGA');
+  });
 });

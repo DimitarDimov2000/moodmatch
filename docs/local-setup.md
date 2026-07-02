@@ -125,6 +125,21 @@ If `MOODMATCH_RAWG_API_KEY` is missing, automatic game searches use the offline 
 
 RAWG is included for non-commercial university prototype usage. Review RAWG attribution and usage terms before any production deployment.
 
+## AniList Provider Setup
+
+AniList is the active real provider for anime/manga metadata in Package 2.8.
+
+Optional local variable:
+
+- `MOODMATCH_ANILIST_BASE_URL`
+
+Notes:
+
+- No secret or API key is required.
+- AniList searches are selected explicitly from the external search UI.
+- Anime movies import as `FILM`, anime TV/OVA/ONA/special/short formats import as `SERIES`, and manga/light novel/novel/one-shot formats import as `BOOK`.
+- MoodMatch does not add core `ANIME` or `MANGA` media types.
+
 ## Future Provider Configuration
 
 These names are reserved for later provider packages. They are not required for the current app and should only be set once the matching provider is implemented:
@@ -132,14 +147,12 @@ These names are reserved for later provider packages. They are not required for 
 - `MOODMATCH_PODCAST_INDEX_API_KEY`
 - `MOODMATCH_PODCAST_INDEX_API_SECRET`
 - `MOODMATCH_PODCAST_INDEX_BASE_URL`
-- `MOODMATCH_ANILIST_BASE_URL`
 - `MOODMATCH_YOUTUBE_API_KEY`
 - `MOODMATCH_YOUTUBE_BASE_URL`
 
 Provider scope notes:
 
 - Podcast Index is planned for `PODCAST`; podcast episode import is out of scope.
-- AniList is planned for anime/manga metadata mapped into `FILM`, `SERIES`, or `BOOK`.
 - YouTube is planned for `VIDEO` URL import only, not search.
 - IGDB is a backup/future game provider and is not active.
 - Music is out of scope.
