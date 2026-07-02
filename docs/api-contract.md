@@ -160,7 +160,9 @@ Search behavior:
 - `BOOK` prefers `OPEN_LIBRARY` and does not require a secret.
 - `AUDIOBOOK` prefers `LIBRIVOX` and does not require a secret in the current implementation.
 - LibriVox results are limited to public-domain audiobooks in the LibriVox catalog.
-- `GAME`, `PODCAST`, and `VIDEO` remain on `DEMO` until their real providers are implemented.
+- `GAME` prefers `RAWG` when `MOODMATCH_RAWG_API_KEY` is configured.
+- If RAWG is not configured, automatic game search falls back to `DEMO` with a warning. Explicit `source=RAWG` returns `RAWG provider is not configured. Set MOODMATCH_RAWG_API_KEY.`
+- `PODCAST` and `VIDEO` remain on `DEMO` until their real providers are implemented.
 - Future provider names are accepted by the enum contract, but requests fail with `Source is not available` until a provider bean exists.
 - AniList anime/manga data will map into `FILM`, `SERIES`, or `BOOK`; there are no core `ANIME` or `MANGA` media types.
 - YouTube is planned only for later URL import, not search.
@@ -172,6 +174,7 @@ Implemented provider/media-type combinations:
 - `TMDB` -> `FILM`, `SERIES`
 - `OPEN_LIBRARY` -> `BOOK`
 - `LIBRIVOX` -> `AUDIOBOOK`
+- `RAWG` -> `GAME`
 - `DEMO` -> `FILM`, `SERIES`, `BOOK`, `GAME`, `AUDIOBOOK`, `PODCAST`, `VIDEO`
 
 Example response shape:
@@ -302,6 +305,62 @@ Audiobook import request example:
 }
 ```
 
+Game search response example:
+
+```json
+{
+  "query": "elden ring",
+  "mediaType": "GAME",
+  "source": "RAWG",
+  "warnings": [],
+  "results": [
+    {
+      "source": "RAWG",
+      "externalId": "3498",
+      "mediaType": "GAME",
+      "title": "Elden Ring",
+      "originalTitle": null,
+      "creatorNames": [
+        "Developer: FromSoftware",
+        "Publisher: Bandai Namco Entertainment"
+      ],
+      "description": "Rise, Tarnished, and be guided by grace.",
+      "releaseYear": 2022,
+      "coverUrl": "https://media.rawg.io/media/games/elden-ring.jpg",
+      "sourceUrl": "https://rawg.io/games/elden-ring",
+      "externalGenres": ["Action", "RPG"],
+      "externalSubjects": ["PC", "PlayStation 5", "Open World"],
+      "suggestedTags": [],
+      "attribution": "Metadata from RAWG. View source on RAWG for full provider details.",
+      "warnings": []
+    }
+  ]
+}
+```
+
+Game import request example:
+
+```json
+{
+  "source": "RAWG",
+  "externalId": "3498",
+  "mediaType": "GAME",
+  "title": "Elden Ring",
+  "originalTitle": null,
+  "creatorNames": [
+    "Developer: FromSoftware",
+    "Publisher: Bandai Namco Entertainment"
+  ],
+  "description": "Rise, Tarnished, and be guided by grace.",
+  "releaseYear": 2022,
+  "coverUrl": "https://media.rawg.io/media/games/elden-ring.jpg",
+  "sourceUrl": "https://rawg.io/games/elden-ring",
+  "externalGenres": ["Action", "RPG"],
+  "externalSubjects": ["PC", "PlayStation 5", "Open World"],
+  "attribution": "Metadata from RAWG. View source on RAWG for full provider details."
+}
+```
+
 Import response shape:
 
 ```json
@@ -330,6 +389,7 @@ Notes on book imports:
 - `creatorNames` is part of the normalized external contract for display/import, but MoodMatch does not yet persist a dedicated author column on `media_items`.
 - When an imported book has no provider description, the backend keeps a short fallback description so authorship and first-publish-year are not lost immediately after import.
 - Imported LibriVox audiobooks stay `mediaType = AUDIOBOOK`; the prototype does not expose playback, chapters, streaming, or progress tracking.
+- Imported RAWG games stay `mediaType = GAME`; this package does not add game-specific recommendation or matching logic.
 
 ## Validation And Error Shape
 

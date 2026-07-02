@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ApiRequestError } from '@/api/client';
 import ExternalSearchView from '@/views/ExternalSearchView.vue';
 
 const { searchExternalMock, importExternalMediaMock } = vi.hoisted(() => ({
@@ -51,6 +52,17 @@ describe('ExternalSearchView', () => {
     expect(wrapper.text()).toContain('LibriVox (Hoerbuecher)');
     expect(wrapper.get('option[value="LIBRIVOX"]').attributes('disabled')).toBeUndefined();
     expect(wrapper.text()).not.toContain('Spotify');
+  });
+
+  it('enables the game RAWG option without introducing music UI', async () => {
+    const wrapper = mountView();
+
+    await wrapper.get('select[name="mediaType"]').setValue('GAME');
+
+    expect(wrapper.text()).toContain('RAWG (Games)');
+    expect(wrapper.get('option[value="RAWG"]').attributes('disabled')).toBeUndefined();
+    expect(wrapper.text()).not.toContain('Spotify');
+    expect(wrapper.text()).not.toContain('Music');
   });
 
   it('renders search results and the demo fallback message from the normalized response', async () => {
@@ -205,6 +217,101 @@ describe('ExternalSearchView', () => {
     expect(wrapper.text()).toContain('In Mediathek ansehen');
   });
 
+  it('renders and imports a RAWG game result', async () => {
+    searchExternalMock.mockResolvedValue({
+      query: 'elden ring',
+      mediaType: 'GAME',
+      source: 'RAWG',
+      warnings: [],
+      results: [
+        {
+          source: 'RAWG',
+          externalId: '3498',
+          mediaType: 'GAME',
+          title: 'Elden Ring',
+          originalTitle: null,
+          creatorNames: ['Developer: FromSoftware', 'Publisher: Bandai Namco Entertainment'],
+          description: 'Rise, Tarnished, and be guided by grace.',
+          releaseYear: 2022,
+          coverUrl: 'https://media.rawg.io/media/games/elden-ring.jpg',
+          sourceUrl: 'https://rawg.io/games/elden-ring',
+          externalGenres: ['Action', 'RPG'],
+          externalSubjects: ['PC', 'PlayStation 5', 'Open World'],
+          suggestedTags: [],
+          attribution: 'Metadata from RAWG. View source on RAWG for full provider details.',
+          warnings: [],
+        },
+      ],
+    });
+    importExternalMediaMock.mockResolvedValue({
+      created: true,
+      message: 'Imported into your media library.',
+      media: {
+        id: 'game-1',
+        title: 'Elden Ring',
+        originalTitle: null,
+        description: 'Rise, Tarnished, and be guided by grace.',
+        mediaType: 'GAME',
+        consumptionStatus: 'WANT_TO_CONSUME',
+        isFavourite: false,
+        rating: null,
+        sourceType: 'EXTERNAL_SEARCH',
+        sourceNote: 'Imported from RAWG',
+        commitmentLevel: 'LONG',
+        releaseYear: 2022,
+        coverUrl: 'https://media.rawg.io/media/games/elden-ring.jpg',
+        externalSourceName: 'RAWG',
+        externalSourceId: '3498',
+        externalSourceUrl: 'https://rawg.io/games/elden-ring',
+        metadataOrigin: 'IMPORTED',
+        tags: [],
+        externalReferences: [],
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
+    });
+
+    const wrapper = mountView();
+
+    await wrapper.get('input[name="query"]').setValue('elden ring');
+    await wrapper.get('select[name="mediaType"]').setValue('GAME');
+    await wrapper.get('select[name="source"]').setValue('RAWG');
+    await wrapper.get('form').trigger('submit');
+    await flushPromises();
+
+    expect(searchExternalMock).toHaveBeenCalledWith({
+      query: 'elden ring',
+      mediaType: 'GAME',
+      source: 'RAWG',
+    });
+    expect(wrapper.text()).toContain('1 Treffer aus RAWG');
+    expect(wrapper.text()).toContain('Elden Ring');
+    expect(wrapper.text()).toContain('Platforms / Tags');
+    expect(wrapper.text()).toContain('PlayStation 5');
+
+    const importButton = getImportButton(wrapper);
+    expect(importButton).toBeTruthy();
+    await importButton!.trigger('click');
+    await flushPromises();
+
+    expect(importExternalMediaMock).toHaveBeenCalledWith({
+      source: 'RAWG',
+      externalId: '3498',
+      mediaType: 'GAME',
+      title: 'Elden Ring',
+      originalTitle: null,
+      creatorNames: ['Developer: FromSoftware', 'Publisher: Bandai Namco Entertainment'],
+      description: 'Rise, Tarnished, and be guided by grace.',
+      releaseYear: 2022,
+      coverUrl: 'https://media.rawg.io/media/games/elden-ring.jpg',
+      sourceUrl: 'https://rawg.io/games/elden-ring',
+      externalGenres: ['Action', 'RPG'],
+      externalSubjects: ['PC', 'PlayStation 5', 'Open World'],
+      attribution: 'Metadata from RAWG. View source on RAWG for full provider details.',
+    });
+    expect(wrapper.text()).toContain('In Mediathek ansehen');
+  });
+
   it('renders an empty state when the search succeeds without matches', async () => {
     searchExternalMock.mockResolvedValue({
       query: 'missing',
@@ -235,6 +342,26 @@ describe('ExternalSearchView', () => {
 
     expect(wrapper.text()).toContain('Suche konnte nicht abgeschlossen werden');
     expect(wrapper.text()).toContain('Die externe Suche konnte gerade nicht geladen werden.');
+  });
+
+  it('renders the RAWG missing-key message surfaced by the backend', async () => {
+    searchExternalMock.mockRejectedValue(new ApiRequestError(
+      'RAWG provider is not configured. Set MOODMATCH_RAWG_API_KEY.',
+      {
+        status: 400,
+        code: 'BUSINESS_RULE_VIOLATION',
+      },
+    ));
+
+    const wrapper = mountView();
+
+    await wrapper.get('input[name="query"]').setValue('zelda');
+    await wrapper.get('select[name="mediaType"]').setValue('GAME');
+    await wrapper.get('select[name="source"]').setValue('RAWG');
+    await wrapper.get('form').trigger('submit');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('RAWG provider is not configured. Set MOODMATCH_RAWG_API_KEY.');
   });
 
   it('renders an import error when saving fails', async () => {

@@ -167,6 +167,7 @@ Ownership note:
 - the same external id can now be imported by different users without cross-user collisions
 - imported Open Library books therefore store `OPEN_LIBRARY` in both `media_items.external_source_name` and `media_external_refs.source_name`
 - imported LibriVox audiobooks store `LIBRIVOX` in both `media_items.external_source_name` and `media_external_refs.source_name`
+- imported RAWG games store `RAWG` in both `media_items.external_source_name` and `media_external_refs.source_name`
 
 ### `external_tag_mappings`
 
@@ -256,6 +257,7 @@ Transport-level note:
 
 - The normalized external search/import API now includes optional `creatorNames` for multi-source book metadata, but there is still no dedicated persisted author column on `media_items`.
 - The same `creatorNames` transport field is also reused for audiobook author and reader summaries from LibriVox.
+- RAWG game imports also reuse `creatorNames` for developer and publisher summaries; no dedicated developer or publisher columns are persisted.
 
 ### `tag_category`
 

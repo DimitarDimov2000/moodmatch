@@ -22,6 +22,7 @@ import com.moodmatch.entity.TagCategory;
 import com.moodmatch.entity.TagMappingConfidence;
 import com.moodmatch.external.librivox.TestLibriVoxGateway;
 import com.moodmatch.external.openlibrary.TestOpenLibraryGateway;
+import com.moodmatch.external.rawg.TestRawgGateway;
 import com.moodmatch.repository.ExternalTagMappingRepository;
 import com.moodmatch.repository.TagRepository;
 
@@ -58,6 +59,7 @@ class ExternalSearchServiceTest {
         TestCurrentUserProvider.useLocalDemoUser();
         TestOpenLibraryGateway.reset();
         TestLibriVoxGateway.reset();
+        TestRawgGateway.reset();
         QuarkusTransaction.requiringNew().run(() -> {
             entityManager.createNativeQuery("DELETE FROM media_tags").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM media_external_refs").executeUpdate();
@@ -177,12 +179,23 @@ class ExternalSearchServiceTest {
     }
 
     @Test
-    void shouldRecognizeFutureProviderNamesBeforeProviderResolution() {
+    void shouldFallbackToDemoForGameSearchesWhenRawgConfigIsMissing() {
+        ExternalSearchResponse response = externalSearchService.search("zelda", "GAME", null, 5);
+
+        assertEquals("GAME", response.mediaType().name());
+        assertEquals("DEMO", response.source().name());
+        assertEquals(
+                List.of("RAWG provider is not configured. Set MOODMATCH_RAWG_API_KEY. Using DEMO fallback."),
+                response.warnings());
+    }
+
+    @Test
+    void shouldRejectExplicitRawgSearchWhenProviderConfigIsMissing() {
         com.moodmatch.exception.BusinessRuleViolationException exception = assertThrows(
                 com.moodmatch.exception.BusinessRuleViolationException.class,
                 () -> externalSearchService.search("zelda", "GAME", "RAWG", 5));
 
-        assertEquals("Source is not available: RAWG", exception.getMessage());
+        assertEquals("RAWG provider is not configured. Set MOODMATCH_RAWG_API_KEY.", exception.getMessage());
     }
 
     @Test

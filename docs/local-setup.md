@@ -107,12 +107,28 @@ Notes:
 - The LibriVox catalog only covers public-domain audiobooks, so missing modern titles are expected.
 - The current prototype imports metadata only. It does not build playback, chapters, streaming, or progress tracking.
 
+## Optional RAWG Provider Setup
+
+RAWG is the active real provider for `GAME` searches in Package 2.7.
+
+Backend-only local variable:
+
+- `MOODMATCH_RAWG_API_KEY`
+
+Example terminal setup:
+
+```bash
+export MOODMATCH_RAWG_API_KEY=your_rawg_api_key
+```
+
+If `MOODMATCH_RAWG_API_KEY` is missing, automatic game searches use the offline `DEMO` fallback and return a warning. Explicit `source=RAWG` searches return a clear provider configuration error. Do not commit a real RAWG key; the frontend never receives the key directly.
+
+RAWG is included for non-commercial university prototype usage. Review RAWG attribution and usage terms before any production deployment.
+
 ## Future Provider Configuration
 
 These names are reserved for later provider packages. They are not required for the current app and should only be set once the matching provider is implemented:
 
-- `MOODMATCH_RAWG_API_KEY`
-- `MOODMATCH_RAWG_BASE_URL`
 - `MOODMATCH_PODCAST_INDEX_API_KEY`
 - `MOODMATCH_PODCAST_INDEX_API_SECRET`
 - `MOODMATCH_PODCAST_INDEX_BASE_URL`
@@ -122,7 +138,6 @@ These names are reserved for later provider packages. They are not required for 
 
 Provider scope notes:
 
-- RAWG is planned for `GAME`.
 - Podcast Index is planned for `PODCAST`; podcast episode import is out of scope.
 - AniList is planned for anime/manga metadata mapped into `FILM`, `SERIES`, or `BOOK`.
 - YouTube is planned for `VIDEO` URL import only, not search.

@@ -41,8 +41,8 @@ export function sourceOptionsForMediaType(
       ];
     case 'GAME':
       return [
-        { value: 'AUTO', label: 'Automatisch (DEMO)' },
-        { value: 'RAWG', label: 'RAWG (Games geplant)', disabled: true },
+        { value: 'AUTO', label: 'Automatisch (RAWG, sonst DEMO)' },
+        { value: 'RAWG', label: 'RAWG (Games)' },
         { value: 'DEMO', label: 'DEMO-Fallback' },
       ];
     case 'AUDIOBOOK':
@@ -81,7 +81,7 @@ export function sourceHintForMediaType(mediaType: MediaType): string {
     case 'BOOK':
       return 'Buecher werden ueber Open Library gesucht. Dafuer ist kein geheimer API-Key noetig.';
     case 'GAME':
-      return 'RAWG ist als Games-Quelle geplant. Bis zur Implementierung bleibt die Suche beim DEMO-Fallback.';
+      return 'Games bevorzugen RAWG, wenn das Backend mit einem API-Key konfiguriert ist. Sonst faellt MoodMatch auf DEMO zurueck.';
     case 'AUDIOBOOK':
       return 'Hoerbuecher werden ueber LibriVox gesucht. Der Katalog ist auf gemeinfreie Audiobooks begrenzt und benoetigt keinen geheimen API-Key.';
     case 'PODCAST':

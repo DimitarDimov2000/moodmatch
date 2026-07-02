@@ -5,6 +5,7 @@
 - `TMDB` is the active real provider for `FILM` and `SERIES`.
 - `OPEN_LIBRARY` is the active real provider for `BOOK`.
 - `LIBRIVOX` is the active real provider for `AUDIOBOOK`.
+- `RAWG` is the active real provider for `GAME`.
 - `DEMO` remains available as an offline fallback and local test source.
 
 Provider notes:
@@ -12,7 +13,9 @@ Provider notes:
 - `TMDB` requires backend-only configuration through `MOODMATCH_TMDB_API_KEY`.
 - `OPEN_LIBRARY` uses the public Search API and does not require a committed secret.
 - `LIBRIVOX` uses the public catalog API and does not require a committed secret in the current implementation.
+- `RAWG` requires backend-only configuration through `MOODMATCH_RAWG_API_KEY`.
 - LibriVox search is intentionally limited to public-domain audiobooks in the catalog.
+- RAWG is used only for this non-commercial university prototype. Keep provider attribution/backlinks visible and review RAWG terms before any production or commercial deployment.
 - The frontend never stores or sends provider secrets.
 - Tests must not require live external APIs or real API keys.
 
@@ -23,7 +26,7 @@ Provider notes:
 | `TMDB` | `FILM`, `SERIES` | Active |
 | `OPEN_LIBRARY` | `BOOK` | Active |
 | `LIBRIVOX` | `AUDIOBOOK` | Active |
-| `RAWG` | `GAME` | Planned |
+| `RAWG` | `GAME` | Active |
 | `PODCAST_INDEX` | `PODCAST` | Planned, without episode import for now |
 | `ANILIST` | Anime and manga mapped into `FILM`, `SERIES`, or `BOOK` | Planned |
 | `YOUTUBE` | `VIDEO` URL import only | Planned, no YouTube search |
@@ -38,7 +41,9 @@ AniList does not introduce core `ANIME` or `MANGA` media types. Anime should map
 - When the key is missing, MoodMatch falls back to the offline `DEMO` provider and returns a clear warning in the search response.
 - `BOOK` searches default to `OPEN_LIBRARY`.
 - `AUDIOBOOK` searches default to `LIBRIVOX`.
-- `GAME`, `PODCAST`, and `VIDEO` currently default to `DEMO` until their real providers are implemented.
+- `GAME` searches prefer `RAWG` when `MOODMATCH_RAWG_API_KEY` is configured.
+- When the RAWG key is missing, automatic `GAME` searches fall back to the offline `DEMO` provider and return a clear warning. Explicit `source=RAWG` searches return a provider configuration error instead of silently falling back.
+- `PODCAST` and `VIDEO` currently default to `DEMO` until their real providers are implemented.
 - `DEMO` remains available for local development and tests.
 
 ## Search And Import Mapping
@@ -74,6 +79,20 @@ LibriVox audiobook mapping decisions:
 - `externalSubjects`: current implementation preserves audiobook language, for example `English`
 - `attribution`: `LibriVox public domain audiobook catalog`
 
+RAWG game mapping decisions:
+
+- `externalId`: RAWG numeric `id` when available, otherwise the stable `slug`
+- `title`: RAWG `name`
+- `originalTitle`: `null` because RAWG does not expose a separate original-title field in this search mapping
+- `creatorNames`: detail-page developers and publishers when available, for example `Developer: FromSoftware` and `Publisher: Bandai Namco Entertainment`
+- `description`: RAWG `description_raw` from the game detail payload when available
+- `releaseYear`: parsed from RAWG `released`
+- `coverUrl`: RAWG `background_image`
+- `sourceUrl`: RAWG game page, for example `https://rawg.io/games/elden-ring`
+- `externalGenres`: RAWG `genres`
+- `externalSubjects`: a capped, de-duplicated list of platforms followed by tags so the UI can show platform/tag context without noisy payloads
+- `attribution`: `Metadata from RAWG. View source on RAWG for full provider details.`
+
 Imports create a normal user-owned `media_items` row with:
 
 - `source_type = EXTERNAL_SEARCH`
@@ -87,6 +106,7 @@ Imports create a normal user-owned `media_items` row with:
 - `TMDB` search results map directly to `external_source_name = TMDB`.
 - `OPEN_LIBRARY` search results map directly to `external_source_name = OPEN_LIBRARY`.
 - `LIBRIVOX` search results map directly to `external_source_name = LIBRIVOX`.
+- `RAWG` search results map directly to `external_source_name = RAWG`.
 - `DEMO` imports preserve `external_source_name = DEMO`.
 - `DEMO` tag suggestions reuse provider-specific mapping sources:
   - `FILM` and `SERIES` -> `TMDB`

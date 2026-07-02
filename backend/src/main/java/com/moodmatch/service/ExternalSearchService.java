@@ -121,7 +121,8 @@ public class ExternalSearchService {
             case FILM, SERIES -> findProvider(ExternalSearchSourceName.TMDB);
             case BOOK -> findProvider(ExternalSearchSourceName.OPEN_LIBRARY);
             case AUDIOBOOK -> findProvider(ExternalSearchSourceName.LIBRIVOX);
-            case GAME, PODCAST, VIDEO -> Optional.empty();
+            case GAME -> findProvider(ExternalSearchSourceName.RAWG);
+            case PODCAST, VIDEO -> Optional.empty();
         };
     }
 

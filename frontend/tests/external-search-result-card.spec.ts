@@ -97,4 +97,45 @@ describe('ExternalSearchResultCard', () => {
 
     expect(wrapper.emitted('import')).toHaveLength(1);
   });
+
+  it('renders RAWG game metadata clearly', () => {
+    const wrapper = mount(ExternalSearchResultCard, {
+      global: {
+        stubs: {
+          RouterLink: {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+      props: {
+        result: {
+          source: 'RAWG',
+          externalId: '3498',
+          mediaType: 'GAME',
+          title: 'Elden Ring',
+          originalTitle: null,
+          creatorNames: ['Developer: FromSoftware', 'Publisher: Bandai Namco Entertainment'],
+          description: 'Rise, Tarnished, and be guided by grace.',
+          releaseYear: 2022,
+          coverUrl: 'https://media.rawg.io/media/games/elden-ring.jpg',
+          sourceUrl: 'https://rawg.io/games/elden-ring',
+          externalGenres: ['Action', 'RPG'],
+          externalSubjects: ['PC', 'PlayStation 5', 'Open World'],
+          suggestedTags: [],
+          attribution: 'Metadata from RAWG. View source on RAWG for full provider details.',
+          warnings: [],
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain('Elden Ring');
+    expect(wrapper.text()).toContain('RAWG');
+    expect(wrapper.text()).toContain('Spiel • 2022');
+    expect(wrapper.text()).toContain('Entwicklung / Publisher');
+    expect(wrapper.text()).toContain('Developer: FromSoftware');
+    expect(wrapper.text()).toContain('Action');
+    expect(wrapper.text()).toContain('Platforms / Tags');
+    expect(wrapper.text()).toContain('PlayStation 5');
+    expect(wrapper.get('img').attributes('src')).toBe('https://media.rawg.io/media/games/elden-ring.jpg');
+  });
 });

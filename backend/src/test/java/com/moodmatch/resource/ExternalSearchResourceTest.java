@@ -17,6 +17,7 @@ import com.moodmatch.entity.TagCategory;
 import com.moodmatch.entity.TagMappingConfidence;
 import com.moodmatch.external.librivox.TestLibriVoxGateway;
 import com.moodmatch.external.openlibrary.TestOpenLibraryGateway;
+import com.moodmatch.external.rawg.TestRawgGateway;
 import com.moodmatch.repository.ExternalTagMappingRepository;
 import com.moodmatch.repository.TagRepository;
 import jakarta.inject.Inject;
@@ -57,6 +58,7 @@ class ExternalSearchResourceTest {
         TestCurrentUserProvider.useLocalDemoUser();
         TestOpenLibraryGateway.reset();
         TestLibriVoxGateway.reset();
+        TestRawgGateway.reset();
         QuarkusTransaction.requiringNew().run(() -> {
             entityManager.createNativeQuery("DELETE FROM media_tags").executeUpdate();
             entityManager.createNativeQuery("DELETE FROM media_external_refs").executeUpdate();
@@ -297,6 +299,43 @@ class ExternalSearchResourceTest {
                 .body("media.tags[0].name", is("Romantik"));
     }
 
+    @Test
+    void shouldImportRawgResultsAsGamesAndPreserveExternalMetadata() {
+        QuarkusTransaction.requiringNew().run(() -> {
+            Tag tag = new Tag();
+            tag.setId(UUID.fromString("10000000-0000-0000-0000-000000000040"));
+            tag.setName("Open World");
+            tag.setCategory(TagCategory.THEME);
+            tagRepository.persist(tag);
+
+            ExternalTagMapping mapping = new ExternalTagMapping();
+            mapping.setSourceName(ExternalSourceName.RAWG);
+            mapping.setExternalField("subject");
+            mapping.setExternalValue("Open World");
+            mapping.setTag(tag);
+            mapping.setConfidence(TagMappingConfidence.HIGH);
+            externalTagMappingRepository.persist(mapping);
+        });
+
+        TestCurrentUserProvider.useUserA();
+        given()
+                .contentType(io.restassured.http.ContentType.JSON)
+                .body(buildRawgImportPayload())
+                .when()
+                .post("/api/external/import")
+                .then()
+                .statusCode(201)
+                .body("created", is(true))
+                .body("media.title", is("Elden Ring"))
+                .body("media.mediaType", is("GAME"))
+                .body("media.commitmentLevel", is("LONG"))
+                .body("media.externalSourceName", is("RAWG"))
+                .body("media.externalSourceId", is("3498"))
+                .body("media.externalReferences[0].sourceName", is("RAWG"))
+                .body("media.externalReferences[0].externalId", is("3498"))
+                .body("media.tags[0].name", is("Open World"));
+    }
+
     private Map<String, Object> buildImportPayload() {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("source", "DEMO");
@@ -348,6 +387,26 @@ class ExternalSearchResourceTest {
         payload.put("externalGenres", java.util.List.of("Romance"));
         payload.put("externalSubjects", java.util.List.of("English"));
         payload.put("attribution", "LibriVox public domain audiobook catalog");
+        return payload;
+    }
+
+    private Map<String, Object> buildRawgImportPayload() {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("source", "RAWG");
+        payload.put("externalId", "3498");
+        payload.put("mediaType", "GAME");
+        payload.put("title", "Elden Ring");
+        payload.put("originalTitle", null);
+        payload.put("creatorNames", java.util.List.of(
+                "Developer: FromSoftware",
+                "Publisher: Bandai Namco Entertainment"));
+        payload.put("description", "Rise, Tarnished, and be guided by grace.");
+        payload.put("releaseYear", 2022);
+        payload.put("coverUrl", "https://media.rawg.io/media/games/elden-ring.jpg");
+        payload.put("sourceUrl", "https://rawg.io/games/elden-ring");
+        payload.put("externalGenres", java.util.List.of("Action", "RPG"));
+        payload.put("externalSubjects", java.util.List.of("PC", "PlayStation 5", "Open World"));
+        payload.put("attribution", "Metadata from RAWG. View source on RAWG for full provider details.");
         return payload;
     }
 }

@@ -26,7 +26,16 @@ const creatorLabel = computed(() => {
   if (props.result.mediaType === 'AUDIOBOOK') {
     return 'Autor:in / Sprecher:in';
   }
+  if (props.result.mediaType === 'GAME') {
+    return 'Entwicklung / Publisher';
+  }
   return 'Mitwirkende';
+});
+const subjectsLabel = computed(() => {
+  if (props.result.mediaType === 'GAME') {
+    return 'Platforms / Tags';
+  }
+  return 'Externe Subjects';
 });
 const subtitle = computed(() => {
   const parts = [mediaTypeLabels[props.result.mediaType]];
@@ -108,7 +117,7 @@ const subtitle = computed(() => {
           class="external-result-card__section"
         >
           <p class="external-result-card__section-label">
-            Externe Subjects
+            {{ subjectsLabel }}
           </p>
           <div class="external-result-card__chip-row">
             <span
