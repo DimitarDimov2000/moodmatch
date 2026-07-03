@@ -48,7 +48,7 @@ describe('ExternalSearchView', () => {
     const wrapper = mountView();
 
     expect(wrapper.text()).toContain('Externe Medien suchen und importieren');
-    expect(wrapper.text()).toContain('Noch keine Suche gestartet');
+    expect(wrapper.text()).toContain('Bereit fuer die erste Suche');
 
     await wrapper.get('select[name="mediaType"]').setValue('AUDIOBOOK');
 
@@ -84,15 +84,15 @@ describe('ExternalSearchView', () => {
   it('enables normal youtube query search for videos while keeping the dedicated url import lane', async () => {
     const wrapper = mountView();
 
-    expect(wrapper.text()).toContain('YouTube-Video per URL oder ID importieren');
+    expect(wrapper.text()).toContain('YouTube-Video per URL oder ID pruefen');
     expect(wrapper.get('input[name="youtubeUrl"]').attributes('placeholder')).toContain('youtube.com/watch');
 
     await wrapper.get('select[name="mediaType"]').setValue('VIDEO');
 
     expect(wrapper.get('option[value="YOUTUBE"]').text()).toContain('offizielle Videosuche');
     expect((wrapper.get('select[name="source"]').element as HTMLSelectElement).value).toBe('YOUTUBE');
-    expect(wrapper.get('select[name="sort"]').text()).toContain('Most viewed');
-    expect(wrapper.text()).toContain('separate YouTube-URL-Import');
+    expect(wrapper.get('select[name="sort"]').text()).toContain('Meistgesehen');
+    expect(wrapper.text()).toContain('YouTube Direktimport');
   });
 
   it('searches youtube videos through the normal external search form and renders thumbnails', async () => {
@@ -160,7 +160,7 @@ describe('ExternalSearchView', () => {
     await wrapper.get('form.external-search-form').trigger('submit');
     await flushPromises();
 
-    expect(wrapper.text()).toContain('Provider-Hinweis');
+    expect(wrapper.text()).toContain('Provider aktuell nicht bereit');
     expect(wrapper.text()).toContain('MOODMATCH_YOUTUBE_API_KEY');
     expect(wrapper.text()).not.toContain('Suche konnte nicht abgeschlossen werden');
   });
@@ -221,9 +221,9 @@ describe('ExternalSearchView', () => {
     });
     expect(wrapper.text()).toContain('VueConf 2024 Keynote');
     expect(wrapper.text()).toContain('YouTube');
-    expect(wrapper.text()).toContain('Video · YouTube');
+    expect(wrapper.text()).toContain('Video');
     expect(wrapper.text()).toContain('2024');
-    expect(wrapper.text()).toContain('Channel');
+    expect(wrapper.text()).toContain('Kanal');
     expect(wrapper.text()).toContain('MoodMatch Dev');
     expect(wrapper.get('img').attributes('src')).toBe('https://img.youtube.test/maxres.jpg');
   });
@@ -263,7 +263,7 @@ describe('ExternalSearchView', () => {
     await wrapper.get('form.youtube-url-import-form').trigger('submit');
     await flushPromises();
 
-    expect(wrapper.text()).toContain('Enter a valid YouTube URL or video ID.');
+    expect(wrapper.text()).toContain('Bitte gib eine gueltige YouTube-URL oder Video-ID ein.');
     expect(importExternalMediaMock).not.toHaveBeenCalled();
   });
 
@@ -397,17 +397,17 @@ describe('ExternalSearchView', () => {
 
     expect(wrapper.text()).toContain('Automatisch (TMDB + AniList)');
     expect(wrapper.text()).toContain('Automatisch durchsucht alle passenden Provider fuer den gewaehlten Medientyp');
-    expect(wrapper.text()).toContain('Anime movie / AniList');
+    expect(wrapper.text()).toContain('AniList (Anime-Film)');
     expect(wrapper.get('option[value="ANILIST"]').attributes('disabled')).toBeUndefined();
 
     await wrapper.get('select[name="mediaType"]').setValue('SERIES');
 
-    expect(wrapper.text()).toContain('Anime series / AniList');
+    expect(wrapper.text()).toContain('AniList (Anime-Serie)');
     expect(wrapper.get('option[value="ANILIST"]').attributes('disabled')).toBeUndefined();
 
     await wrapper.get('select[name="mediaType"]').setValue('BOOK');
 
-    expect(wrapper.text()).toContain('Manga / AniList');
+    expect(wrapper.text()).toContain('AniList (Manga)');
     expect(wrapper.text()).toContain('Automatisch (Open Library + AniList)');
     expect(wrapper.get('option[value="ANILIST"]').attributes('disabled')).toBeUndefined();
     expect(wrapper.find('option[value="ANIME"]').exists()).toBe(false);
@@ -456,14 +456,14 @@ describe('ExternalSearchView', () => {
       mediaType: 'FILM',
       source: undefined,
     });
-    expect(wrapper.text()).toContain('1 Treffer aus passenden Quellen');
+    expect(wrapper.text()).toContain('1 Treffer aus automatischen Quellen');
     expect(wrapper.text()).toContain('Sen to Chihiro no Kamikakushi');
     expect(wrapper.text()).toContain('AniList');
     expect(wrapper.text()).toContain('Film');
-    expect(wrapper.text()).toContain('Anime movie');
-    expect(wrapper.text()).toContain('Automatic searches all suitable providers for the selected media type.');
+    expect(wrapper.text()).toContain('Anime-Film');
+    expect(wrapper.text()).toContain('Automatisch kombiniert fuer diesen Medientyp');
     expect(wrapper.text()).toContain('Provider-Hinweis');
-    expect(wrapper.text()).toContain('TMDB provider is not configured');
+    expect(wrapper.text()).toContain('TMDB ist aktuell nicht verbunden');
   });
 
   it('renders mixed-source automatic results with provider badges', async () => {
@@ -517,7 +517,7 @@ describe('ExternalSearchView', () => {
     await wrapper.get('form').trigger('submit');
     await flushPromises();
 
-    expect(wrapper.text()).toContain('2 Treffer aus passenden Quellen');
+    expect(wrapper.text()).toContain('2 Treffer aus automatischen Quellen');
     expect(wrapper.text()).toContain('Open Library');
     expect(wrapper.text()).toContain('AniList');
     expect(wrapper.text()).toContain('Buch');
@@ -577,7 +577,7 @@ describe('ExternalSearchView', () => {
 
     await wrapper.get('select[name="resultProviderFilter"]').setValue('ANILIST');
 
-    expect(wrapper.text()).toContain('1 Treffer aus passenden Quellen');
+    expect(wrapper.text()).toContain('1 Treffer aus automatischen Quellen');
     expect(wrapper.text()).toContain('Berserk');
     expect(wrapper.text()).not.toContain('Berserk Deluxe');
   });
@@ -630,7 +630,7 @@ describe('ExternalSearchView', () => {
       source: undefined,
     });
     expect(wrapper.text()).toContain('Provider-Hinweis');
-    expect(wrapper.text()).toContain('Podcast Index provider is not configured');
+    expect(wrapper.text()).toContain('Podcast Index ist aktuell nicht verbunden');
     expect(wrapper.text()).toContain('Keine Ergebnisse gefunden');
   });
 
@@ -721,7 +721,7 @@ describe('ExternalSearchView', () => {
       attribution: 'Metadata from Podcast Index',
     });
     expect(wrapper.text()).toContain('Imported into your media library.');
-    expect(wrapper.text()).toContain('In Mediathek ansehen');
+    expect(wrapper.text()).toContain('Details');
   });
 
   it('imports an audiobook result and shows the library link state', async () => {
@@ -806,7 +806,7 @@ describe('ExternalSearchView', () => {
       attribution: 'LibriVox public domain audiobook catalog',
     });
     expect(wrapper.text()).toContain('Imported into your media library.');
-    expect(wrapper.text()).toContain('In Mediathek ansehen');
+    expect(wrapper.text()).toContain('Details');
   });
 
   it('renders and imports a RAWG game result', async () => {
@@ -878,7 +878,7 @@ describe('ExternalSearchView', () => {
     });
     expect(wrapper.text()).toContain('1 Treffer aus RAWG');
     expect(wrapper.text()).toContain('Elden Ring');
-    expect(wrapper.text()).toContain('Platforms / Tags');
+    expect(wrapper.text()).toContain('Hinweise');
     expect(wrapper.text()).toContain('PlayStation 5');
 
     const importButton = getImportButton(wrapper);
@@ -901,7 +901,7 @@ describe('ExternalSearchView', () => {
       externalSubjects: ['PC', 'PlayStation 5', 'Open World'],
       attribution: 'Metadata from RAWG. View source on RAWG for full provider details.',
     });
-    expect(wrapper.text()).toContain('In Mediathek ansehen');
+    expect(wrapper.text()).toContain('Details');
   });
 
   it('renders and imports an AniList anime series as a series result', async () => {
@@ -973,10 +973,10 @@ describe('ExternalSearchView', () => {
     });
     expect(wrapper.text()).toContain('1 Treffer aus AniList');
     expect(wrapper.text()).toContain('Shingeki no Kyojin');
-    expect(wrapper.text()).toContain('Serie · AniList · Anime series');
+    expect(wrapper.text()).toContain('Anime-Serie');
     expect(wrapper.text()).toContain('2013');
     expect(wrapper.text()).toContain('Originaltitel: 進撃の巨人');
-    expect(wrapper.text()).toContain('Format / Status / Tags');
+    expect(wrapper.text()).toContain('Hinweise');
 
     const importButton = getImportButton(wrapper);
     expect(importButton).toBeTruthy();
@@ -998,7 +998,7 @@ describe('ExternalSearchView', () => {
       externalSubjects: ['Format: TV', 'Status: FINISHED', 'Season: SPRING 2013'],
       attribution: 'Metadata from AniList',
     });
-    expect(wrapper.text()).toContain('In Mediathek ansehen');
+    expect(wrapper.text()).toContain('Details');
   });
 
   it('renders AniList anime movie and manga mappings from normalized results', async () => {
@@ -1063,7 +1063,7 @@ describe('ExternalSearchView', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain('Sen to Chihiro no Kamikakushi');
-    expect(wrapper.text()).toContain('Film · AniList · Anime movie');
+    expect(wrapper.text()).toContain('Anime-Film');
     expect(wrapper.text()).toContain('2001');
 
     const importButton = getImportButton(wrapper);
@@ -1086,7 +1086,7 @@ describe('ExternalSearchView', () => {
       externalSubjects: ['Format: MOVIE', 'Status: FINISHED'],
       attribution: 'Metadata from AniList',
     });
-    expect(wrapper.text()).toContain('In Mediathek ansehen');
+    expect(wrapper.text()).toContain('Details');
 
     searchExternalMock.mockResolvedValueOnce({
       query: 'berserk',
@@ -1121,9 +1121,9 @@ describe('ExternalSearchView', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain('Berserk');
-    expect(wrapper.text()).toContain('Buch · AniList · Manga');
+    expect(wrapper.text()).toContain('Manga');
     expect(wrapper.text()).toContain('1989');
-    expect(wrapper.text()).toContain('Format: MANGA');
+    expect(wrapper.text()).toContain('Status: Laufend');
   });
 
   it('renders an empty state when the search succeeds without matches', async () => {
@@ -1175,7 +1175,7 @@ describe('ExternalSearchView', () => {
     await wrapper.get('form').trigger('submit');
     await flushPromises();
 
-    expect(wrapper.text()).toContain('RAWG provider is not configured. Set MOODMATCH_RAWG_API_KEY.');
+    expect(wrapper.text()).toContain('RAWG ist aktuell nicht verbunden. Hinterlege MOODMATCH_RAWG_API_KEY im Backend, um Suche oder Import zu nutzen.');
   });
 
   it('renders an import error when saving fails', async () => {

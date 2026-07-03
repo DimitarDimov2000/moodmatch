@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { RouterLink } from "vue-router";
+import { computed } from 'vue';
+import { RouterLink } from 'vue-router';
 
-import TagChip from "@/components/tags/TagChip.vue";
-import type { MediaResponse } from "@/types/api";
+import MediaArtwork from '@/components/media/MediaArtwork.vue';
+import {
+  getExternalSourceLabel,
+} from '@/components/media/media-presentation';
+import TagChip from '@/components/tags/TagChip.vue';
+import type { MediaResponse } from '@/types/api';
 import {
   canBeFavourite,
   commitmentLevelLabels,
@@ -11,7 +15,7 @@ import {
   mediaTypeLabels,
   metadataOriginLabels,
   sourceTypeLabels,
-} from "@/components/media/media-options";
+} from '@/components/media/media-options';
 
 const props = defineProps<{
   media: MediaResponse;
@@ -21,40 +25,37 @@ const visibleTags = computed(() => props.media.tags.slice(0, 4));
 const hiddenTagCount = computed(() =>
   Math.max(props.media.tags.length - visibleTags.value.length, 0),
 );
-const sourceLabel = computed(() => {
-  const parts = [
-    mediaTypeLabels[props.media.mediaType],
-    sourceTypeLabels[props.media.sourceType],
-  ];
-
-  if (props.media.externalSourceName) {
-    parts.push(props.media.externalSourceName.split("_").join(" "));
-  }
-
-  if (props.media.releaseYear) {
-    parts.push(String(props.media.releaseYear));
-  }
-
-  return parts.join(" · ");
-});
-
-const detailBadges = computed(() =>
+const sourceBadgeLabel = computed(() =>
+  props.media.externalSourceName
+    ? getExternalSourceLabel(props.media.externalSourceName)
+    : sourceTypeLabels[props.media.sourceType],
+);
+const subtitle = computed(() =>
   [
     consumptionStatusLabels[props.media.consumptionStatus],
     commitmentLevelLabels[props.media.commitmentLevel],
+    props.media.releaseYear ? String(props.media.releaseYear) : null,
+  ].filter((value): value is string => Boolean(value)).join(' • '),
+);
+
+const detailBadges = computed(() =>
+  [
     props.media.metadataOrigin
       ? metadataOriginLabels[props.media.metadataOrigin]
       : null,
   ].filter((value): value is string => Boolean(value)),
 );
 const ratingLabel = computed(() =>
-  props.media.rating === null ? "Keine Bewertung" : `${props.media.rating}/5`,
+  props.media.rating === null ? 'Keine Bewertung' : `${props.media.rating}/5`,
 );
 const favouriteEligible = computed(() =>
   canBeFavourite(props.media.consumptionStatus, props.media.rating),
 );
 const descriptionPreview = computed(
-  () => props.media.description?.trim() ?? "",
+  () => props.media.description?.trim() ?? '',
+);
+const tagSummary = computed(() =>
+  props.media.tags.length === 1 ? '1 Tag' : `${props.media.tags.length} Tags`,
 );
 </script>
 
@@ -62,18 +63,12 @@ const descriptionPreview = computed(
   <article class="media-card page-card">
     <div class="media-card__body">
       <div class="media-card__aside">
-        <img
-          v-if="media.coverUrl"
-          :src="media.coverUrl"
-          :alt="`Cover von ${media.title}`"
+        <MediaArtwork
           class="media-card__cover"
-        >
-        <div
-          v-else
-          class="media-card__cover media-card__cover--placeholder"
-        >
-          {{ media.title.slice(0, 1).toUpperCase() }}
-        </div>
+          :title="media.title"
+          :media-type="media.mediaType"
+          :cover-url="media.coverUrl"
+        />
 
         <div class="media-card__actions">
           <RouterLink
@@ -92,12 +87,30 @@ const descriptionPreview = computed(
       </div>
 
       <div class="media-card__copy">
+        <div class="media-card__badge-row">
+          <span class="badge">
+            {{ mediaTypeLabels[media.mediaType] }}
+          </span>
+          <span class="badge badge--accent">
+            {{ sourceBadgeLabel }}
+          </span>
+          <span
+            v-if="media.releaseYear"
+            class="badge"
+          >
+            {{ media.releaseYear }}
+          </span>
+        </div>
+
         <div class="media-card__header">
           <h2 class="media-card__title">
             {{ media.title }}
           </h2>
-          <p class="media-card__meta">
-            {{ sourceLabel }}
+          <p
+            v-if="subtitle"
+            class="media-card__meta"
+          >
+            {{ subtitle }}
           </p>
         </div>
 
@@ -121,12 +134,14 @@ const descriptionPreview = computed(
           <span class="media-card__fact">
             {{ ratingLabel }}
           </span>
-          <span class="media-card__fact"> {{ media.tags.length }} Tags </span>
+          <span class="media-card__fact">
+            {{ tagSummary }}
+          </span>
           <span
-            v-if="media.externalSourceName"
+            v-if="media.sourceType !== 'MANUAL'"
             class="media-card__fact media-card__fact--accent"
           >
-            {{ media.externalSourceName.split("_").join(" ") }}
+            Quelle: {{ sourceBadgeLabel }}
           </span>
         </div>
 
@@ -180,6 +195,7 @@ const descriptionPreview = computed(
   gap: 0.7rem;
 }
 
+.media-card__badge-row,
 .media-card__eyebrow-row {
   display: flex;
   flex-wrap: wrap;
@@ -239,25 +255,6 @@ const descriptionPreview = computed(
   justify-items: stretch;
 }
 
-.media-card__cover {
-  width: 100%;
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
-    var(--color-surface-muted);
-  box-shadow: var(--shadow-card);
-}
-
-.media-card__cover--placeholder {
-  display: grid;
-  place-items: center;
-  color: var(--color-text-muted);
-  font-size: 2rem;
-  font-weight: 700;
-}
-
 .media-card__actions {
   display: grid;
   gap: 0.6rem;
@@ -287,7 +284,7 @@ const descriptionPreview = computed(
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
 }
 
 @media (max-width: 820px) {

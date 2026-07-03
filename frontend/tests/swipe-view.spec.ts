@@ -228,6 +228,7 @@ describe('SwipeView', () => {
     expect(wrapper.text()).toContain('Science-Fiction');
     expect(wrapper.text()).toContain('2/2 Tags passen');
     expect(wrapper.text()).toContain('Nicht jetzt');
+    expect(wrapper.text()).not.toContain('Links fuer Nicht jetzt, Mitte fuer Details, rechts fuer Like.');
     expect(wrapper.text()).not.toContain('Skip');
     expect(wrapper.find('.swipe-view__card-column').exists()).toBe(true);
     expect(wrapper.find('.swipe-decision-controls__buttons').exists()).toBe(true);

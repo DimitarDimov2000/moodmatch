@@ -43,7 +43,7 @@ const showSort = computed(() => props.mediaType === 'VIDEO' && props.source === 
     >
       <FormField
         label="Suchbegriff"
-        hint="Suche nach Filmen, Serien, Buechern, Videos oder anderen unterstuetzten Treffern und importiere sie direkt in deine Mediathek."
+        hint="Suche nach Titeln, Reihen, Autor:innen, Creator-Namen oder bekannten Schlagwoertern."
         required
       >
         <input
@@ -59,7 +59,7 @@ const showSort = computed(() => props.mediaType === 'VIDEO' && props.source === 
 
       <FormField
         label="Medientyp"
-        hint="Waehle zuerst den Bereich aus, damit MoodMatch die passenden Quellen anbieten kann."
+        hint="Der Medientyp legt fest, welche Quellen in dieser Suche verfuegbar sind."
         required
       >
         <select
@@ -103,7 +103,7 @@ const showSort = computed(() => props.mediaType === 'VIDEO' && props.source === 
       <FormField
         v-if="showSort"
         label="YouTube-Sortierung"
-        hint="Gilt nur fuer die explizite YouTube-Suche. Automatic search bleibt leichtgewichtig und unveraendert."
+        hint="Gilt nur fuer die explizite YouTube-Suche."
         required
       >
         <select
@@ -129,7 +129,7 @@ const showSort = computed(() => props.mediaType === 'VIDEO' && props.source === 
         type="submit"
         :disabled="submitting || !query.trim()"
       >
-        {{ submitting ? 'Suche laeuft...' : 'Externe Suche starten' }}
+        {{ submitting ? 'Suche laeuft...' : 'Jetzt suchen' }}
       </button>
     </div>
   </form>
@@ -145,11 +145,11 @@ const showSort = computed(() => props.mediaType === 'VIDEO' && props.source === 
 .external-search-form__grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(0, 1.5fr) minmax(180px, 0.7fr) minmax(220px, 0.9fr);
+  grid-template-columns: minmax(0, 1.7fr) minmax(170px, 0.8fr) minmax(220px, 1fr);
 }
 
 .external-search-form__grid--with-sort {
-  grid-template-columns: minmax(0, 1.5fr) minmax(180px, 0.7fr) minmax(220px, 0.9fr) minmax(180px, 0.8fr);
+  grid-template-columns: minmax(0, 1.6fr) minmax(170px, 0.75fr) minmax(220px, 0.95fr) minmax(180px, 0.8fr);
 }
 
 .external-search-form__actions {
@@ -160,6 +160,14 @@ const showSort = computed(() => props.mediaType === 'VIDEO' && props.source === 
 @media (max-width: 720px) {
   .external-search-form__grid {
     grid-template-columns: 1fr;
+  }
+
+  .external-search-form__actions {
+    justify-content: stretch;
+  }
+
+  .external-search-form__actions .button {
+    width: 100%;
   }
 }
 </style>

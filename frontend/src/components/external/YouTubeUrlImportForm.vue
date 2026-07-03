@@ -20,7 +20,7 @@ const emit = defineEmits<{
     <div class="youtube-url-import-form__grid">
       <FormField
         label="YouTube-URL oder Video-ID"
-        hint="Unterstuetzt watch-URLs, youtu.be-Links, Shorts-URLs und rohe Video-IDs. Die Aufloesung nutzt ausschliesslich die offizielle YouTube Data API."
+        hint="Unterstuetzt watch-URLs, youtu.be-Links, Shorts-URLs und rohe Video-IDs."
         required
       >
         <input
@@ -41,7 +41,7 @@ const emit = defineEmits<{
         type="submit"
         :disabled="submitting || !value.trim()"
       >
-        {{ submitting ? 'YouTube-Vorschau wird geladen...' : 'YouTube-Vorschau laden' }}
+        {{ submitting ? 'YouTube-Vorschau wird geladen...' : 'Vorschau laden' }}
       </button>
     </div>
   </form>
@@ -62,5 +62,15 @@ const emit = defineEmits<{
 .youtube-url-import-form__actions {
   display: flex;
   justify-content: flex-start;
+}
+
+@media (max-width: 720px) {
+  .youtube-url-import-form__actions {
+    justify-content: stretch;
+  }
+
+  .youtube-url-import-form__actions .button {
+    width: 100%;
+  }
 }
 </style>

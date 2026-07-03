@@ -48,20 +48,19 @@ describe('ExternalSearchResultCard', () => {
     expect(wrapper.text()).toContain('Pride and Prejudice');
     expect(wrapper.text()).toContain('LibriVox');
     expect(wrapper.text()).toContain('Hoerbuch');
-    expect(wrapper.text()).toContain('Hoerbuch · LibriVox · Audiobook');
-    expect(wrapper.text()).toContain('Autor:in / Sprecher:in');
+    expect(wrapper.text()).toContain('Bereits vorhanden');
+    expect(wrapper.text()).toContain('Autor:in & Stimme');
     expect(wrapper.text()).toContain('Author: Jane Austen');
     expect(wrapper.text()).toContain('Reader: Annie Coleman Rothenberg');
     expect(wrapper.text()).toContain('Romance');
     expect(wrapper.text()).toContain('English');
-    expect(wrapper.text()).toContain('Quelle');
-    expect(wrapper.text()).toContain('LibriVox Audiobook Catalog');
+    expect(wrapper.text()).toContain('Provider');
     expect(wrapper.text()).toContain('Romantik');
     expect(wrapper.text()).not.toContain('HIGH');
-    expect(wrapper.text()).not.toContain('Fuer dieses Ergebnis liegen noch keine gemappten Tag-Vorschlaege vor.');
+    expect(wrapper.text()).not.toContain('Noch keine passenden Tag-Vorschlaege vorhanden.');
     expect(wrapper.text()).toContain('LibriVox public domain audiobook catalog');
     expect(wrapper.text()).toContain('Imported into your media library.');
-    expect(wrapper.text()).toContain('In Mediathek ansehen');
+    expect(wrapper.text()).toContain('Details');
     expect(wrapper.get('a').attributes('href')).toBe(
       'https://librivox.org/pride-and-prejudice-by-jane-austen/',
     );
@@ -189,7 +188,7 @@ describe('ExternalSearchResultCard', () => {
       },
     });
 
-    expect(wrapper.text()).toContain('Fuer dieses Ergebnis liegen noch keine gemappten Tag-Vorschlaege vor.');
+    expect(wrapper.text()).toContain('Noch keine passenden Tag-Vorschlaege vorhanden.');
   });
 
   it('renders RAWG game metadata clearly', () => {
@@ -224,13 +223,12 @@ describe('ExternalSearchResultCard', () => {
 
     expect(wrapper.text()).toContain('Elden Ring');
     expect(wrapper.text()).toContain('RAWG');
-    expect(wrapper.text()).toContain('Spiel · RAWG');
-    expect(wrapper.text()).toContain('2022');
     expect(wrapper.text()).toContain('Spiel');
-    expect(wrapper.text()).toContain('Entwicklung / Publisher');
+    expect(wrapper.text()).toContain('2022');
+    expect(wrapper.text()).toContain('Studio / Publisher');
     expect(wrapper.text()).toContain('Developer: FromSoftware');
     expect(wrapper.text()).toContain('Action');
-    expect(wrapper.text()).toContain('Platforms / Tags');
+    expect(wrapper.text()).toContain('Hinweise');
     expect(wrapper.text()).toContain('PlayStation 5');
     expect(wrapper.get('img').attributes('src')).toBe('https://media.rawg.io/media/games/elden-ring.jpg');
   });
@@ -267,14 +265,14 @@ describe('ExternalSearchResultCard', () => {
 
     expect(wrapper.text()).toContain('Sen to Chihiro no Kamikakushi');
     expect(wrapper.text()).toContain('AniList');
-    expect(wrapper.text()).toContain('Film · AniList · Anime movie');
+    expect(wrapper.text()).toContain('Anime-Film');
     expect(wrapper.text()).toContain('2001');
-    expect(wrapper.text()).toContain('Anime movie');
+    expect(wrapper.text()).toContain('Film');
     expect(wrapper.text()).toContain('Originaltitel: 千と千尋の神隠し');
-    expect(wrapper.text()).toContain('Studios');
+    expect(wrapper.text()).toContain('Studio');
     expect(wrapper.text()).toContain('Studio Ghibli');
-    expect(wrapper.text()).toContain('Format / Status / Tags');
-    expect(wrapper.text()).toContain('Format: MOVIE');
+    expect(wrapper.text()).toContain('Hinweise');
+    expect(wrapper.text()).toContain('Status: Abgeschlossen');
   });
 
   it('renders AniList manga metadata as a book result', () => {
@@ -308,12 +306,11 @@ describe('ExternalSearchResultCard', () => {
     });
 
     expect(wrapper.text()).toContain('Berserk');
-    expect(wrapper.text()).toContain('Buch · AniList · Manga');
-    expect(wrapper.text()).toContain('1989');
     expect(wrapper.text()).toContain('Manga');
+    expect(wrapper.text()).toContain('1989');
     expect(wrapper.text()).toContain('Autor:innen');
     expect(wrapper.text()).toContain('Kentaro Miura');
-    expect(wrapper.text()).toContain('Format: MANGA');
+    expect(wrapper.text()).toContain('Status: Laufend');
   });
 
   it('renders youtube video metadata with a landscape thumbnail', () => {
@@ -347,13 +344,12 @@ describe('ExternalSearchResultCard', () => {
     });
 
     expect(wrapper.text()).toContain('AI Tutorial for Builders');
-    expect(wrapper.text()).toContain('Video · YouTube');
-    expect(wrapper.text()).toContain('Channel');
+    expect(wrapper.text()).toContain('YouTube');
+    expect(wrapper.text()).toContain('Video');
+    expect(wrapper.text()).toContain('Kanal');
     expect(wrapper.text()).toContain('MoodMatch Dev');
     expect(wrapper.get('img').attributes('src')).toBe('https://img.youtube.test/high.jpg');
-    expect(wrapper.get('img').attributes('width')).toBe('224');
-    expect(wrapper.get('img').attributes('height')).toBe('126');
-    expect(wrapper.get('img').classes()).toContain('external-result-card__cover--video-thumbnail');
+    expect(wrapper.find('.media-artwork--landscape').exists()).toBe(true);
   });
 
   it('renders Podcast Index podcast metadata clearly', () => {
@@ -389,17 +385,16 @@ describe('ExternalSearchResultCard', () => {
 
     expect(wrapper.text()).toContain('Lex Fridman Podcast');
     expect(wrapper.text()).toContain('Podcast Index');
-    expect(wrapper.text()).toContain('Podcast · Podcast Index · Podcast show');
+    expect(wrapper.text()).toContain('Podcast-Show');
     expect(wrapper.text()).toContain('2024');
-    expect(wrapper.text()).toContain('Host / Autor:in');
+    expect(wrapper.text()).toContain('Host / Creator');
     expect(wrapper.text()).toContain('Lex Fridman');
     expect(wrapper.text()).toContain('Technology');
     expect(wrapper.text()).toContain('Science');
-    expect(wrapper.text()).toContain('Sprache / Hinweise');
-    expect(wrapper.text()).toContain('Language: en');
-    expect(wrapper.text()).toContain('Explicit: No');
-    expect(wrapper.text()).toContain('Quelle');
-    expect(wrapper.text()).toContain('Podcast Index Podcast Catalog');
+    expect(wrapper.text()).toContain('Hinweise');
+    expect(wrapper.text()).toContain('Sprache: EN');
+    expect(wrapper.text()).toContain('Explizit: Nein');
+    expect(wrapper.text()).toContain('Provider');
     expect(wrapper.get('img').attributes('src')).toBe(
       'https://image.simplecastcdn.com/images/lex-fridman.jpg',
     );
@@ -437,12 +432,12 @@ describe('ExternalSearchResultCard', () => {
 
     expect(wrapper.text()).toContain('VueConf 2024 Keynote');
     expect(wrapper.text()).toContain('YouTube');
-    expect(wrapper.text()).toContain('Video · YouTube');
+    expect(wrapper.text()).toContain('Video');
     expect(wrapper.text()).toContain('2024');
-    expect(wrapper.text()).toContain('Channel');
+    expect(wrapper.text()).toContain('Kanal');
     expect(wrapper.text()).toContain('MoodMatch Dev');
     expect(wrapper.text()).toContain('Education');
-    expect(wrapper.text()).toContain('Tags / Kategorie');
+    expect(wrapper.text()).toContain('Kategorie: Education');
     expect(wrapper.get('img').attributes('src')).toBe('https://img.youtube.test/maxres.jpg');
   });
 
@@ -477,13 +472,12 @@ describe('ExternalSearchResultCard', () => {
     });
 
     expect(wrapper.text()).toContain('Buch');
-    expect(wrapper.text()).toContain('Book');
-    expect(wrapper.text()).toContain('Kein Buchcover');
-    expect(wrapper.get('.external-result-card__cover--fallback').attributes('aria-label')).toBe(
-      'Buch Placeholder',
+    expect(wrapper.text()).toContain('Cover fehlt');
+    expect(wrapper.get('.media-artwork__fallback-copy').attributes('aria-label')).toBe(
+      'Buch Platzhalter',
     );
     expect(wrapper.get('.external-result-card__description').text()).toContain('…');
-    expect(wrapper.text()).toContain('Hinweise');
+    expect(wrapper.text()).toContain('Hinweis');
     expect(wrapper.text()).toContain('Cover unavailable from provider.');
   });
 });

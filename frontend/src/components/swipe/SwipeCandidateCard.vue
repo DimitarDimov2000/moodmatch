@@ -5,6 +5,7 @@ import { RouterLink } from 'vue-router';
 import { ApiRequestError } from '@/api/client';
 import { getMediaById } from '@/api/media';
 import { sourceTypeLabels } from '@/components/media/media-options';
+import { getExternalSourceLabel } from '@/components/media/media-presentation';
 import {
   formatDecimal,
   mediaTypeLabels,
@@ -15,7 +16,6 @@ import {
 } from '@/components/swipe/swipe-insights';
 import TagChip from '@/components/tags/TagChip.vue';
 import type {
-  ExternalSourceName,
   MediaResponse,
 } from '@/types/api';
 import type {
@@ -29,21 +29,6 @@ const HORIZONTAL_THRESHOLD = 100;
 const HORIZONTAL_CLAMP = 170;
 const VERTICAL_CLAMP = 42;
 const DESCRIPTION_PREVIEW_LIMIT = 260;
-
-const externalSourceLabels: Record<ExternalSourceName, string> = {
-  DEMO: 'Demo',
-  TMDB: 'TMDB',
-  OPEN_LIBRARY: 'Open Library',
-  RAWG: 'RAWG',
-  LIBRIVOX: 'LibriVox',
-  PODCAST_INDEX: 'Podcast Index',
-  ANILIST: 'AniList',
-  YOUTUBE: 'YouTube',
-  WIKIDATA: 'Wikidata',
-  IGDB: 'IGDB',
-  GOOGLE_BOOKS: 'Google Books',
-  TVMAZE: 'TVMaze',
-};
 
 const props = withDefaults(
   defineProps<{
@@ -145,12 +130,12 @@ const sourceLabel = computed(() => {
   }
 
   if (media.externalSourceName) {
-    return externalSourceLabels[media.externalSourceName];
+    return getExternalSourceLabel(media.externalSourceName);
   }
 
   const reference = media.externalReferences.find((entry) => entry.externalUrl || entry.sourceName);
   if (reference) {
-    return externalSourceLabels[reference.sourceName];
+    return getExternalSourceLabel(reference.sourceName);
   }
 
   if (media.sourceType !== 'MANUAL') {

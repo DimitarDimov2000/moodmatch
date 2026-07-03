@@ -257,6 +257,7 @@ async function handleRegister() {
 }
 
 .login-view__header {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   width: 100%;
@@ -267,12 +268,12 @@ async function handleRegister() {
 }
 
 .login-view__toolbar {
+  position: absolute;
+  top: 0;
+  right: var(--page-padding);
   display: flex;
   justify-content: flex-end;
-  width: 100%;
-  margin-bottom: 0;
-  padding-right: clamp(0.1rem, 0.9vw, 0.55rem);
-  justify-self: stretch;
+  width: auto;
 }
 
 .login-view__intro {
@@ -428,8 +429,7 @@ async function handleRegister() {
   }
 
   .login-view__toolbar {
-    margin-bottom: 0.4rem;
-    padding-right: 0;
+    right: max(var(--page-padding), 0.9rem);
   }
 
   .login-view__brand-subtitle {

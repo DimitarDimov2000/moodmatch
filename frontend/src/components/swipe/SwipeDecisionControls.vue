@@ -17,9 +17,6 @@ const emit = defineEmits<{
       <p class="eyebrow">
         Schnell entscheiden
       </p>
-      <p class="body-muted">
-        Links fuer Nicht jetzt, Mitte fuer Details, rechts fuer Like.
-      </p>
     </div>
 
     <div
@@ -90,7 +87,6 @@ const emit = defineEmits<{
 
 .swipe-decision-controls__copy {
   display: grid;
-  gap: 0.18rem;
 }
 
 .swipe-decision-controls__copy p {
@@ -99,10 +95,6 @@ const emit = defineEmits<{
 
 .swipe-decision-controls__copy .eyebrow {
   color: var(--theme-swipe-eyebrow-color);
-}
-
-.swipe-decision-controls__copy .body-muted {
-  color: var(--theme-swipe-panel-copy-text);
 }
 
 .swipe-decision-controls__buttons {
