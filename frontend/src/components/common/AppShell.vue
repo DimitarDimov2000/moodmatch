@@ -491,6 +491,7 @@ function handleWindowKeydown(event: KeyboardEvent) {
   }
 
   .app-shell__masthead {
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.65rem;
   }
 
@@ -509,8 +510,11 @@ function handleWindowKeydown(event: KeyboardEvent) {
   }
 
   .app-shell__header-tools {
+    width: 100%;
     flex-wrap: wrap;
+    justify-content: space-between;
     gap: 0.4rem;
+    justify-self: stretch;
   }
 
   .app-shell__preferences {
