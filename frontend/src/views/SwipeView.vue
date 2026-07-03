@@ -384,7 +384,7 @@ function toMatchesErrorMessage(error: unknown): string {
       <template v-else-if="showNoRecommendationsState">
         <AppMessage
           title="Noch keine Empfehlungen"
-          description="Fuelle deine WANT_TO_CONSUME Liste, importiere weitere Titel oder pruefe bestehende Kandidaten, damit hier neue Karten auftauchen."
+          description="Fuelle deine Liste mit 'Moechte ich konsumieren'-Titeln, importiere weitere Medien oder pruefe bestehende Kandidaten, damit hier neue Karten auftauchen."
         >
           <div class="swipe-view__message-actions">
             <RouterLink
@@ -573,9 +573,9 @@ function toMatchesErrorMessage(error: unknown): string {
 }
 
 .swipe-view__card-column {
-  width: min(100%, 30rem);
+  width: min(100%, 27rem);
   display: grid;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .swipe-view__footnote {
@@ -622,6 +622,12 @@ function toMatchesErrorMessage(error: unknown): string {
 
 .swipe-view :deep(.app-message--info) {
   background: var(--theme-swipe-message-info-background);
+}
+
+@media (min-width: 960px) {
+  .swipe-view__card-column {
+    width: min(100%, 26.5rem);
+  }
 }
 
 @media (max-width: 720px) {

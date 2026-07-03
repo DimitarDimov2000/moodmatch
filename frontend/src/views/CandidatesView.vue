@@ -85,7 +85,7 @@ function toUserMessage(error: unknown): string {
           {{ candidates.length }}
         </p>
         <p class="overview-stat-card__copy">
-          WANT_TO_CONSUME Medien
+          Moechte ich konsumieren
         </p>
       </article>
 
@@ -118,7 +118,7 @@ function toUserMessage(error: unknown): string {
       v-if="loading"
       class="candidates-view__state-card"
       title="Kandidaten werden geladen"
-      description="Wir holen die aktuelle Kandidatenliste aus der typed API."
+      description="Wir holen die aktuelle Kandidatenliste."
       tone="info"
     />
 
@@ -144,7 +144,7 @@ function toUserMessage(error: unknown): string {
       v-else-if="candidates.length === 0"
       class="candidates-view__state-card"
       title="Noch keine Kandidaten fuer spaetere Empfehlungen"
-      description="Lege WANT_TO_CONSUME Medien an, damit hier die Vorschlaege erscheinen, die MoodMatch als naechste Vergleichsliste vorbereitet."
+      description="Lege Medien mit dem Status 'Moechte ich konsumieren' an, damit hier die Vorschlaege erscheinen, die MoodMatch als naechste Vergleichsliste vorbereitet."
     >
       <div class="state-actions">
         <RouterLink

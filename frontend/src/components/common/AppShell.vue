@@ -293,7 +293,7 @@ function handleWindowKeydown(event: KeyboardEvent) {
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.55rem 0.75rem;
+  gap: 0.45rem 0.65rem;
   min-width: 0;
 }
 
@@ -302,8 +302,8 @@ function handleWindowKeydown(event: KeyboardEvent) {
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 0.4rem;
-  min-height: 2.5rem;
+  gap: 0.35rem;
+  min-height: 2.6rem;
   min-width: 0;
 }
 
@@ -333,8 +333,8 @@ function handleWindowKeydown(event: KeyboardEvent) {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  min-height: 2.75rem;
-  padding: 0.66rem 0.95rem;
+  min-height: 2.6rem;
+  padding: 0.56rem 0.88rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   background: var(--theme-app-shell-frame-background);
@@ -360,11 +360,11 @@ function handleWindowKeydown(event: KeyboardEvent) {
 
 .app-shell__auth-dropdown {
   position: absolute;
-  top: calc(100% + 0.45rem);
+  top: calc(100% + 0.35rem);
   right: 0;
   z-index: 25;
-  min-width: 12rem;
-  padding: 0.45rem;
+  min-width: 9.75rem;
+  padding: 0.3rem;
   border: 1px solid var(--color-border);
   border-radius: calc(var(--radius-md) + 2px);
   background: var(--theme-app-shell-frame-background);
@@ -374,7 +374,11 @@ function handleWindowKeydown(event: KeyboardEvent) {
 
 .app-shell__auth-dropdown-action {
   width: 100%;
+  min-height: 2.3rem;
   justify-content: flex-start;
+  padding-inline: 0.82rem;
+  border-radius: calc(var(--radius-sm) + 2px);
+  box-shadow: none;
 }
 
 .app-shell__nav-link {

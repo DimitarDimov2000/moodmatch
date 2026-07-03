@@ -62,7 +62,7 @@ const emptyState = computed(() => {
   return {
     title: "Noch keine Match-Ergebnisse vorhanden",
     description:
-      "Lege Kandidaten mit WANT_TO_CONSUME Status an, damit MoodMatch sie mit deinem Profil vergleichen kann.",
+      "Lege Kandidaten mit dem Status 'Moechte ich konsumieren' an, damit MoodMatch sie mit deinem Profil vergleichen kann.",
     to: { name: "candidates" as const },
     label: "Kandidaten ansehen",
   };

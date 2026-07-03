@@ -446,59 +446,47 @@ defineExpose({
       :class="{ 'swipe-candidate-card__peek--visible': showPeekCard }"
       aria-hidden="true"
     >
-      <div class="swipe-candidate-card__peek-surface">
-        <div
-          class="swipe-candidate-card__peek-cover"
-          :class="getGradientSeed(nextItem.candidate.media.id)"
+      <div
+        class="swipe-candidate-card__peek-cover"
+        :class="getGradientSeed(nextItem.candidate.media.id)"
+      >
+        <img
+          v-if="nextItem.candidate.media.coverUrl"
+          class="swipe-candidate-card__peek-cover-image"
+          :src="nextItem.candidate.media.coverUrl"
+          :alt="`Cover von ${nextItem.candidate.media.title}`"
         >
-          <img
-            v-if="nextItem.candidate.media.coverUrl"
-            class="swipe-candidate-card__peek-cover-image"
-            :src="nextItem.candidate.media.coverUrl"
-            :alt="`Cover von ${nextItem.candidate.media.title}`"
-          >
-          <div
-            v-else
-            class="swipe-candidate-card__peek-cover-fallback"
-            aria-hidden="true"
-          >
-            {{ mediaTypeLabels[nextItem.candidate.media.mediaType] }}
-          </div>
-
-          <div class="swipe-candidate-card__peek-cover-overlay">
-            <div class="swipe-candidate-card__peek-top">
-              <span class="swipe-candidate-card__peek-type-pill">
-                {{ mediaTypeLabels[nextItem.candidate.media.mediaType] }}
-              </span>
-              <span class="swipe-candidate-card__peek-next-pill">
-                Als naechstes
-              </span>
-            </div>
-
-            <div class="swipe-candidate-card__peek-hero">
-              <p class="swipe-candidate-card__peek-eyebrow">
-                Empfehlung fuer dich
-              </p>
-              <h3 class="swipe-candidate-card__peek-title">
-                {{ nextItem.candidate.media.title }}
-              </h3>
-              <p class="swipe-candidate-card__peek-meta">
-                {{ mediaTypeLabels[nextItem.candidate.media.mediaType] }}
-                <span v-if="nextItem.candidate.media.releaseYear">
-                  · {{ nextItem.candidate.media.releaseYear }}
-                </span>
-              </p>
-            </div>
-          </div>
+        <div
+          v-else
+          class="swipe-candidate-card__peek-cover-fallback"
+          aria-hidden="true"
+        >
+          {{ mediaTypeLabels[nextItem.candidate.media.mediaType] }}
         </div>
 
-        <div class="swipe-candidate-card__peek-body">
-          <p class="swipe-candidate-card__peek-copy">
-            Diese Karte liegt als naechste Empfehlung bereit.
-          </p>
-          <div class="swipe-candidate-card__peek-chips">
-            <span class="swipe-candidate-card__peek-chip">Bereit zum Swipen</span>
-            <span class="swipe-candidate-card__peek-chip">Danach aktiv</span>
+        <div class="swipe-candidate-card__peek-cover-overlay">
+          <div class="swipe-candidate-card__peek-top">
+            <span class="swipe-candidate-card__peek-type-pill">
+              {{ mediaTypeLabels[nextItem.candidate.media.mediaType] }}
+            </span>
+            <span class="swipe-candidate-card__peek-next-pill">
+              Als naechstes
+            </span>
+          </div>
+
+          <div class="swipe-candidate-card__peek-hero">
+            <p class="swipe-candidate-card__peek-eyebrow">
+              Empfehlung fuer dich
+            </p>
+            <h3 class="swipe-candidate-card__peek-title">
+              {{ nextItem.candidate.media.title }}
+            </h3>
+            <p class="swipe-candidate-card__peek-meta">
+              {{ mediaTypeLabels[nextItem.candidate.media.mediaType] }}
+              <span v-if="nextItem.candidate.media.releaseYear">
+                · {{ nextItem.candidate.media.releaseYear }}
+              </span>
+            </p>
           </div>
         </div>
       </div>
@@ -782,17 +770,17 @@ defineExpose({
 <style scoped>
 .swipe-candidate-card__stage {
   position: relative;
-  padding: 0 1rem 1.5rem 0;
+  padding: 0 0.85rem 1.15rem 0;
   overflow: visible;
 }
 
 .swipe-candidate-card__peek {
   position: absolute;
-  inset: 1.25rem 0 0.1rem 1.2rem;
+  inset: 0.9rem 0 0 0.95rem;
   z-index: 0;
   padding: 0;
   opacity: 0;
-  transform: translate3d(0.65rem, 0.7rem, 0) scale(0.98);
+  transform: translate3d(0.5rem, 0.6rem, 0) scale(0.978);
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--color-surface-secondary) 84%, var(--color-accent-soft)),
@@ -808,17 +796,12 @@ defineExpose({
 
 .swipe-candidate-card__peek--visible {
   opacity: 0.88;
-  transform: translate3d(1.1rem, 1.2rem, 0) scale(0.965);
-}
-
-.swipe-candidate-card__peek-surface {
-  display: grid;
-  min-height: 100%;
+  transform: translate3d(0.82rem, 0.95rem, 0) scale(0.962);
 }
 
 .swipe-candidate-card__peek-cover {
   position: relative;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 4 / 6;
   overflow: hidden;
 }
 
@@ -901,12 +884,6 @@ defineExpose({
   font-weight: 600;
 }
 
-.swipe-candidate-card__peek-body {
-  display: grid;
-  gap: 0.55rem;
-  padding: 0.8rem 0.9rem 0.9rem;
-}
-
 .swipe-candidate-card__peek-label,
 .swipe-candidate-card__peek-title,
 .swipe-candidate-card__peek-meta {
@@ -929,31 +906,6 @@ defineExpose({
 .swipe-candidate-card__peek-meta {
   color: rgba(255, 255, 255, 0.78);
   font-size: 0.86rem;
-}
-
-.swipe-candidate-card__peek-copy {
-  color: var(--color-text-secondary);
-  font-size: 0.88rem;
-  line-height: 1.45;
-}
-
-.swipe-candidate-card__peek-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-}
-
-.swipe-candidate-card__peek-chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 1.65rem;
-  padding: 0.22rem 0.56rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--color-surface-secondary) 82%, var(--color-surface));
-  color: var(--color-text-secondary);
-  font-size: 0.74rem;
-  font-weight: 600;
 }
 
 .swipe-candidate-card__intents {
@@ -1029,7 +981,7 @@ defineExpose({
 
 .swipe-candidate-card__cover {
   position: relative;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 4 / 5.55;
   overflow: hidden;
   background: linear-gradient(135deg, #1f2937, #334155);
 }
@@ -1355,20 +1307,12 @@ defineExpose({
     transform: translate3d(0.55rem, 0.75rem, 0) scale(0.978);
   }
 
-  .swipe-candidate-card__peek-surface {
-    min-height: 100%;
-  }
-
   .swipe-candidate-card__peek-cover-overlay {
     padding: 0.7rem;
   }
 
   .swipe-candidate-card__peek-title {
     font-size: 1.12rem;
-  }
-
-  .swipe-candidate-card__peek-body {
-    padding: 0.7rem 0.75rem 0.8rem;
   }
 
   .swipe-candidate-card__intents {
@@ -1397,6 +1341,43 @@ defineExpose({
 
   .swipe-candidate-card__technical-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 960px) {
+  .swipe-candidate-card__stage {
+    padding-right: 0.75rem;
+    padding-bottom: 1rem;
+  }
+
+  .swipe-candidate-card__peek {
+    inset: 0.7rem 0 0 0.8rem;
+    transform: translate3d(0.42rem, 0.5rem, 0) scale(0.982);
+  }
+
+  .swipe-candidate-card__peek--visible {
+    transform: translate3d(0.68rem, 0.82rem, 0) scale(0.968);
+  }
+
+  .swipe-candidate-card__cover {
+    aspect-ratio: 4 / 5.2;
+  }
+
+  .swipe-candidate-card__cover-overlay {
+    padding: 0.92rem;
+  }
+
+  .swipe-candidate-card__title {
+    font-size: clamp(1.7rem, 2.6vw, 2.2rem);
+  }
+
+  .swipe-candidate-card__body {
+    gap: 0.85rem;
+    padding: 1rem 1rem 1.05rem;
+  }
+
+  .swipe-candidate-card__details-grid {
+    max-height: min(40vh, 22rem);
   }
 }
 
