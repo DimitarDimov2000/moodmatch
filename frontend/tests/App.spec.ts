@@ -100,6 +100,8 @@ describe('App', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain('MoodMatch');
+    expect(wrapper.find('[data-testid="brand-mark"]').exists()).toBe(true);
+    expect(wrapper.get('[data-testid="brand-mark"]').attributes('src')).toContain('moodmatch_logo_dark.svg');
     expect(wrapper.text()).toContain('Profil');
     expect(wrapper.text()).toContain('Suche');
     expect(wrapper.text()).toContain('Medien');
@@ -119,20 +121,21 @@ describe('App', () => {
     expect(activeLinks.some((node) => node.text() === 'Matches')).toBe(true);
   });
 
-  it('renders the header theme control on the login route and updates the root theme attribute', async () => {
+  it('renders the login theme control without the global header and updates the root theme attribute', async () => {
     const wrapper = await mountApp('/login');
     await flushPromises();
 
     const themeSwitch = wrapper.get('[data-testid="theme-switch"]');
 
-    expect(themeSwitch.text()).toContain('System');
+    expect(wrapper.find('[data-testid="brand-link"]').exists()).toBe(false);
     expect(themeSwitch.text()).toContain('Dark');
-    expect(themeSwitch.text()).toContain('Light');
+    expect(themeSwitch.attributes('aria-label')).toBe('Theme: Dark. Click to switch to Light.');
     expect(document.documentElement.dataset.theme).toBe('dark');
 
-    await wrapper.get('[data-testid="theme-option-light"]').trigger('click');
+    await themeSwitch.trigger('click');
 
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');
+    expect(themeSwitch.text()).toContain('Light');
   });
 });

@@ -93,6 +93,11 @@ describe('auth UI foundation', () => {
   it('shows login and create-account forms without a Google button', async () => {
     const { wrapper } = await mountAppAtRoute('/login');
 
+    expect(wrapper.find('[data-testid="login-brand-lockup"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="login-brand-mark"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="brand-link"]').exists()).toBe(false);
+    expect(wrapper.text()).toContain('MoodMatch');
+    expect(wrapper.text()).toContain('Media Discovery App');
     expect(wrapper.text()).toContain('Log in to continue');
     expect(wrapper.text()).toContain('Your media and matches are private to your account.');
     expect(wrapper.text()).toContain('Login');
@@ -115,7 +120,7 @@ describe('auth UI foundation', () => {
     expect(router.currentRoute.value.name).toBe('login');
     expect(router.currentRoute.value.query.reason).toBe('login-required');
     expect(wrapper.text()).toContain('Log in to continue');
-    expect(wrapper.text()).toContain('Signed out');
+    expect(wrapper.find('[data-testid="brand-link"]').exists()).toBe(false);
   });
 
   it('stores a successful login and returns to the requested route', async () => {
@@ -200,6 +205,6 @@ describe('auth UI foundation', () => {
     expect(logoutMock).toHaveBeenCalledTimes(1);
     expect(authStore.isAuthenticated).toBe(false);
     expect(router.currentRoute.value.name).toBe('login');
-    expect(wrapper.text()).toContain('Signed out');
+    expect(wrapper.find('[data-testid="brand-link"]').exists()).toBe(false);
   });
 });

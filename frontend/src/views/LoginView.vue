@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia';
 import { computed, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { storeToRefs } from 'pinia';
 
+import BrandMark from '@/components/brand/BrandMark.vue';
 import AppMessage from '@/components/common/AppMessage.vue';
 import FormField from '@/components/common/FormField.vue';
+import ThemePreferenceSwitch from '@/components/common/ThemePreferenceSwitch.vue';
 import { useAuthStore } from '@/stores/auth';
 
 type AuthPanel = 'login' | 'register';
@@ -64,8 +66,26 @@ async function handleRegister() {
 
 <template>
   <section class="login-view page-stack">
-    <header class="page-header">
-      <div>
+    <header class="page-header login-view__header">
+      <div class="login-view__intro">
+        <div class="login-view__toolbar">
+          <ThemePreferenceSwitch class="login-view__theme-switch" />
+        </div>
+
+        <div
+          class="login-view__brand-lockup"
+          data-testid="login-brand-lockup"
+        >
+          <BrandMark
+            test-id="login-brand-mark"
+            class="login-view__brand-mark"
+          />
+          <div class="login-view__brand-copy">
+            <span class="login-view__brand-name">MoodMatch</span>
+            <span class="login-view__brand-subtitle">Media Discovery App</span>
+          </div>
+        </div>
+
         <p class="eyebrow">
           Login
         </p>
@@ -216,6 +236,71 @@ async function handleRegister() {
 </template>
 
 <style scoped>
+.login-view {
+  position: relative;
+  justify-items: center;
+}
+
+.login-view__header {
+  position: relative;
+  width: 100%;
+  justify-content: center;
+}
+
+.login-view__intro {
+  display: grid;
+  gap: 0.85rem;
+  width: min(100%, 38rem);
+  justify-items: center;
+  padding-top: clamp(0.4rem, 1vw, 0.7rem);
+  text-align: center;
+}
+
+.login-view__toolbar {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.login-view__brand-lockup {
+  display: inline-grid;
+  gap: 0.55rem;
+  min-width: 0;
+  justify-items: center;
+}
+
+.login-view__brand-mark {
+  width: clamp(5.6rem, 13vw, 7rem);
+  height: clamp(5.6rem, 13vw, 7rem);
+}
+
+.login-view__brand-copy {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.login-view__brand-name {
+  color: var(--color-text-primary);
+  font-size: clamp(1.55rem, 3.6vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.login-view__brand-subtitle {
+  color: var(--color-text-secondary);
+  font-size: 0.98rem;
+  line-height: 1.2;
+}
+
+.login-view :deep(.page-title) {
+  max-width: 12ch;
+}
+
+.login-view :deep(.page-copy) {
+  max-width: 34rem;
+  margin-top: 0;
+}
+
 .login-view__panel {
   display: grid;
   gap: 1.25rem;
@@ -270,6 +355,17 @@ async function handleRegister() {
   .login-view__submit {
     width: auto;
     justify-self: start;
+  }
+}
+
+@media (max-width: 560px) {
+  .login-view__toolbar {
+    top: -0.1rem;
+    right: 0;
+  }
+
+  .login-view__brand-subtitle {
+    font-size: 0.9rem;
   }
 }
 </style>

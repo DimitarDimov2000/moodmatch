@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 
+import BrandMark from '@/components/brand/BrandMark.vue';
 import ThemePreferenceSwitch from '@/components/common/ThemePreferenceSwitch.vue';
 import { useAppStore } from '@/stores/app';
 import { useAuthStore } from '@/stores/auth';
@@ -21,6 +22,7 @@ const currentRouteTitle = computed(() =>
   typeof route.meta.title === 'string' ? route.meta.title : appTitle.value,
 );
 const isImmersiveRoute = computed(() => route.name === 'swipe');
+const showsHeader = computed(() => route.name !== 'login' || isAuthenticated.value);
 
 const authStatusLabel = computed(() => {
   if (authStore.mode === 'local-demo') {
@@ -57,15 +59,19 @@ async function handleLogout() {
     class="app-shell"
     :class="{ 'app-shell--immersive': isImmersiveRoute }"
   >
-    <header class="app-shell__header">
+    <header
+      v-if="showsHeader"
+      class="app-shell__header"
+    >
       <div class="app-shell__header-inner page-shell">
         <div class="app-shell__masthead">
           <div class="app-shell__brand-group">
             <RouterLink
               :to="{ name: 'dashboard' }"
               class="app-shell__brand"
+              data-testid="brand-link"
             >
-              <span class="app-shell__brand-mark">MM</span>
+              <BrandMark class="app-shell__brand-mark" />
               <span class="app-shell__brand-name">{{ appTitle }}</span>
             </RouterLink>
 
@@ -76,8 +82,12 @@ async function handleLogout() {
           </div>
 
           <div class="app-shell__header-tools">
-            <div class="app-shell__preferences">
+            <div
+              class="app-shell__preferences"
+              data-testid="header-preferences"
+            >
               <ThemePreferenceSwitch class="app-shell__preference-control" />
+              <slot name="header-preferences" />
             </div>
 
             <div class="app-shell__auth">
@@ -131,7 +141,10 @@ async function handleLogout() {
 
     <main
       class="page-shell app-shell__content"
-      :class="{ 'app-shell__content--immersive': isImmersiveRoute }"
+      :class="{
+        'app-shell__content--immersive': isImmersiveRoute,
+        'app-shell__content--headerless': !showsHeader,
+      }"
     >
       <slot />
     </main>
@@ -211,19 +224,14 @@ async function handleLogout() {
 }
 
 .app-shell__brand-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.8rem;
-  height: 2.8rem;
-  border-radius: var(--radius-full);
-  background: var(--theme-brand-mark-background);
-  color: #fff;
-  border: 1px solid var(--theme-brand-mark-border);
-  box-shadow: var(--shadow-accent);
+  flex: 0 0 auto;
+  width: 2.4rem;
+  height: 2.4rem;
+  opacity: 0.98;
 }
 
 .app-shell__brand-name {
+  font-size: 1.08rem;
   letter-spacing: -0.02em;
 }
 
@@ -272,14 +280,17 @@ async function handleLogout() {
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.85rem;
+  gap: 0.75rem 0.9rem;
   min-width: 0;
 }
 
 .app-shell__preferences {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  min-height: 2.5rem;
   min-width: 0;
 }
 
@@ -351,6 +362,10 @@ async function handleLogout() {
   padding-top: 0.75rem;
 }
 
+.app-shell__content--headerless {
+  padding-top: max(1.1rem, env(safe-area-inset-top));
+}
+
 @media (max-width: 780px) {
   .app-shell__masthead {
     display: grid;
@@ -415,8 +430,8 @@ async function handleLogout() {
   }
 
   .app-shell__brand-mark {
-    width: 2.55rem;
-    height: 2.55rem;
+    width: 2.2rem;
+    height: 2.2rem;
   }
 
   .app-shell__nav-link {
