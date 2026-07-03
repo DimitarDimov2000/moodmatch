@@ -323,6 +323,7 @@ async function handleRegister() {
   font-size: clamp(1.8rem, 6.2vw, 3.2rem);
   line-height: 1.02;
   white-space: nowrap;
+  text-wrap: balance;
 }
 
 .login-view :deep(.page-copy) {
@@ -435,6 +436,11 @@ async function handleRegister() {
   .login-view__brand-subtitle {
     max-width: 14ch;
     font-size: 0.9rem;
+    white-space: normal;
+  }
+
+  .login-view :deep(.page-title) {
+    max-width: 11ch;
     white-space: normal;
   }
 

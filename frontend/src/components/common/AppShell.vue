@@ -314,6 +314,11 @@ function handleWindowKeydown(event: KeyboardEvent) {
 }
 
 .app-shell__auth-label {
+  display: block;
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--color-text-primary);
   font-size: 0.95rem;
   font-weight: 700;
@@ -500,12 +505,21 @@ function handleWindowKeydown(event: KeyboardEvent) {
   }
 
   .app-shell__header-tools {
+    flex-wrap: wrap;
     gap: 0.4rem;
+  }
+
+  .app-shell__preferences {
+    justify-content: flex-end;
   }
 
   .app-shell__auth-trigger {
     min-height: 2.4rem;
     padding: 0.52rem 0.78rem;
+  }
+
+  .app-shell__auth-label {
+    max-width: 7.5rem;
   }
 
   .app-shell__nav-link {
