@@ -1,6 +1,7 @@
 :root {
   color-scheme: dark;
-  --font-sans: Inter, 'Avenir Next', 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: Inter, "Avenir Next", "Segoe UI", ui-sans-serif, system-ui,
+    sans-serif;
 
   --color-background: #070b18;
   --color-background-alt: #0d1328;
@@ -42,27 +43,54 @@
   --radius-xl: 32px;
   --radius-full: 9999px;
 
-  --shadow-card:
-    0 24px 60px rgba(3, 7, 18, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  --shadow-card-hover:
-    0 30px 72px rgba(3, 7, 18, 0.48),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --shadow-card: 0 22px 52px rgba(3, 7, 18, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --shadow-card-hover: 0 28px 64px rgba(3, 7, 18, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --shadow-accent: 0 18px 36px rgba(255, 47, 117, 0.22);
   --shadow-shell: 0 24px 70px rgba(2, 6, 16, 0.55);
   --shadow-swipe-card: 0 28px 60px rgba(6, 11, 24, 0.34);
 
-  --theme-html-background:
-    radial-gradient(circle at top left, rgba(139, 124, 255, 0.18), transparent 24%),
-    radial-gradient(circle at top right, rgba(255, 79, 135, 0.16), transparent 24%),
+  --theme-html-background: radial-gradient(
+      circle at 12% 0%,
+      rgba(139, 124, 255, 0.09),
+      transparent 18%
+    ),
+    radial-gradient(
+      circle at 88% 0%,
+      rgba(255, 79, 135, 0.08),
+      transparent 18%
+    ),
     linear-gradient(180deg, var(--color-background) 0%, #040711 100%);
   --theme-selection-background: rgba(255, 79, 135, 0.24);
   --theme-selection-text: #fff;
   --theme-option-background: #121931;
-  --theme-input-background: linear-gradient(180deg, rgba(12, 17, 34, 0.82), rgba(21, 28, 52, 0.94));
-  --theme-input-disabled-background: linear-gradient(180deg, rgba(14, 18, 34, 0.7), rgba(18, 22, 40, 0.76));
-  --theme-card-background: linear-gradient(180deg, rgba(29, 37, 68, 0.88) 0%, rgba(16, 22, 43, 0.96) 100%);
-  --theme-card-highlight: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 34%);
+  --theme-input-background: linear-gradient(
+    180deg,
+    rgba(12, 17, 34, 0.82),
+    rgba(21, 28, 52, 0.94)
+  );
+  --theme-input-disabled-background: linear-gradient(
+    180deg,
+    rgba(14, 18, 34, 0.7),
+    rgba(18, 22, 40, 0.76)
+  );
+  --theme-card-background: linear-gradient(
+    180deg,
+    rgba(25, 33, 59, 0.9) 0%,
+    rgba(14, 20, 39, 0.97) 100%
+  );
+  --theme-card-highlight: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.025),
+    transparent 28%
+  );
+  --theme-card-accent-line: linear-gradient(
+    90deg,
+    rgba(255, 79, 135, 0.34),
+    rgba(139, 124, 255, 0.22) 56%,
+    transparent
+  );
   --theme-eyebrow-color: #ffb4c8;
   --theme-button-hover-shadow: 0 14px 28px rgba(5, 9, 19, 0.26);
   --theme-button-primary-border: rgba(255, 255, 255, 0.12);
@@ -74,65 +102,126 @@
   --theme-badge-warning-text: #ffd29a;
   --theme-badge-error-text: #ffc0cf;
 
-  --theme-app-shell-background:
-    radial-gradient(circle at 0% 0%, rgba(139, 124, 255, 0.14), transparent 26%),
-    radial-gradient(circle at 100% 0%, rgba(255, 79, 135, 0.14), transparent 24%),
+  --theme-app-shell-background: radial-gradient(
+      circle at 12% 0%,
+      rgba(139, 124, 255, 0.08),
+      transparent 18%
+    ),
+    radial-gradient(
+      circle at 88% 0%,
+      rgba(255, 79, 135, 0.08),
+      transparent 18%
+    ),
     linear-gradient(180deg, var(--color-background) 0%, #050814 100%);
-  --theme-app-shell-overlay:
-    radial-gradient(circle at 14% 18%, rgba(255, 79, 135, 0.12), transparent 22%),
-    radial-gradient(circle at 82% 0%, rgba(139, 124, 255, 0.13), transparent 26%);
-  --theme-app-shell-header-background: linear-gradient(180deg, rgba(7, 11, 24, 0.92), rgba(7, 11, 24, 0.74) 72%, transparent);
-  --theme-app-shell-header-rule:
-    linear-gradient(
-      90deg,
-      transparent,
-      color-mix(in srgb, var(--color-border) 78%, white 6%) 14%,
-      color-mix(in srgb, var(--color-border) 78%, white 6%) 86%,
-      transparent
+  --theme-app-shell-overlay: radial-gradient(
+      circle at 16% 12%,
+      rgba(255, 79, 135, 0.05),
+      transparent 14%
+    ),
+    radial-gradient(
+      circle at 78% 0%,
+      rgba(139, 124, 255, 0.06),
+      transparent 18%
     );
-  --theme-app-shell-frame-background: rgba(16, 22, 43, 0.6);
-  --theme-app-shell-frame-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 12px 30px rgba(3, 7, 18, 0.18);
+  --theme-app-shell-header-background: linear-gradient(
+    180deg,
+    rgba(7, 11, 24, 0.92),
+    rgba(7, 11, 24, 0.74) 72%,
+    transparent
+  );
+  --theme-app-shell-header-rule: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-border) 78%, white 6%) 14%,
+    color-mix(in srgb, var(--color-border) 78%, white 6%) 86%,
+    transparent
+  );
+  --theme-app-shell-frame-background: rgba(14, 20, 39, 0.7);
+  --theme-app-shell-frame-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 10px 26px rgba(3, 7, 18, 0.16);
   --theme-app-shell-link-hover-background: rgba(255, 255, 255, 0.06);
   --theme-app-shell-link-hover-border: rgba(255, 255, 255, 0.06);
-  --theme-app-shell-link-active-background: linear-gradient(135deg, rgba(255, 79, 135, 0.22), rgba(139, 124, 255, 0.22));
+  --theme-app-shell-link-active-background: linear-gradient(
+    135deg,
+    rgba(255, 79, 135, 0.22),
+    rgba(139, 124, 255, 0.22)
+  );
   --theme-app-shell-link-active-border: rgba(255, 255, 255, 0.1);
   --theme-app-shell-link-active-color: #fff;
   --theme-app-shell-link-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --theme-control-label-color: rgba(229, 233, 255, 0.7);
   --theme-control-background: rgba(13, 19, 40, 0.62);
   --theme-control-border: rgba(255, 255, 255, 0.12);
-  --theme-control-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+  --theme-control-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04),
     0 12px 24px rgba(3, 7, 18, 0.16);
   --theme-control-button-color: var(--color-text-secondary);
   --theme-control-button-hover-background: rgba(255, 255, 255, 0.06);
-  --theme-control-button-active-background: linear-gradient(135deg, rgba(255, 79, 135, 0.22), rgba(139, 124, 255, 0.22));
+  --theme-control-button-active-background: linear-gradient(
+    135deg,
+    rgba(255, 79, 135, 0.22),
+    rgba(139, 124, 255, 0.22)
+  );
   --theme-control-button-active-border: rgba(255, 255, 255, 0.12);
   --theme-control-button-active-color: #fff;
   --theme-control-button-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
   --theme-message-rail-background: rgba(255, 255, 255, 0.08);
-  --theme-message-neutral-background: linear-gradient(180deg, rgba(27, 34, 60, 0.86), rgba(18, 24, 46, 0.92));
-  --theme-message-error-background: linear-gradient(180deg, rgba(66, 21, 38, 0.9), rgba(40, 15, 24, 0.94));
-  --theme-message-warning-background: linear-gradient(180deg, rgba(69, 41, 14, 0.9), rgba(41, 26, 11, 0.94));
-  --theme-message-info-background: linear-gradient(180deg, rgba(20, 39, 76, 0.9), rgba(13, 25, 52, 0.94));
+  --theme-message-neutral-background: linear-gradient(
+    180deg,
+    rgba(23, 30, 53, 0.88),
+    rgba(16, 22, 41, 0.94)
+  );
+  --theme-message-error-background: linear-gradient(
+    180deg,
+    rgba(58, 20, 34, 0.9),
+    rgba(36, 15, 23, 0.95)
+  );
+  --theme-message-warning-background: linear-gradient(
+    180deg,
+    rgba(62, 38, 16, 0.9),
+    rgba(38, 24, 11, 0.95)
+  );
+  --theme-message-info-background: linear-gradient(
+    180deg,
+    rgba(19, 35, 69, 0.9),
+    rgba(13, 24, 48, 0.95)
+  );
 
-  --theme-login-tabs-background: rgba(255, 255, 255, 0.05);
+  --theme-login-tabs-background: rgba(255, 255, 255, 0.045);
   --theme-login-tabs-border: rgba(255, 255, 255, 0.12);
-  --theme-login-tab-active-background: color-mix(in srgb, var(--color-surface-strong) 88%, white 4%);
+  --theme-login-tab-active-background: color-mix(
+    in srgb,
+    var(--color-surface-strong) 88%,
+    white 4%
+  );
   --theme-login-tab-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  --theme-login-tab-active-border: color-mix(in srgb, var(--color-accent) 30%, var(--color-border));
-  --theme-login-panel-glow:
-    radial-gradient(circle at top, color-mix(in srgb, var(--color-accent-soft) 90%, transparent), transparent 58%);
+  --theme-login-tab-active-border: color-mix(
+    in srgb,
+    var(--color-accent) 30%,
+    var(--color-border)
+  );
+  --theme-login-panel-glow: radial-gradient(
+    circle at top,
+    color-mix(in srgb, var(--color-accent-soft) 72%, transparent),
+    transparent 54%
+  );
 
-  --theme-swipe-background:
-    radial-gradient(circle at top center, rgba(124, 92, 252, 0.26), transparent 34%),
-    radial-gradient(circle at bottom center, rgba(236, 72, 153, 0.18), transparent 36%),
+  --theme-swipe-background: radial-gradient(
+      circle at top center,
+      rgba(124, 92, 252, 0.26),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at bottom center,
+      rgba(236, 72, 153, 0.18),
+      transparent 36%
+    ),
     linear-gradient(180deg, #0f1630 0%, #0a1024 100%);
-  --theme-swipe-overlay:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02), transparent 28%),
+  --theme-swipe-overlay: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.02),
+      transparent 28%
+    ),
     linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 28%);
   --theme-swipe-text: #f8f7ff;
   --theme-swipe-title-color: #fff;
@@ -156,22 +245,36 @@
   --theme-swipe-intent-background: rgba(15, 23, 42, 0.82);
   --theme-swipe-intent-text: #fff;
   --theme-swipe-cover-fallback-text: rgba(255, 255, 255, 0.9);
-  --theme-swipe-cover-fallback-overlay:
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.2), transparent 40%),
-    radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.14), transparent 32%);
-  --theme-swipe-cover-overlay:
-    linear-gradient(
-      180deg,
-      rgba(15, 23, 42, 0.12) 0%,
-      rgba(15, 23, 42, 0.05) 25%,
-      rgba(15, 23, 42, 0.82) 100%
+  --theme-swipe-cover-fallback-overlay: radial-gradient(
+      circle at top right,
+      rgba(255, 255, 255, 0.2),
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at bottom left,
+      rgba(255, 255, 255, 0.14),
+      transparent 32%
     );
+  --theme-swipe-cover-overlay: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.12) 0%,
+    rgba(15, 23, 42, 0.05) 25%,
+    rgba(15, 23, 42, 0.82) 100%
+  );
   --theme-swipe-type-pill-background: rgba(255, 255, 255, 0.12);
   --theme-swipe-type-pill-border: rgba(255, 255, 255, 0.18);
   --theme-swipe-type-pill-text: #fff;
   --theme-swipe-score-background: rgba(15, 23, 42, 0.72);
-  --theme-swipe-score-success-background: color-mix(in srgb, var(--color-success) 42%, rgba(15, 23, 42, 0.72));
-  --theme-swipe-score-accent-background: color-mix(in srgb, var(--color-accent) 38%, rgba(15, 23, 42, 0.72));
+  --theme-swipe-score-success-background: color-mix(
+    in srgb,
+    var(--color-success) 42%,
+    rgba(15, 23, 42, 0.72)
+  );
+  --theme-swipe-score-accent-background: color-mix(
+    in srgb,
+    var(--color-accent) 38%,
+    rgba(15, 23, 42, 0.72)
+  );
   --theme-swipe-score-caption: rgba(255, 255, 255, 0.84);
   --theme-swipe-drag-shadow: 0 24px 54px rgba(15, 23, 42, 0.2);
   --theme-swipe-sticky-shadow: 0 16px 34px rgba(4, 10, 24, 0.34);
@@ -181,7 +284,11 @@
   --theme-swipe-details-button-background: rgba(190, 196, 255, 0.1);
   --theme-swipe-details-button-border: rgba(190, 196, 255, 0.22);
   --theme-swipe-details-button-text: #c7c5ff;
-  --theme-swipe-like-button-background: linear-gradient(180deg, rgba(255, 74, 124, 0.92), rgba(229, 49, 98, 0.92));
+  --theme-swipe-like-button-background: linear-gradient(
+    180deg,
+    rgba(255, 74, 124, 0.92),
+    rgba(229, 49, 98, 0.92)
+  );
   --theme-swipe-like-button-border: rgba(255, 255, 255, 0.18);
   --theme-swipe-like-button-shadow: 0 12px 24px rgba(229, 49, 98, 0.24);
 
@@ -196,13 +303,13 @@
   --space-9: 3rem;
   --space-10: 4rem;
 
-  --page-max-width: 1200px;
+  --page-max-width: 1248px;
   --page-padding: clamp(1rem, 3vw, 2rem);
-  --content-gap: clamp(1rem, 2.4vw, 1.6rem);
+  --content-gap: clamp(0.9rem, 2vw, 1.35rem);
   --shell-sticky-offset: 8.75rem;
 }
 
-:root[data-theme='light'] {
+:root[data-theme="light"] {
   color-scheme: light;
   --color-background: #fdf7f2;
   --color-background-alt: #f4e8e1;
@@ -219,27 +326,54 @@
   --color-text-secondary: rgba(58, 42, 53, 0.78);
   --color-text-muted: rgba(92, 72, 83, 0.62);
 
-  --shadow-card:
-    0 24px 60px rgba(125, 87, 70, 0.12),
+  --shadow-card: 0 22px 52px rgba(125, 87, 70, 0.11),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  --shadow-card-hover:
-    0 30px 72px rgba(125, 87, 70, 0.16),
+  --shadow-card-hover: 0 28px 64px rgba(125, 87, 70, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
   --shadow-accent: 0 18px 36px rgba(255, 47, 117, 0.18);
   --shadow-shell: 0 24px 70px rgba(152, 118, 101, 0.16);
   --shadow-swipe-card: 0 24px 56px rgba(121, 94, 80, 0.16);
 
-  --theme-html-background:
-    radial-gradient(circle at top left, rgba(255, 79, 135, 0.14), transparent 26%),
-    radial-gradient(circle at top right, rgba(139, 124, 255, 0.12), transparent 24%),
+  --theme-html-background: radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 79, 135, 0.08),
+      transparent 18%
+    ),
+    radial-gradient(
+      circle at 88% 0%,
+      rgba(139, 124, 255, 0.07),
+      transparent 17%
+    ),
     linear-gradient(180deg, #fffaf6 0%, #f7eee8 56%, #f0e3de 100%);
   --theme-selection-background: rgba(255, 79, 135, 0.18);
   --theme-selection-text: #2b1a27;
   --theme-option-background: #fff7f2;
-  --theme-input-background: linear-gradient(180deg, rgba(255, 252, 248, 0.96), rgba(248, 239, 232, 0.98));
-  --theme-input-disabled-background: linear-gradient(180deg, rgba(249, 242, 237, 0.92), rgba(243, 233, 225, 0.96));
-  --theme-card-background: linear-gradient(180deg, rgba(255, 251, 247, 0.9) 0%, rgba(248, 240, 234, 0.96) 100%);
-  --theme-card-highlight: linear-gradient(180deg, rgba(255, 255, 255, 0.64), transparent 34%);
+  --theme-input-background: linear-gradient(
+    180deg,
+    rgba(255, 252, 248, 0.96),
+    rgba(248, 239, 232, 0.98)
+  );
+  --theme-input-disabled-background: linear-gradient(
+    180deg,
+    rgba(249, 242, 237, 0.92),
+    rgba(243, 233, 225, 0.96)
+  );
+  --theme-card-background: linear-gradient(
+    180deg,
+    rgba(255, 251, 247, 0.92) 0%,
+    rgba(247, 239, 233, 0.97) 100%
+  );
+  --theme-card-highlight: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.54),
+    transparent 28%
+  );
+  --theme-card-accent-line: linear-gradient(
+    90deg,
+    rgba(255, 79, 135, 0.24),
+    rgba(139, 124, 255, 0.18) 56%,
+    transparent
+  );
   --theme-eyebrow-color: #b54873;
   --theme-button-hover-shadow: 0 14px 28px rgba(125, 87, 70, 0.14);
   --theme-button-primary-border: rgba(255, 255, 255, 0.16);
@@ -251,65 +385,130 @@
   --theme-badge-warning-text: #925723;
   --theme-badge-error-text: #a24962;
 
-  --theme-app-shell-background:
-    radial-gradient(circle at 0% 0%, rgba(139, 124, 255, 0.16), transparent 28%),
-    radial-gradient(circle at 100% 0%, rgba(255, 79, 135, 0.14), transparent 26%),
+  --theme-app-shell-background: radial-gradient(
+      circle at 12% 0%,
+      rgba(139, 124, 255, 0.08),
+      transparent 20%
+    ),
+    radial-gradient(
+      circle at 88% 0%,
+      rgba(255, 79, 135, 0.08),
+      transparent 19%
+    ),
     linear-gradient(180deg, #fffaf5 0%, #f4ebe5 100%);
-  --theme-app-shell-overlay:
-    radial-gradient(circle at 14% 18%, rgba(255, 79, 135, 0.1), transparent 22%),
-    radial-gradient(circle at 82% 0%, rgba(139, 124, 255, 0.11), transparent 26%);
-  --theme-app-shell-header-background: linear-gradient(180deg, rgba(252, 245, 239, 0.96), rgba(252, 245, 239, 0.8) 72%, transparent);
-  --theme-app-shell-header-rule:
-    linear-gradient(
-      90deg,
-      transparent,
-      color-mix(in srgb, var(--color-border) 88%, white 24%) 14%,
-      color-mix(in srgb, var(--color-border) 88%, white 24%) 86%,
-      transparent
+  --theme-app-shell-overlay: radial-gradient(
+      circle at 16% 12%,
+      rgba(255, 79, 135, 0.04),
+      transparent 14%
+    ),
+    radial-gradient(
+      circle at 78% 0%,
+      rgba(139, 124, 255, 0.05),
+      transparent 18%
     );
-  --theme-app-shell-frame-background: rgba(255, 248, 242, 0.76);
-  --theme-app-shell-frame-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.64),
+  --theme-app-shell-header-background: linear-gradient(
+    180deg,
+    rgba(252, 245, 239, 0.96),
+    rgba(252, 245, 239, 0.8) 72%,
+    transparent
+  );
+  --theme-app-shell-header-rule: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-border) 88%, white 24%) 14%,
+    color-mix(in srgb, var(--color-border) 88%, white 24%) 86%,
+    transparent
+  );
+  --theme-app-shell-frame-background: rgba(255, 248, 242, 0.8);
+  --theme-app-shell-frame-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.64),
     0 12px 30px rgba(128, 98, 84, 0.12);
   --theme-app-shell-link-hover-background: rgba(88, 64, 77, 0.06);
   --theme-app-shell-link-hover-border: rgba(88, 64, 77, 0.08);
-  --theme-app-shell-link-active-background: linear-gradient(135deg, rgba(255, 79, 135, 0.16), rgba(139, 124, 255, 0.18));
+  --theme-app-shell-link-active-background: linear-gradient(
+    135deg,
+    rgba(255, 79, 135, 0.16),
+    rgba(139, 124, 255, 0.18)
+  );
   --theme-app-shell-link-active-border: rgba(120, 89, 108, 0.14);
   --theme-app-shell-link-active-color: var(--color-text-primary);
   --theme-app-shell-link-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
   --theme-control-label-color: rgba(71, 50, 63, 0.68);
   --theme-control-background: rgba(255, 248, 242, 0.86);
   --theme-control-border: rgba(109, 78, 60, 0.12);
-  --theme-control-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+  --theme-control-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72),
     0 10px 24px rgba(128, 98, 84, 0.12);
   --theme-control-button-color: rgba(71, 50, 63, 0.74);
   --theme-control-button-hover-background: rgba(88, 64, 77, 0.06);
-  --theme-control-button-active-background: linear-gradient(135deg, rgba(255, 79, 135, 0.18), rgba(139, 124, 255, 0.2));
+  --theme-control-button-active-background: linear-gradient(
+    135deg,
+    rgba(255, 79, 135, 0.18),
+    rgba(139, 124, 255, 0.2)
+  );
   --theme-control-button-active-border: rgba(120, 89, 108, 0.14);
   --theme-control-button-active-color: var(--color-text-primary);
   --theme-control-button-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
 
   --theme-message-rail-background: rgba(103, 76, 66, 0.12);
-  --theme-message-neutral-background: linear-gradient(180deg, rgba(255, 250, 245, 0.96), rgba(248, 240, 234, 0.98));
-  --theme-message-error-background: linear-gradient(180deg, rgba(255, 236, 240, 0.96), rgba(252, 226, 232, 0.98));
-  --theme-message-warning-background: linear-gradient(180deg, rgba(255, 244, 229, 0.96), rgba(253, 236, 214, 0.98));
-  --theme-message-info-background: linear-gradient(180deg, rgba(240, 245, 255, 0.96), rgba(232, 240, 255, 0.98));
+  --theme-message-neutral-background: linear-gradient(
+    180deg,
+    rgba(255, 250, 245, 0.96),
+    rgba(248, 240, 234, 0.98)
+  );
+  --theme-message-error-background: linear-gradient(
+    180deg,
+    rgba(255, 236, 240, 0.96),
+    rgba(252, 226, 232, 0.98)
+  );
+  --theme-message-warning-background: linear-gradient(
+    180deg,
+    rgba(255, 244, 229, 0.96),
+    rgba(253, 236, 214, 0.98)
+  );
+  --theme-message-info-background: linear-gradient(
+    180deg,
+    rgba(240, 245, 255, 0.96),
+    rgba(232, 240, 255, 0.98)
+  );
 
-  --theme-login-tabs-background: rgba(255, 255, 255, 0.42);
+  --theme-login-tabs-background: rgba(255, 255, 255, 0.48);
   --theme-login-tabs-border: rgba(109, 78, 60, 0.12);
-  --theme-login-tab-active-background: color-mix(in srgb, var(--color-surface-strong) 92%, white 14%);
+  --theme-login-tab-active-background: color-mix(
+    in srgb,
+    var(--color-surface-strong) 92%,
+    white 14%
+  );
   --theme-login-tab-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
-  --theme-login-tab-active-border: color-mix(in srgb, var(--color-accent) 28%, var(--color-border));
-  --theme-login-panel-glow:
-    radial-gradient(circle at top, color-mix(in srgb, var(--color-accent-soft) 75%, transparent), transparent 60%);
+  --theme-login-tab-active-border: color-mix(
+    in srgb,
+    var(--color-accent) 28%,
+    var(--color-border)
+  );
+  --theme-login-panel-glow: radial-gradient(
+    circle at top,
+    color-mix(in srgb, var(--color-accent-soft) 62%, transparent),
+    transparent 56%
+  );
 
-  --theme-swipe-background:
-    radial-gradient(circle at top center, rgba(139, 124, 255, 0.14), transparent 34%),
-    radial-gradient(circle at bottom center, rgba(255, 79, 135, 0.12), transparent 36%),
-    linear-gradient(180deg, rgba(255, 250, 245, 0.98) 0%, rgba(248, 239, 232, 0.98) 100%);
-  --theme-swipe-overlay:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.24), transparent 28%),
+  --theme-swipe-background: radial-gradient(
+      circle at top center,
+      rgba(139, 124, 255, 0.14),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at bottom center,
+      rgba(255, 79, 135, 0.12),
+      transparent 36%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 250, 245, 0.98) 0%,
+      rgba(248, 239, 232, 0.98) 100%
+    );
+  --theme-swipe-overlay: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.24),
+      transparent 28%
+    ),
     linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 28%);
   --theme-swipe-text: var(--color-text-primary);
   --theme-swipe-title-color: var(--color-text-primary);

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { RouterLink } from 'vue-router';
+import { computed } from "vue";
+import { RouterLink } from "vue-router";
 
-import TagChip from '@/components/tags/TagChip.vue';
-import type { MediaResponse } from '@/types/api';
+import TagChip from "@/components/tags/TagChip.vue";
+import type { MediaResponse } from "@/types/api";
 import {
   canBeFavourite,
   commitmentLevelLabels,
@@ -11,27 +11,51 @@ import {
   mediaTypeLabels,
   metadataOriginLabels,
   sourceTypeLabels,
-} from '@/components/media/media-options';
+} from "@/components/media/media-options";
 
 const props = defineProps<{
   media: MediaResponse;
 }>();
 
-const visibleTags = computed(() => props.media.tags.slice(0, 5));
-const hiddenTagCount = computed(() => Math.max(props.media.tags.length - visibleTags.value.length, 0));
-const sourceSummary = computed(() => {
-  const sourceParts = [sourceTypeLabels[props.media.sourceType]];
+const visibleTags = computed(() => props.media.tags.slice(0, 4));
+const hiddenTagCount = computed(() =>
+  Math.max(props.media.tags.length - visibleTags.value.length, 0),
+);
+const sourceLabel = computed(() => {
+  const parts = [
+    mediaTypeLabels[props.media.mediaType],
+    sourceTypeLabels[props.media.sourceType],
+  ];
 
   if (props.media.externalSourceName) {
-    sourceParts.push(props.media.externalSourceName.split('_').join(' '));
+    parts.push(props.media.externalSourceName.split("_").join(" "));
   }
 
-  if (props.media.metadataOrigin) {
-    sourceParts.push(metadataOriginLabels[props.media.metadataOrigin]);
+  if (props.media.releaseYear) {
+    parts.push(String(props.media.releaseYear));
   }
 
-  return sourceParts.join(' · ');
+  return parts.join(" · ");
 });
+
+const detailBadges = computed(() =>
+  [
+    consumptionStatusLabels[props.media.consumptionStatus],
+    commitmentLevelLabels[props.media.commitmentLevel],
+    props.media.metadataOrigin
+      ? metadataOriginLabels[props.media.metadataOrigin]
+      : null,
+  ].filter((value): value is string => Boolean(value)),
+);
+const ratingLabel = computed(() =>
+  props.media.rating === null ? "Keine Bewertung" : `${props.media.rating}/5`,
+);
+const favouriteEligible = computed(() =>
+  canBeFavourite(props.media.consumptionStatus, props.media.rating),
+);
+const descriptionPreview = computed(
+  () => props.media.description?.trim() ?? "",
+);
 </script>
 
 <template>
@@ -59,7 +83,7 @@ const sourceSummary = computed(() => {
             Details
           </RouterLink>
           <span
-            v-if="!canBeFavourite(media.consumptionStatus, media.rating)"
+            v-if="!favouriteEligible"
             class="media-card__note"
           >
             Favorit erst ab konsumiert und Bewertung 4+
@@ -68,12 +92,22 @@ const sourceSummary = computed(() => {
       </div>
 
       <div class="media-card__copy">
+        <div class="media-card__header">
+          <h2 class="media-card__title">
+            {{ media.title }}
+          </h2>
+          <p class="media-card__meta">
+            {{ sourceLabel }}
+          </p>
+        </div>
+
         <div class="media-card__eyebrow-row">
-          <span class="badge badge--accent">
-            {{ mediaTypeLabels[media.mediaType] }}
-          </span>
-          <span class="badge">
-            {{ consumptionStatusLabels[media.consumptionStatus] }}
+          <span
+            v-for="badge in detailBadges"
+            :key="badge"
+            class="badge"
+          >
+            {{ badge }}
           </span>
           <span
             v-if="media.isFavourite"
@@ -83,42 +117,25 @@ const sourceSummary = computed(() => {
           </span>
         </div>
 
-        <div class="media-card__header">
-          <h2 class="media-card__title">
-            {{ media.title }}
-          </h2>
+        <div class="media-card__facts">
+          <span class="media-card__fact">
+            {{ ratingLabel }}
+          </span>
+          <span class="media-card__fact"> {{ media.tags.length }} Tags </span>
+          <span
+            v-if="media.externalSourceName"
+            class="media-card__fact media-card__fact--accent"
+          >
+            {{ media.externalSourceName.split("_").join(" ") }}
+          </span>
         </div>
 
-        <p class="media-card__meta">
-          Aufwand: {{ commitmentLevelLabels[media.commitmentLevel] }}
-          <span v-if="media.releaseYear"> · {{ media.releaseYear }}</span>
-        </p>
-
         <p
-          v-if="media.description"
+          v-if="descriptionPreview"
           class="media-card__description"
         >
-          {{ media.description }}
+          {{ descriptionPreview }}
         </p>
-
-        <p class="media-card__source">
-          {{ sourceSummary }}
-        </p>
-
-        <dl class="media-card__facts">
-          <div>
-            <dt>Bewertung</dt>
-            <dd>{{ media.rating ?? 'Keine' }}</dd>
-          </div>
-          <div>
-            <dt>Umfang</dt>
-            <dd>{{ commitmentLevelLabels[media.commitmentLevel] }}</dd>
-          </div>
-          <div>
-            <dt>Tags bestaetigt</dt>
-            <dd>{{ media.tags.length }}</dd>
-          </div>
-        </dl>
 
         <div
           v-if="visibleTags.length > 0"
@@ -148,76 +165,77 @@ const sourceSummary = computed(() => {
 
 <style scoped>
 .media-card {
-  padding: clamp(1.1rem, 2.6vw, 1.35rem);
+  padding: clamp(1rem, 2.4vw, 1.15rem);
 }
 
 .media-card__body {
   display: grid;
-  grid-template-columns: 10.5rem minmax(0, 1fr);
-  gap: 1.35rem;
+  grid-template-columns: 8.6rem minmax(0, 1fr);
+  gap: 1rem;
   align-items: start;
 }
 
 .media-card__copy {
   display: grid;
-  gap: 0.9rem;
+  gap: 0.7rem;
 }
 
 .media-card__eyebrow-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem;
+  gap: 0.45rem;
 }
 
 .media-card__header {
   display: grid;
-  gap: 0.25rem;
+  gap: 0.15rem;
 }
 
 .media-card__title {
   margin: 0;
-  font-size: clamp(1.2rem, 2.4vw, 1.42rem);
+  font-size: clamp(1.12rem, 2vw, 1.3rem);
   letter-spacing: -0.02em;
 }
 
 .media-card__meta,
-.media-card__source,
 .media-card__description,
 .media-card__note {
   margin: 0;
   color: var(--color-text-secondary);
 }
 
-.media-card__source {
-  font-size: 0.93rem;
-}
-
 .media-card__facts {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-.media-card__facts div {
-  padding: 0.75rem;
-  border-radius: var(--radius-md);
+.media-card__fact {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.8rem;
+  padding: 0.24rem 0.68rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
   background: var(--color-surface-secondary);
-}
-
-.media-card__facts dt {
-  color: var(--color-text-muted);
-  font-size: 0.8rem;
-}
-
-.media-card__facts dd {
-  margin: 0.3rem 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
   font-weight: 600;
+}
+
+.media-card__fact--accent {
+  background: var(--color-accent-soft);
+  border-color: color-mix(
+    in srgb,
+    var(--color-accent) 28%,
+    var(--color-border)
+  );
+  color: var(--theme-badge-accent-text);
 }
 
 .media-card__aside {
   display: grid;
-  gap: 0.95rem;
+  gap: 0.75rem;
   justify-items: stretch;
 }
 
@@ -227,8 +245,7 @@ const sourceSummary = computed(() => {
   object-fit: cover;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
     var(--color-surface-muted);
   box-shadow: var(--shadow-card);
 }
@@ -243,12 +260,12 @@ const sourceSummary = computed(() => {
 
 .media-card__actions {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 .media-card__tag-group {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.45rem;
 }
 
 .media-card__label {
@@ -263,7 +280,14 @@ const sourceSummary = computed(() => {
 .media-card__tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
+  gap: 0.55rem;
+}
+
+.media-card__description {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 @media (max-width: 820px) {
@@ -272,14 +296,8 @@ const sourceSummary = computed(() => {
   }
 
   .media-card__aside {
-    grid-template-columns: 6.5rem 1fr;
+    grid-template-columns: 6rem 1fr;
     align-items: start;
-  }
-}
-
-@media (max-width: 560px) {
-  .media-card__facts {
-    grid-template-columns: 1fr;
   }
 }
 </style>

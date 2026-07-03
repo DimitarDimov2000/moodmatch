@@ -81,8 +81,8 @@ const emit = defineEmits<{
 <style scoped>
 .swipe-decision-controls {
   display: grid;
-  gap: 0.9rem;
-  padding: 1rem;
+  gap: 0.7rem;
+  padding: 0.85rem 0.9rem;
   border-color: var(--theme-swipe-panel-border);
   background: var(--theme-swipe-panel-background);
   backdrop-filter: blur(18px);
@@ -90,7 +90,7 @@ const emit = defineEmits<{
 
 .swipe-decision-controls__copy {
   display: grid;
-  gap: 0.3rem;
+  gap: 0.18rem;
 }
 
 .swipe-decision-controls__copy p {
@@ -107,32 +107,34 @@ const emit = defineEmits<{
 
 .swipe-decision-controls__buttons {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.6rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .swipe-decision-controls__button {
   display: grid;
   justify-items: center;
-  gap: 0.15rem;
-  min-height: 5rem;
-  padding: 0.9rem 0.65rem;
-  border-radius: 999px;
+  gap: 0.1rem;
+  min-height: 4.1rem;
+  padding: 0.62rem 0.55rem;
+  border-radius: 1.6rem;
   border-width: 1px;
 }
 
 .swipe-decision-controls__icon {
-  font-size: 1.15rem;
+  font-size: 1.02rem;
   font-weight: 700;
+  line-height: 1;
 }
 
 .swipe-decision-controls__label {
   font-weight: 700;
+  font-size: 0.94rem;
 }
 
 .swipe-decision-controls__hint {
   color: var(--theme-swipe-panel-soft-text);
-  font-size: 0.82rem;
+  font-size: 0.76rem;
 }
 
 .swipe-decision-controls__button--skip {
@@ -169,16 +171,16 @@ const emit = defineEmits<{
 
 @media (max-width: 380px) {
   .swipe-decision-controls__button {
-    min-height: 4.35rem;
-    padding-inline: 0.45rem;
+    min-height: 3.8rem;
+    padding-inline: 0.42rem;
   }
 
   .swipe-decision-controls__label {
-    font-size: 0.92rem;
+    font-size: 0.88rem;
   }
 
   .swipe-decision-controls__hint {
-    font-size: 0.76rem;
+    font-size: 0.72rem;
   }
 }
 </style>

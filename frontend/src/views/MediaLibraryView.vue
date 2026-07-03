@@ -1,24 +1,28 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { RouterLink } from 'vue-router';
+import { computed, onMounted, ref } from "vue";
+import { RouterLink } from "vue-router";
 
-import { ApiRequestError } from '@/api/client';
-import { listMedia } from '@/api/media';
-import { listTags } from '@/api/tags';
-import AppMessage from '@/components/common/AppMessage.vue';
-import MediaCard from '@/components/media/MediaCard.vue';
-import TagCategoryList from '@/components/tags/TagCategoryList.vue';
-import type { MediaResponse, TagResponse } from '@/types/api';
+import { ApiRequestError } from "@/api/client";
+import { listMedia } from "@/api/media";
+import { listTags } from "@/api/tags";
+import AppMessage from "@/components/common/AppMessage.vue";
+import MediaCard from "@/components/media/MediaCard.vue";
+import TagCategoryList from "@/components/tags/TagCategoryList.vue";
+import type { MediaResponse, TagResponse } from "@/types/api";
 
 const mediaItems = ref<MediaResponse[]>([]);
 const tags = ref<TagResponse[]>([]);
 const loading = ref(true);
-const errorMessage = ref('');
+const errorMessage = ref("");
 
 const consumedCount = computed(
-  () => mediaItems.value.filter((item) => item.consumptionStatus === 'CONSUMED').length,
+  () =>
+    mediaItems.value.filter((item) => item.consumptionStatus === "CONSUMED")
+      .length,
 );
-const taggedCount = computed(() => mediaItems.value.filter((item) => item.tags.length > 0).length);
+const taggedCount = computed(
+  () => mediaItems.value.filter((item) => item.tags.length > 0).length,
+);
 
 onMounted(async () => {
   await loadPageData();
@@ -26,10 +30,13 @@ onMounted(async () => {
 
 async function loadPageData() {
   loading.value = true;
-  errorMessage.value = '';
+  errorMessage.value = "";
 
   try {
-    const [mediaResponse, tagResponse] = await Promise.all([listMedia(), listTags()]);
+    const [mediaResponse, tagResponse] = await Promise.all([
+      listMedia(),
+      listTags(),
+    ]);
     mediaItems.value = mediaResponse;
     tags.value = tagResponse;
   } catch (error) {
@@ -44,7 +51,7 @@ function toUserMessage(error: unknown): string {
     return error.message;
   }
 
-  return 'Die Daten konnten gerade nicht geladen werden.';
+  return "Die Daten konnten gerade nicht geladen werden.";
 }
 </script>
 
@@ -59,9 +66,9 @@ function toUserMessage(error: unknown): string {
           Deine Mediathek
         </h1>
         <p class="page-copy">
-          Deine lokale Sammlung ist die Grundlage fuer Profilbildung und spaeteres Matching.
-          Hier pflegst du konsumierte Medien, Kandidaten und die Tags, die sie fuer dein Profil
-          aussagekraeftig machen.
+          Deine Sammlung bleibt die Grundlage fuer Profilbildung und Matching.
+          Hier siehst du konsumierte Medien und Kandidaten in einer kompakteren
+          Uebersicht.
         </p>
       </div>
 
@@ -75,7 +82,10 @@ function toUserMessage(error: unknown): string {
       </div>
     </header>
 
-    <section class="overview-stats">
+    <section
+      v-if="!loading && !errorMessage"
+      class="overview-stats"
+    >
       <article class="page-card overview-stat-card">
         <p class="eyebrow">
           Sammlung
@@ -115,6 +125,7 @@ function toUserMessage(error: unknown): string {
 
     <AppMessage
       v-if="loading"
+      class="media-library__state-card"
       title="Mediendaten werden geladen"
       description="Liste und Tag-Kategorien werden vorbereitet."
       tone="info"
@@ -122,6 +133,7 @@ function toUserMessage(error: unknown): string {
 
     <AppMessage
       v-else-if="errorMessage"
+      class="media-library__state-card"
       title="Ansicht konnte nicht geladen werden"
       :description="errorMessage"
       tone="error"
@@ -151,13 +163,15 @@ function toUserMessage(error: unknown): string {
               Angelegte Medien
             </h2>
             <p class="body-muted">
-              Karten zeigen Status, Herkunft, Tags und den schnellsten Weg zu Details.
+              Titel zuerst, danach Status, Herkunft und Tags fuer einen
+              schnelleren Ueberblick.
             </p>
           </div>
         </div>
 
         <AppMessage
           v-if="mediaItems.length === 0"
+          class="media-library__state-card"
           title="Noch keine Medien angelegt"
           description="Lege zuerst konsumierte Medien oder Kandidaten an, damit MoodMatch Profil, Sammlung und spaetere Vergleiche sinnvoll aufbauen kann."
         >
@@ -195,14 +209,18 @@ function toUserMessage(error: unknown): string {
 <style scoped>
 .media-library__layout {
   display: grid;
-  gap: 1.5rem;
+  gap: 0.95rem;
   grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.9fr);
 }
 
 .media-library__content,
 .media-library__list {
   display: grid;
-  gap: 1rem;
+  gap: 0.8rem;
+}
+
+.media-library__list {
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
 }
 
 .media-library__tags {
@@ -211,12 +229,20 @@ function toUserMessage(error: unknown): string {
   top: var(--shell-sticky-offset);
 }
 
+.media-library__state-card {
+  width: min(100%, 58rem);
+}
+
 .media-library__message-actions {
   margin-top: 1rem;
 }
 
 @media (max-width: 980px) {
   .media-library__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .media-library__list {
     grid-template-columns: 1fr;
   }
 

@@ -172,6 +172,9 @@ const gestureIntent = computed<SwipeGestureIntent>(() => getGestureIntent(dragX.
 const showIntentIndicators = computed(
   () => dragging.value || awaitingDecision.value || exiting.value,
 );
+const showPeekCard = computed(
+  () => Boolean(props.nextItem) && showIntentIndicators.value,
+);
 const cardTransitionDuration = computed(() => {
   if (dragging.value) {
     return '0ms';
@@ -440,17 +443,65 @@ defineExpose({
     <article
       v-if="nextItem"
       class="swipe-candidate-card__peek page-card"
+      :class="{ 'swipe-candidate-card__peek--visible': showPeekCard }"
       aria-hidden="true"
     >
-      <p class="swipe-candidate-card__peek-label">
-        Danach
-      </p>
-      <h3 class="swipe-candidate-card__peek-title">
-        {{ nextItem.candidate.media.title }}
-      </h3>
-      <p class="swipe-candidate-card__peek-meta">
-        {{ mediaTypeLabels[nextItem.candidate.media.mediaType] }}
-      </p>
+      <div class="swipe-candidate-card__peek-surface">
+        <div
+          class="swipe-candidate-card__peek-cover"
+          :class="getGradientSeed(nextItem.candidate.media.id)"
+        >
+          <img
+            v-if="nextItem.candidate.media.coverUrl"
+            class="swipe-candidate-card__peek-cover-image"
+            :src="nextItem.candidate.media.coverUrl"
+            :alt="`Cover von ${nextItem.candidate.media.title}`"
+          >
+          <div
+            v-else
+            class="swipe-candidate-card__peek-cover-fallback"
+            aria-hidden="true"
+          >
+            {{ mediaTypeLabels[nextItem.candidate.media.mediaType] }}
+          </div>
+
+          <div class="swipe-candidate-card__peek-cover-overlay">
+            <div class="swipe-candidate-card__peek-top">
+              <span class="swipe-candidate-card__peek-type-pill">
+                {{ mediaTypeLabels[nextItem.candidate.media.mediaType] }}
+              </span>
+              <span class="swipe-candidate-card__peek-next-pill">
+                Als naechstes
+              </span>
+            </div>
+
+            <div class="swipe-candidate-card__peek-hero">
+              <p class="swipe-candidate-card__peek-eyebrow">
+                Empfehlung fuer dich
+              </p>
+              <h3 class="swipe-candidate-card__peek-title">
+                {{ nextItem.candidate.media.title }}
+              </h3>
+              <p class="swipe-candidate-card__peek-meta">
+                {{ mediaTypeLabels[nextItem.candidate.media.mediaType] }}
+                <span v-if="nextItem.candidate.media.releaseYear">
+                  · {{ nextItem.candidate.media.releaseYear }}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="swipe-candidate-card__peek-body">
+          <p class="swipe-candidate-card__peek-copy">
+            Diese Karte liegt als naechste Empfehlung bereit.
+          </p>
+          <div class="swipe-candidate-card__peek-chips">
+            <span class="swipe-candidate-card__peek-chip">Bereit zum Swipen</span>
+            <span class="swipe-candidate-card__peek-chip">Danach aktiv</span>
+          </div>
+        </div>
+      </div>
     </article>
 
     <div
@@ -731,21 +782,129 @@ defineExpose({
 <style scoped>
 .swipe-candidate-card__stage {
   position: relative;
-  padding-bottom: 0.95rem;
+  padding: 0 1rem 1.5rem 0;
+  overflow: visible;
 }
 
 .swipe-candidate-card__peek {
   position: absolute;
-  inset: 0.9rem 0 auto;
+  inset: 1.25rem 0 0.1rem 1.2rem;
   z-index: 0;
-  padding: 1.1rem 1.25rem 1rem;
-  opacity: 0.72;
-  transform: scale(0.97);
+  padding: 0;
+  opacity: 0;
+  transform: translate3d(0.65rem, 0.7rem, 0) scale(0.98);
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--color-surface-secondary) 92%, var(--color-accent-soft)),
-    var(--color-surface)
+    color-mix(in srgb, var(--color-surface-secondary) 84%, var(--color-accent-soft)),
+    color-mix(in srgb, var(--color-surface) 88%, transparent)
   );
+  box-shadow: 0 18px 34px rgba(8, 15, 32, 0.14);
+  backdrop-filter: blur(12px);
+  transition:
+    opacity 160ms ease,
+    transform 180ms ease;
+  pointer-events: none;
+}
+
+.swipe-candidate-card__peek--visible {
+  opacity: 0.88;
+  transform: translate3d(1.1rem, 1.2rem, 0) scale(0.965);
+}
+
+.swipe-candidate-card__peek-surface {
+  display: grid;
+  min-height: 100%;
+}
+
+.swipe-candidate-card__peek-cover {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+}
+
+.swipe-candidate-card__peek-cover-image,
+.swipe-candidate-card__peek-cover-fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.swipe-candidate-card__peek-cover-image {
+  object-fit: cover;
+}
+
+.swipe-candidate-card__peek-cover-fallback {
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  color: var(--theme-swipe-cover-fallback-text);
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-align: center;
+  background: var(--theme-swipe-cover-fallback-overlay);
+}
+
+.swipe-candidate-card__peek-cover-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.85rem;
+  background: var(--theme-swipe-cover-overlay);
+}
+
+.swipe-candidate-card__peek-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.swipe-candidate-card__peek-type-pill,
+.swipe-candidate-card__peek-next-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.26rem 0.62rem;
+  border-radius: var(--radius-full);
+  backdrop-filter: blur(12px);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.swipe-candidate-card__peek-type-pill {
+  border: 1px solid var(--theme-swipe-type-pill-border);
+  background: var(--theme-swipe-type-pill-background);
+  color: var(--theme-swipe-type-pill-text);
+}
+
+.swipe-candidate-card__peek-next-pill {
+  background: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.swipe-candidate-card__peek-hero {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.swipe-candidate-card__peek-eyebrow,
+.swipe-candidate-card__peek-copy {
+  margin: 0;
+}
+
+.swipe-candidate-card__peek-eyebrow {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.swipe-candidate-card__peek-body {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.8rem 0.9rem 0.9rem;
 }
 
 .swipe-candidate-card__peek-label,
@@ -761,8 +920,40 @@ defineExpose({
 }
 
 .swipe-candidate-card__peek-title {
-  margin-top: 0.3rem;
-  font-size: 1rem;
+  font-size: 1.35rem;
+  max-width: 18ch;
+  color: #fff;
+  line-height: 1.02;
+}
+
+.swipe-candidate-card__peek-meta {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.86rem;
+}
+
+.swipe-candidate-card__peek-copy {
+  color: var(--color-text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.swipe-candidate-card__peek-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.swipe-candidate-card__peek-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.65rem;
+  padding: 0.22rem 0.56rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-surface-secondary) 82%, var(--color-surface));
+  color: var(--color-text-secondary);
+  font-size: 0.74rem;
+  font-weight: 600;
 }
 
 .swipe-candidate-card__intents {
@@ -1150,9 +1341,34 @@ defineExpose({
 }
 
 @media (max-width: 720px) {
+  .swipe-candidate-card__stage {
+    padding-right: 0.55rem;
+    padding-bottom: 1.1rem;
+  }
+
   .swipe-candidate-card__peek {
-    left: 0.45rem;
-    right: 0.45rem;
+    inset: 0.85rem 0 0.1rem 0.6rem;
+    transform: translate3d(0.28rem, 0.4rem, 0) scale(0.986);
+  }
+
+  .swipe-candidate-card__peek--visible {
+    transform: translate3d(0.55rem, 0.75rem, 0) scale(0.978);
+  }
+
+  .swipe-candidate-card__peek-surface {
+    min-height: 100%;
+  }
+
+  .swipe-candidate-card__peek-cover-overlay {
+    padding: 0.7rem;
+  }
+
+  .swipe-candidate-card__peek-title {
+    font-size: 1.12rem;
+  }
+
+  .swipe-candidate-card__peek-body {
+    padding: 0.7rem 0.75rem 0.8rem;
   }
 
   .swipe-candidate-card__intents {

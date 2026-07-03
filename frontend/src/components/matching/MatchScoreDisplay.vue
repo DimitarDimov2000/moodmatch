@@ -51,8 +51,8 @@ const detailLabel = computed(() =>
 .match-score-display {
   display: grid;
   gap: 0.2rem;
-  min-width: min(100%, 11rem);
-  padding: 1rem;
+  min-width: min(100%, 10rem);
+  padding: 0.9rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface-secondary);
@@ -104,13 +104,13 @@ const detailLabel = computed(() =>
 }
 
 .match-score-display__value {
-  font-size: 1.65rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--color-text-primary);
 }
 
 .match-score-display__detail {
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   color: var(--color-text-secondary);
 }
 

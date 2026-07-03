@@ -61,7 +61,8 @@ const emptyState = computed(() => {
 
   return {
     title: "Noch keine Match-Ergebnisse vorhanden",
-    description: "Lege Kandidaten mit WANT_TO_CONSUME Status an, damit MoodMatch sie mit deinem Profil vergleichen kann.",
+    description:
+      "Lege Kandidaten mit WANT_TO_CONSUME Status an, damit MoodMatch sie mit deinem Profil vergleichen kann.",
     to: { name: "candidates" as const },
     label: "Kandidaten ansehen",
   };
@@ -104,14 +105,17 @@ function toUserMessage(error: unknown): string {
           Warum diese Titel zu dir passen
         </h1>
         <p class="page-copy">
-          MoodMatch zeigt Prozentwerte nur dann, wenn genug Vergleichsbasis vorhanden ist.
-          Fehlende Prozentzahlen bleiben deshalb bewusst sichtbar, statt als 0 % missverstanden
-          zu werden.
+          Diese Seite zeigt die bereits passenden Empfehlungen mit Begruendung.
+          Prozentwerte erscheinen bewusst nur dann, wenn genug Vergleichsbasis
+          vorhanden ist.
         </p>
       </div>
     </header>
 
-    <section class="overview-stats">
+    <section
+      v-if="!loading && !errorMessage"
+      class="overview-stats"
+    >
       <article class="page-card overview-stat-card">
         <p class="eyebrow">
           Kandidaten
@@ -151,6 +155,7 @@ function toUserMessage(error: unknown): string {
 
     <AppMessage
       v-if="loading"
+      class="matches-view__state-card"
       title="Matches werden geladen"
       description="Profil, Score-Hinweise und Kandidatenerklaerungen werden vorbereitet."
       tone="info"
@@ -158,6 +163,7 @@ function toUserMessage(error: unknown): string {
 
     <AppMessage
       v-else-if="errorMessage"
+      class="matches-view__state-card"
       title="Matches konnten nicht geladen werden"
       :description="errorMessage"
       tone="error"
@@ -210,7 +216,7 @@ function toUserMessage(error: unknown): string {
         <p class="body-muted">
           Ein Kandidat ohne Prozentzahl ist nicht automatisch schwach. Entweder
           fehlen Tags, es gibt keine Profilueberschneidung, oder der Vergleich
-          ist mit den vorhandenen Kandidaten noch nicht belastbar genug.
+          ist noch nicht belastbar genug.
         </p>
       </article>
 
@@ -272,10 +278,11 @@ function toUserMessage(error: unknown): string {
               Match-Karten
             </p>
             <h2 class="section-title">
-              Vorschlaege mit Begruendung
+              Bestaetigte Empfehlungen
             </h2>
             <p class="body-muted">
-              Jede Karte verbindet Kandidat, Match-Wert und eine erklaerbare Einordnung derselben Datenbasis.
+              Jede Karte verbindet Score, Gruende und Kandidatenbasis in einer
+              kompakteren Ansicht.
             </p>
           </div>
         </div>
@@ -305,7 +312,8 @@ function toUserMessage(error: unknown): string {
             <CandidateSummaryCard
               class="matches-view__candidate-card"
               :candidate="result.candidate"
-              title="Kandidat im Vergleich"
+              title="Ausgangskandidat"
+              compact
               :show-expected-note="false"
             />
           </div>
@@ -321,21 +329,21 @@ function toUserMessage(error: unknown): string {
 .matches-view__note-card,
 .matches-view__highlight,
 .matches-view__match-card {
-  padding: 1.25rem;
+  padding: 0.98rem;
 }
 
 .matches-view__hero {
   display: grid;
-  gap: 1.5rem;
+  gap: 0.9rem;
   grid-template-columns: minmax(320px, 1fr) minmax(300px, 0.9fr);
 }
 
 .matches-view__note-card {
   display: grid;
-  gap: 0.45rem;
+  gap: 0.35rem;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--color-info-soft) 55%, var(--color-surface)),
+    color-mix(in srgb, var(--color-info-soft) 40%, var(--color-surface)),
     var(--color-surface)
   );
 }
@@ -346,26 +354,30 @@ function toUserMessage(error: unknown): string {
 
 .matches-view__highlight {
   display: grid;
-  gap: 1rem;
+  gap: 0.72rem;
   align-content: start;
 }
 
 .matches-view__highlight-copy p {
-  margin: 0.4rem 0 0;
+  margin: 0.3rem 0 0;
 }
 
 .matches-view__highlight-note {
-  font-size: 0.92rem;
+  font-size: 0.88rem;
 }
 
 .matches-view__list {
   display: grid;
-  gap: 1rem;
+  gap: 0.8rem;
+}
+
+.matches-view__state-card {
+  width: min(100%, 58rem);
 }
 
 .matches-view__match-card {
   display: grid;
-  gap: 1.25rem;
+  gap: 0.85rem;
 }
 
 .matches-view__match-header {
@@ -382,7 +394,7 @@ function toUserMessage(error: unknown): string {
 
 .matches-view__match-top {
   display: grid;
-  gap: 1.25rem;
+  gap: 0.9rem;
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }

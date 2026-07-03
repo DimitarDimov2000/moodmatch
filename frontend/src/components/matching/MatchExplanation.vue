@@ -16,6 +16,24 @@ const adjustedScoreLabel = computed(() =>
 const precisionFactorLabel = computed(() =>
   formatDecimal(props.result.precisionFactor),
 );
+const visibleMatchingTags = computed(() =>
+  props.result.matchingTags.slice(0, 4),
+);
+const hiddenMatchingTagCount = computed(() =>
+  Math.max(
+    props.result.matchingTags.length - visibleMatchingTags.value.length,
+    0,
+  ),
+);
+const visibleExtraTags = computed(() =>
+  props.result.extraCandidateTags.slice(0, 4),
+);
+const hiddenExtraTagCount = computed(() =>
+  Math.max(
+    props.result.extraCandidateTags.length - visibleExtraTags.value.length,
+    0,
+  ),
+);
 const stateToneClass = computed(() => {
   if (!props.result.candidate.isCompleteForMatching) {
     return "match-explanation__state--warning";
@@ -31,37 +49,37 @@ const stateToneClass = computed(() => {
 
 <template>
   <section class="match-explanation">
-    <div class="match-explanation__copy">
-      <h3 class="section-title">
-        Warum dieser Vorschlag passt
-      </h3>
-      <p class="body-muted">
-        {{ result.explanationMessage }}
-      </p>
-    </div>
+    <div class="match-explanation__top">
+      <div class="match-explanation__copy">
+        <h3 class="section-title">
+          Warum das passt
+        </h3>
+        <p class="body-muted">
+          {{ result.explanationMessage }}
+        </p>
+      </div>
 
-    <div
-      class="match-explanation__state"
-      :class="stateToneClass"
-    >
-      {{
-        result.candidate.isCompleteForMatching
-          ? "Score-Zustand erklaert"
-          : "Explizit unvollstaendig fuer Matching"
-      }}
-    </div>
-
-    <div class="match-explanation__notes">
-      <p class="match-explanation__note">
-        {{ result.candidateTagsNote }}
-      </p>
-      <p
-        v-if="result.relativeScore === null"
-        class="match-explanation__note"
+      <div
+        class="match-explanation__state"
+        :class="stateToneClass"
       >
-        Keine Prozentangabe bedeutet hier nicht 0 %, sondern bewusst fehlende
-        Vergleichbarkeit.
-      </p>
+        {{
+          result.candidate.isCompleteForMatching
+            ? result.relativeScore === null
+              ? "Vergleich noch vorsichtig"
+              : "Vergleich gut einordenbar"
+            : "Noch unvollstaendig fuer Matching"
+        }}
+      </div>
+    </div>
+
+    <div class="match-explanation__facts">
+      <span class="match-explanation__fact">
+        {{ result.matchingTagCount }} gemeinsame Tags
+      </span>
+      <span class="match-explanation__fact">
+        {{ result.candidateTagCount }} erwartete Tags
+      </span>
     </div>
 
     <div
@@ -73,10 +91,16 @@ const stateToneClass = computed(() => {
       </p>
       <div class="match-explanation__chips">
         <TagChip
-          v-for="item in result.matchingTags"
+          v-for="item in visibleMatchingTags"
           :key="item.tag.id"
           :tag="item.tag"
         />
+        <span
+          v-if="hiddenMatchingTagCount > 0"
+          class="badge"
+        >
+          +{{ hiddenMatchingTagCount }} weitere
+        </span>
       </div>
     </div>
 
@@ -89,10 +113,16 @@ const stateToneClass = computed(() => {
       </p>
       <div class="match-explanation__chips">
         <TagChip
-          v-for="tag in result.extraCandidateTags"
+          v-for="tag in visibleExtraTags"
           :key="tag.id"
           :tag="tag"
         />
+        <span
+          v-if="hiddenExtraTagCount > 0"
+          class="badge"
+        >
+          +{{ hiddenExtraTagCount }} weitere
+        </span>
       </div>
     </div>
 
@@ -100,10 +130,24 @@ const stateToneClass = computed(() => {
       <summary class="match-explanation__summary">
         Score-Hintergrund ansehen
       </summary>
+      <div class="match-explanation__notes">
+        <p class="match-explanation__note">
+          {{ result.candidateTagsNote }}
+        </p>
+        <p
+          v-if="result.relativeScore === null"
+          class="match-explanation__note"
+        >
+          Keine Prozentangabe bedeutet hier nicht 0 %, sondern bewusst fehlende
+          Vergleichbarkeit.
+        </p>
+      </div>
       <dl class="match-explanation__metrics">
         <div>
           <dt>Profiltreffer</dt>
-          <dd>{{ result.matchingTagCount }} / {{ result.candidateTagCount }} Tags</dd>
+          <dd>
+            {{ result.matchingTagCount }} / {{ result.candidateTagCount }} Tags
+          </dd>
         </div>
         <div>
           <dt>Rohwert</dt>
@@ -125,14 +169,21 @@ const stateToneClass = computed(() => {
 <style scoped>
 .match-explanation {
   display: grid;
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
+.match-explanation__top,
 .match-explanation__copy,
 .match-explanation__notes,
 .match-explanation__section {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.4rem;
+}
+
+.match-explanation__top {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.75rem;
 }
 
 .match-explanation__copy p,
@@ -140,15 +191,34 @@ const stateToneClass = computed(() => {
   margin: 0;
 }
 
+.match-explanation__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.match-explanation__fact {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.8rem;
+  padding: 0.24rem 0.68rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 .match-explanation__state {
   display: inline-flex;
   align-items: center;
   width: fit-content;
-  min-height: 2rem;
-  padding: 0.35rem 0.8rem;
+  min-height: 1.85rem;
+  padding: 0.24rem 0.68rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  font-size: 0.9rem;
+  font-size: 0.84rem;
   font-weight: 600;
 }
 
@@ -179,7 +249,7 @@ const stateToneClass = computed(() => {
 
 .match-explanation__note {
   color: var(--color-text-muted);
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   margin: 0;
 }
 
@@ -191,19 +261,19 @@ const stateToneClass = computed(() => {
 .match-explanation__chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
+  gap: 0.55rem;
 }
 
 .match-explanation__metrics {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.65rem;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   margin: 0;
 }
 
 .match-explanation__details {
   display: grid;
-  gap: 0.85rem;
+  gap: 0.7rem;
 }
 
 .match-explanation__summary {
@@ -218,7 +288,7 @@ const stateToneClass = computed(() => {
 }
 
 .match-explanation__metrics div {
-  padding: 0.85rem 1rem;
+  padding: 0.75rem 0.9rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface-secondary);
@@ -234,5 +304,11 @@ const stateToneClass = computed(() => {
   margin: 0.3rem 0 0;
   font-size: 1rem;
   font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .match-explanation__top {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

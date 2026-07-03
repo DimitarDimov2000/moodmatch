@@ -60,17 +60,17 @@ const groupedTags = computed(() => groupTagsByCategory(props.tags));
 <style scoped>
 .tag-category-list {
   display: grid;
-  gap: 1rem;
-  padding: 1.5rem;
+  gap: 0.9rem;
+  padding: 1.15rem;
 }
 
 .tag-category-list__header p {
-  margin: 0.4rem 0 0;
+  margin: 0.28rem 0 0;
 }
 
 .tag-category-list__groups {
   display: grid;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .tag-category-list__groups--compact {
@@ -79,7 +79,7 @@ const groupedTags = computed(() => groupTagsByCategory(props.tags));
 
 .tag-category-list__group {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.55rem;
 }
 
 .tag-category-list__group-title {
@@ -90,6 +90,6 @@ const groupedTags = computed(() => groupTagsByCategory(props.tags));
 .tag-category-list__chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
+  gap: 0.55rem;
 }
 </style>

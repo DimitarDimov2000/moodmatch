@@ -1,52 +1,58 @@
 <script setup lang="ts">
-import { storeToRefs } from 'pinia';
-import { computed, reactive, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { storeToRefs } from "pinia";
+import { computed, reactive, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
-import BrandMark from '@/components/brand/BrandMark.vue';
-import AppMessage from '@/components/common/AppMessage.vue';
-import FormField from '@/components/common/FormField.vue';
-import ThemePreferenceSwitch from '@/components/common/ThemePreferenceSwitch.vue';
-import { useAuthStore } from '@/stores/auth';
+import BrandMark from "@/components/brand/BrandMark.vue";
+import AppMessage from "@/components/common/AppMessage.vue";
+import FormField from "@/components/common/FormField.vue";
+import ThemePreferenceSwitch from "@/components/common/ThemePreferenceSwitch.vue";
+import { useAuthStore } from "@/stores/auth";
 
-type AuthPanel = 'login' | 'register';
+type AuthPanel = "login" | "register";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
-const { isAuthenticated, isLoading, providerError, userDisplayName } = storeToRefs(authStore);
-const activePanel = ref<AuthPanel>('login');
+const { isAuthenticated, isLoading, providerError, userDisplayName } =
+  storeToRefs(authStore);
+const activePanel = ref<AuthPanel>("login");
 
 const loginForm = reactive({
-  email: '',
-  password: '',
+  email: "",
+  password: "",
 });
 
 const registerForm = reactive({
-  email: '',
-  password: '',
-  displayName: '',
+  email: "",
+  password: "",
+  displayName: "",
 });
 
 const redirectTarget = computed(() => {
   const redirect = route.query.redirect;
-  return typeof redirect === 'string' && redirect ? redirect : '/';
+  return typeof redirect === "string" && redirect ? redirect : "/";
 });
 
 const pageTitle = computed(() => {
-  if (route.query.reason === 'session-expired') {
-    return 'Log in to continue';
+  if (route.query.reason === "session-expired") {
+    return "Log in to continue";
   }
 
   if (isAuthenticated.value) {
-    return 'You are signed in';
+    return "You are signed in";
   }
 
-  return activePanel.value === 'register' ? 'Create your MoodMatch account' : 'Log in to continue';
+  return activePanel.value === "register"
+    ? "Create your MoodMatch account"
+    : "Log in to continue";
 });
 
 async function handleLogin() {
-  const didLogin = await authStore.loginWithPassword(loginForm.email, loginForm.password);
+  const didLogin = await authStore.loginWithPassword(
+    loginForm.email,
+    loginForm.password,
+  );
   if (didLogin) {
     await router.push(redirectTarget.value);
   }
@@ -67,11 +73,11 @@ async function handleRegister() {
 <template>
   <section class="login-view page-stack">
     <header class="page-header login-view__header">
-      <div class="login-view__intro">
-        <div class="login-view__toolbar">
-          <ThemePreferenceSwitch class="login-view__theme-switch" />
-        </div>
+      <div class="login-view__toolbar">
+        <ThemePreferenceSwitch class="login-view__theme-switch" />
+      </div>
 
+      <div class="login-view__intro">
         <div
           class="login-view__brand-lockup"
           data-testid="login-brand-lockup"
@@ -144,7 +150,8 @@ async function handleRegister() {
         </div>
 
         <p class="login-view__panel-copy">
-          Use your existing account or create a private space for your library, taste profile, and matches.
+          Use your existing account or create a private space for your library,
+          profile, and matches.
         </p>
       </div>
 
@@ -185,7 +192,7 @@ async function handleRegister() {
           type="submit"
           :disabled="isLoading"
         >
-          {{ isLoading ? 'Logging in...' : 'Log in' }}
+          {{ isLoading ? "Logging in..." : "Log in" }}
         </button>
       </form>
 
@@ -236,7 +243,7 @@ async function handleRegister() {
           type="submit"
           :disabled="isLoading"
         >
-          {{ isLoading ? 'Creating account...' : 'Create account' }}
+          {{ isLoading ? "Creating account..." : "Create account" }}
         </button>
       </form>
     </section>
@@ -250,53 +257,62 @@ async function handleRegister() {
 }
 
 .login-view__header {
-  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   width: 100%;
-  justify-content: center;
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding-inline: var(--page-padding);
+  gap: 0.25rem;
+}
+
+.login-view__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin-bottom: 0;
+  padding-right: clamp(0.1rem, 0.9vw, 0.55rem);
+  justify-self: stretch;
 }
 
 .login-view__intro {
   display: grid;
-  gap: 0.95rem;
-  width: min(100%, 38rem);
+  gap: 0.75rem;
+  width: min(100%, 40rem);
+  margin: 0 auto;
   justify-items: center;
-  padding-top: clamp(0.65rem, 1.4vw, 0.95rem);
   text-align: center;
-}
-
-.login-view__toolbar {
-  position: absolute;
-  top: 0;
-  right: 0;
+  justify-self: center;
 }
 
 .login-view__brand-lockup {
   display: inline-grid;
-  gap: 0.7rem;
+  gap: 0.65rem;
   min-width: 0;
   justify-items: center;
 }
 
 .login-view__brand-mark {
-  width: clamp(6.9rem, 18vw, 8.8rem);
-  height: clamp(6.9rem, 18vw, 8.8rem);
+  width: clamp(8.3rem, 19vw, 10.4rem);
+  height: clamp(8.3rem, 19vw, 10.4rem);
 }
 
 .login-view__brand-copy {
   display: grid;
-  gap: 0.2rem;
+  gap: 0.15rem;
 }
 
 .login-view__brand-name {
   color: var(--color-text-primary);
-  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-size: clamp(1.9rem, 4vw, 2.45rem);
   font-weight: 800;
   letter-spacing: -0.04em;
 }
 
 .login-view__brand-subtitle {
   color: var(--color-text-secondary);
-  font-size: clamp(0.92rem, 2vw, 1rem);
+  max-width: 20ch;
+  font-size: clamp(0.92rem, 1.8vw, 1rem);
   line-height: 1.2;
   white-space: nowrap;
 }
@@ -315,34 +331,35 @@ async function handleRegister() {
 
 .login-view__panel {
   display: grid;
-  gap: 1.25rem;
-  width: min(100%, 38rem);
-  padding: clamp(1.1rem, 2.6vw, 1.4rem);
-  background:
-    var(--theme-login-panel-glow),
-    var(--theme-card-background);
+  gap: 0.95rem;
+  width: min(100%, 35.75rem);
+  padding: clamp(1rem, 2.2vw, 1.2rem);
+  background: var(--theme-login-panel-glow), var(--theme-card-background);
+  justify-self: center;
 }
 
 .login-view__panel-header {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.65rem;
 }
 
 .login-view__tabs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
-  padding: 0.3rem;
+  gap: 0.3rem;
+  padding: 0.28rem;
   background: var(--theme-login-tabs-background);
   border: 1px solid var(--theme-login-tabs-border);
-  border-radius: var(--radius-md);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  border-radius: calc(var(--radius-md) + 2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 10px 24px rgba(5, 9, 19, 0.08);
 }
 
 .login-view__tab {
   position: relative;
-  min-height: 2.5rem;
-  padding: 0.5rem 0.75rem;
+  min-height: 2.6rem;
+  padding: 0.48rem 0.8rem;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -359,23 +376,30 @@ async function handleRegister() {
 .login-view__tab--active {
   background: var(--theme-login-tab-active-background);
   color: var(--color-text-primary);
-  box-shadow: var(--theme-login-tab-active-shadow);
+  box-shadow:
+    var(--theme-login-tab-active-shadow),
+    0 8px 18px rgba(5, 9, 19, 0.07);
   border-color: var(--theme-login-tab-active-border);
 }
 
 .login-view__tab:hover {
+  background: color-mix(
+    in srgb,
+    var(--theme-login-tab-active-background) 48%,
+    transparent
+  );
   color: var(--color-text-primary);
 }
 
 .login-view__panel-copy {
   margin: 0;
   color: var(--color-text-secondary);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
 }
 
 .login-view__form {
   display: grid;
-  gap: 1rem;
+  gap: 0.95rem;
 }
 
 .login-view__input {
@@ -399,13 +423,19 @@ async function handleRegister() {
 }
 
 @media (max-width: 560px) {
+  .login-view__header {
+    padding-inline: max(var(--page-padding), 0.9rem);
+  }
+
   .login-view__toolbar {
-    top: -0.1rem;
-    right: 0;
+    margin-bottom: 0.4rem;
+    padding-right: 0;
   }
 
   .login-view__brand-subtitle {
+    max-width: 14ch;
     font-size: 0.9rem;
+    white-space: normal;
   }
 
   .login-view__panel-copy {

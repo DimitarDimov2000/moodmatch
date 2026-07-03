@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 
@@ -18,39 +18,61 @@ const { isAuthenticated, userDisplayName } = storeToRefs(authStore);
 const visibleNavigationItems = computed(() =>
   authStore.canAccessProtectedRoutes ? navigationItems.value : [],
 );
-const currentRouteTitle = computed(() =>
-  typeof route.meta.title === 'string' ? route.meta.title : appTitle.value,
-);
 const isImmersiveRoute = computed(() => route.name === 'swipe');
 const showsHeader = computed(() => route.name !== 'login' || isAuthenticated.value);
+const showsAuthStatus = computed(
+  () => authStore.mode !== 'local-demo' || isAuthenticated.value,
+);
+const authMenuRef = ref<HTMLElement | null>(null);
+const authMenuOpen = ref(false);
 
 const authStatusLabel = computed(() => {
-  if (authStore.mode === 'local-demo') {
-    return 'Local demo mode';
-  }
-
   if (isAuthenticated.value) {
     return userDisplayName.value ?? 'Authenticated';
   }
 
-  return 'Signed out';
-});
-
-const authStatusDescription = computed(() => {
-  if (authStore.mode === 'local-demo') {
-    return 'Private routes stay open for local development.';
-  }
-
-  if (isAuthenticated.value) {
-    return 'Your private media and matches are tied to this account.';
-  }
-
-  return 'Protected routes redirect to login until you sign in.';
+  return 'Account';
 });
 
 async function handleLogout() {
+  authMenuOpen.value = false;
   await authStore.logout();
   await router.push({ name: 'login' });
+}
+
+onMounted(() => {
+  window.addEventListener('pointerdown', handleWindowPointerDown);
+  window.addEventListener('keydown', handleWindowKeydown);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('pointerdown', handleWindowPointerDown);
+  window.removeEventListener('keydown', handleWindowKeydown);
+});
+
+function toggleAuthMenu() {
+  authMenuOpen.value = !authMenuOpen.value;
+}
+
+function handleWindowPointerDown(event: PointerEvent) {
+  if (!authMenuOpen.value) {
+    return;
+  }
+
+  if (!(event.target instanceof Node)) {
+    authMenuOpen.value = false;
+    return;
+  }
+
+  if (!authMenuRef.value?.contains(event.target)) {
+    authMenuOpen.value = false;
+  }
+}
+
+function handleWindowKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && authMenuOpen.value) {
+    authMenuOpen.value = false;
+  }
 }
 </script>
 
@@ -74,28 +96,13 @@ async function handleLogout() {
               <BrandMark class="app-shell__brand-mark" />
               <span class="app-shell__brand-name">{{ appTitle }}</span>
             </RouterLink>
-
-            <div class="app-shell__route-copy">
-              <span class="app-shell__route-label">Current section</span>
-              <span class="app-shell__route-title">{{ currentRouteTitle }}</span>
-            </div>
           </div>
 
           <div class="app-shell__header-tools">
             <div
-              class="app-shell__preferences"
-              data-testid="header-preferences"
+              v-if="showsAuthStatus"
+              class="app-shell__auth"
             >
-              <ThemePreferenceSwitch class="app-shell__preference-control" />
-              <slot name="header-preferences" />
-            </div>
-
-            <div class="app-shell__auth">
-              <div class="app-shell__auth-copy">
-                <span class="app-shell__auth-label">{{ authStatusLabel }}</span>
-                <span class="app-shell__auth-description">{{ authStatusDescription }}</span>
-              </div>
-
               <RouterLink
                 v-if="authStore.isAuthRequiredMode && !isAuthenticated"
                 :to="{ name: 'login' }"
@@ -104,14 +111,43 @@ async function handleLogout() {
                 Anmelden
               </RouterLink>
 
-              <button
+              <details
                 v-else-if="isAuthenticated"
-                class="button button--secondary app-shell__auth-action"
-                type="button"
-                @click="handleLogout"
+                ref="authMenuRef"
+                class="app-shell__auth-menu"
+                :open="authMenuOpen"
               >
-                Abmelden
-              </button>
+                <summary
+                  class="app-shell__auth-trigger"
+                  role="button"
+                  :aria-expanded="authMenuOpen ? 'true' : 'false'"
+                  @click.prevent="toggleAuthMenu"
+                >
+                  <span class="app-shell__auth-label">{{ authStatusLabel }}</span>
+                  <span
+                    class="app-shell__auth-chevron"
+                    aria-hidden="true"
+                  >▾</span>
+                </summary>
+
+                <div class="app-shell__auth-dropdown">
+                  <button
+                    class="button button--secondary app-shell__auth-dropdown-action"
+                    type="button"
+                    @click="handleLogout"
+                  >
+                    Abmelden
+                  </button>
+                </div>
+              </details>
+            </div>
+
+            <div
+              class="app-shell__preferences"
+              data-testid="header-preferences"
+            >
+              <slot name="header-preferences" />
+              <ThemePreferenceSwitch class="app-shell__preference-control" />
             </div>
           </div>
         </div>
@@ -235,29 +271,6 @@ async function handleLogout() {
   letter-spacing: -0.02em;
 }
 
-.app-shell__route-copy {
-  display: grid;
-  gap: 0.12rem;
-  min-width: 0;
-}
-
-.app-shell__route-label {
-  color: var(--color-text-muted);
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.app-shell__route-title {
-  overflow: hidden;
-  color: var(--color-text-primary);
-  font-size: 1rem;
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .app-shell__nav-frame {
   overflow: hidden;
   padding: 0.35rem;
@@ -280,7 +293,7 @@ async function handleLogout() {
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.75rem 0.9rem;
+  gap: 0.55rem 0.75rem;
   min-width: 0;
 }
 
@@ -289,7 +302,7 @@ async function handleLogout() {
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 0.55rem;
+  gap: 0.4rem;
   min-height: 2.5rem;
   min-width: 0;
 }
@@ -297,15 +310,7 @@ async function handleLogout() {
 .app-shell__auth {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
   min-width: 0;
-}
-
-.app-shell__auth-copy {
-  display: grid;
-  gap: 0.18rem;
-  max-width: 24rem;
-  text-align: right;
 }
 
 .app-shell__auth-label {
@@ -314,10 +319,62 @@ async function handleLogout() {
   font-weight: 700;
 }
 
-.app-shell__auth-description {
+.app-shell__auth-menu {
+  position: relative;
+}
+
+.app-shell__auth-menu[open] .app-shell__auth-trigger {
+  border-color: var(--theme-app-shell-link-active-border);
+  background: var(--theme-app-shell-link-active-background);
+  box-shadow: var(--theme-app-shell-link-active-shadow);
+}
+
+.app-shell__auth-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.75rem;
+  padding: 0.66rem 0.95rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--theme-app-shell-frame-background);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.app-shell__auth-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.app-shell__auth-chevron {
   color: var(--color-text-secondary);
-  font-size: 0.84rem;
-  line-height: 1.4;
+  font-size: 0.78rem;
+  transition: transform 160ms ease;
+}
+
+.app-shell__auth-menu[open] .app-shell__auth-chevron {
+  transform: rotate(180deg);
+}
+
+.app-shell__auth-dropdown {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  right: 0;
+  z-index: 25;
+  min-width: 12rem;
+  padding: 0.45rem;
+  border: 1px solid var(--color-border);
+  border-radius: calc(var(--radius-md) + 2px);
+  background: var(--theme-app-shell-frame-background);
+  box-shadow: var(--theme-app-shell-frame-shadow);
+  backdrop-filter: blur(16px);
+}
+
+.app-shell__auth-dropdown-action {
+  width: 100%;
+  justify-content: flex-start;
 }
 
 .app-shell__nav-link {
@@ -369,36 +426,26 @@ async function handleLogout() {
 @media (max-width: 780px) {
   .app-shell__masthead {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
   }
 
-  .app-shell__brand-group,
-  .app-shell__header-tools,
-  .app-shell__preferences,
-  .app-shell__auth {
+  .app-shell__brand-group {
     width: 100%;
   }
 
   .app-shell__header-tools {
-    justify-content: stretch;
+    width: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: 0.65rem;
+    justify-self: end;
   }
 
   .app-shell__preferences {
-    justify-content: flex-start;
-  }
-
-  .app-shell__auth {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    justify-content: space-between;
-  }
-
-  .app-shell__auth-copy {
-    text-align: left;
-  }
-
-  .app-shell__auth-description {
-    display: none;
+    width: auto;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
   }
 
   .app-shell__nav {
@@ -411,13 +458,27 @@ async function handleLogout() {
   .app-shell__nav::-webkit-scrollbar {
     display: none;
   }
+
+  .app-shell__nav-frame {
+    padding: 0.28rem;
+  }
+
+  .app-shell__nav-link {
+    min-height: 2.55rem;
+    padding: 0.58rem 0.78rem;
+    font-size: 0.92rem;
+  }
 }
 
 @media (max-width: 560px) {
   .app-shell__header-inner {
-    gap: 0.7rem;
-    padding-top: 0.85rem;
-    padding-bottom: 0.8rem;
+    gap: 0.55rem;
+    padding-top: 0.72rem;
+    padding-bottom: 0.68rem;
+  }
+
+  .app-shell__masthead {
+    gap: 0.65rem;
   }
 
   .app-shell__brand-group {
@@ -425,18 +486,28 @@ async function handleLogout() {
     justify-content: flex-start;
   }
 
-  .app-shell__route-copy {
-    display: none;
-  }
-
   .app-shell__brand-mark {
     width: 2.2rem;
     height: 2.2rem;
   }
 
+  .app-shell__brand-name {
+    font-size: 1rem;
+  }
+
+  .app-shell__header-tools {
+    gap: 0.4rem;
+  }
+
+  .app-shell__auth-trigger {
+    min-height: 2.4rem;
+    padding: 0.52rem 0.78rem;
+  }
+
   .app-shell__nav-link {
-    min-height: 2.55rem;
-    padding-inline: 0.88rem;
+    min-height: 2.4rem;
+    padding: 0.52rem 0.72rem;
+    font-size: 0.88rem;
   }
 }
 </style>

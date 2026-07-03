@@ -1,19 +1,23 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { RouterLink } from 'vue-router';
+import { computed, onMounted, ref } from "vue";
+import { RouterLink } from "vue-router";
 
-import { ApiRequestError } from '@/api/client';
-import { listCandidates } from '@/api/candidates';
-import AppMessage from '@/components/common/AppMessage.vue';
-import CandidateSummaryCard from '@/components/matching/CandidateSummaryCard.vue';
-import type { CandidateMediaResponse } from '@/types/api';
+import { ApiRequestError } from "@/api/client";
+import { listCandidates } from "@/api/candidates";
+import AppMessage from "@/components/common/AppMessage.vue";
+import CandidateSummaryCard from "@/components/matching/CandidateSummaryCard.vue";
+import type { CandidateMediaResponse } from "@/types/api";
 
 const candidates = ref<CandidateMediaResponse[]>([]);
 const loading = ref(true);
-const errorMessage = ref('');
+const errorMessage = ref("");
 
-const completeCount = computed(() => candidates.value.filter((item) => item.isCompleteForMatching).length);
-const incompleteCount = computed(() => candidates.value.length - completeCount.value);
+const completeCount = computed(
+  () => candidates.value.filter((item) => item.isCompleteForMatching).length,
+);
+const incompleteCount = computed(
+  () => candidates.value.length - completeCount.value,
+);
 
 onMounted(async () => {
   await loadCandidates();
@@ -21,7 +25,7 @@ onMounted(async () => {
 
 async function loadCandidates() {
   loading.value = true;
-  errorMessage.value = '';
+  errorMessage.value = "";
 
   try {
     const response = await listCandidates();
@@ -38,7 +42,7 @@ function toUserMessage(error: unknown): string {
     return error.message;
   }
 
-  return 'Die Kandidaten konnten nicht geladen werden.';
+  return "Die Kandidaten konnten nicht geladen werden.";
 }
 </script>
 
@@ -53,8 +57,9 @@ function toUserMessage(error: unknown): string {
           Kandidaten fuer dein naechstes Match
         </h1>
         <p class="page-copy">
-          Diese Liste sammelt Titel, die du spaeter mit deinem Profil vergleichen willst.
-          Der Swipe-Modus bleibt davon getrennt und dient nur als eigener Bewertungsfluss.
+          Diese Liste zeigt moegliche Empfehlungen vor der eigentlichen
+          Entscheidung. Du siehst sofort, welche Kandidaten schon vergleichbar
+          sind und wo noch erwartete Signale fehlen.
         </p>
       </div>
 
@@ -68,7 +73,10 @@ function toUserMessage(error: unknown): string {
       </div>
     </header>
 
-    <section class="overview-stats">
+    <section
+      v-if="!loading && !errorMessage"
+      class="overview-stats"
+    >
       <article class="page-card overview-stat-card">
         <p class="eyebrow">
           Insgesamt
@@ -108,6 +116,7 @@ function toUserMessage(error: unknown): string {
 
     <AppMessage
       v-if="loading"
+      class="candidates-view__state-card"
       title="Kandidaten werden geladen"
       description="Wir holen die aktuelle Kandidatenliste aus der typed API."
       tone="info"
@@ -115,6 +124,7 @@ function toUserMessage(error: unknown): string {
 
     <AppMessage
       v-else-if="errorMessage"
+      class="candidates-view__state-card"
       title="Kandidaten konnten nicht geladen werden"
       :description="errorMessage"
       tone="error"
@@ -132,8 +142,9 @@ function toUserMessage(error: unknown): string {
 
     <AppMessage
       v-else-if="candidates.length === 0"
-      title="Noch keine Medienvorschlaege vorhanden"
-      description="Lege zuerst Kandidaten mit WANT_TO_CONSUME Status an. Swipe und externe Suche bleiben bewusst getrennte Schritte und fuellen diese Liste nicht automatisch."
+      class="candidates-view__state-card"
+      title="Noch keine Kandidaten fuer spaetere Empfehlungen"
+      description="Lege WANT_TO_CONSUME Medien an, damit hier die Vorschlaege erscheinen, die MoodMatch als naechste Vergleichsliste vorbereitet."
     >
       <div class="state-actions">
         <RouterLink
@@ -145,9 +156,9 @@ function toUserMessage(error: unknown): string {
       </div>
     </AppMessage>
 
-    <div
+    <section
       v-else
-      class="candidates-view__list"
+      class="candidates-view__content"
     >
       <div class="section-header">
         <div class="section-header__copy">
@@ -155,30 +166,50 @@ function toUserMessage(error: unknown): string {
             Vergleichsliste
           </p>
           <h2 class="section-title">
-            Kandidaten mit erklaerbarer Datenbasis
+            Kandidaten vor der Entscheidung
           </h2>
           <p class="body-muted">
-            Vollstaendige Kandidaten koennen direkt gematcht werden. Unvollstaendige Kandidaten zeigen dir klar, was noch fehlt.
+            Die Karten bleiben bewusst kompakt und vergleichbar. Vollstaendige
+            Kandidaten sind bereit fuer spaetere Matches, unvollstaendige zeigen
+            knapp, was noch fehlt.
           </p>
         </div>
       </div>
 
-      <CandidateSummaryCard
-        v-for="candidate in candidates"
-        :key="candidate.media.id"
-        :candidate="candidate"
-      />
-    </div>
+      <div class="candidates-view__list">
+        <CandidateSummaryCard
+          v-for="candidate in candidates"
+          :key="candidate.media.id"
+          :candidate="candidate"
+        />
+      </div>
+    </section>
   </section>
 </template>
 
 <style scoped>
+.candidates-view__content {
+  display: grid;
+  gap: 0.8rem;
+}
+
 .candidates-view__list {
   display: grid;
-  gap: 1rem;
+  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.candidates-view__state-card {
+  width: min(100%, 58rem);
 }
 
 .candidates-view__message-actions {
   margin-top: 1rem;
+}
+
+@media (max-width: 760px) {
+  .candidates-view__list {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

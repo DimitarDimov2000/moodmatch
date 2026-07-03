@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import TagChip from '@/components/tags/TagChip.vue';
-import type { InterestProfileTagWeightResponse } from '@/types/api';
-import { formatDecimal } from '@/components/matching/matching-format';
+import TagChip from "@/components/tags/TagChip.vue";
+import type { InterestProfileTagWeightResponse } from "@/types/api";
+import { formatDecimal } from "@/components/matching/matching-format";
 
 defineProps<{
   title?: string;
@@ -17,10 +17,11 @@ defineProps<{
           Profil-Gewichte
         </p>
         <h2 class="section-title">
-          {{ title ?? 'Interessenprofil nach Tags' }}
+          {{ title ?? "Interessenprofil nach Tags" }}
         </h2>
         <p class="body-muted">
-          Hohe Werte bedeuten: Dieses Thema oder Gefuehl taucht in deinen positiv bewerteten Medien besonders stark auf.
+          Hohe Werte zeigen, welche Themen und Stimmungen in deinen positiv
+          bewerteten Medien am staerksten wiederkehren.
         </p>
       </div>
     </div>
@@ -53,8 +54,8 @@ defineProps<{
 <style scoped>
 .interest-profile-weights {
   display: grid;
-  gap: 1rem;
-  padding: 1.5rem;
+  gap: 0.85rem;
+  padding: 1.1rem;
 }
 
 .interest-profile-weights__header {
@@ -76,8 +77,8 @@ defineProps<{
 
 .interest-profile-weights__list {
   display: grid;
-  gap: 0.8rem;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.65rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   margin: 0;
   padding: 0;
   list-style: none;
@@ -87,14 +88,16 @@ defineProps<{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.9rem 1rem;
+  gap: 0.65rem;
+  padding: 0.75rem 0.9rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface-secondary);
 }
 
 .interest-profile-weights__value {
+  min-width: 2.5rem;
+  text-align: right;
   font-weight: 700;
   color: var(--color-text-primary);
 }

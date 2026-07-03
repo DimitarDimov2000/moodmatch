@@ -9,6 +9,10 @@ import { getMatches } from "@/api/matches";
 import { getProfile } from "@/api/profile";
 import AppMessage from "@/components/common/AppMessage.vue";
 import DashboardSummaryCard from "@/components/dashboard/DashboardSummaryCard.vue";
+import {
+  consumptionStatusLabels,
+  mediaTypeLabels,
+} from "@/components/matching/matching-format";
 import type {
   CandidateSelectionResponse,
   InterestProfileResponse,
@@ -47,6 +51,15 @@ const candidateCount = computed(
 );
 const bestMatch = computed<MatchResultResponse | null>(
   () => matching.value?.matches[0] ?? null,
+);
+const recentMediaItems = computed(() =>
+  [...(media.value ?? [])]
+    .sort(
+      (left, right) =>
+        new Date(right.updatedAt).getTime() -
+        new Date(left.updatedAt).getTime(),
+    )
+    .slice(0, 3),
 );
 
 const heroTitle = computed(() => {
@@ -232,14 +245,16 @@ function toUserMessage(error: unknown, fallback: string): string {
         </p>
 
         <div class="dashboard__hero-badges">
-          <span class="badge">
-            {{ mediaCount }} Medien
-          </span>
+          <span class="badge"> {{ mediaCount }} Medien </span>
           <span
             class="badge"
-            :class="profile?.isReadyForMatching ? 'badge--success' : 'badge--warning'"
+            :class="
+              profile?.isReadyForMatching ? 'badge--success' : 'badge--warning'
+            "
           >
-            {{ profile?.isReadyForMatching ? 'Profil bereit' : 'Profil im Aufbau' }}
+            {{
+              profile?.isReadyForMatching ? "Profil bereit" : "Profil im Aufbau"
+            }}
           </span>
           <span
             class="badge"
@@ -250,20 +265,55 @@ function toUserMessage(error: unknown, fallback: string): string {
         </div>
       </div>
 
-      <div class="dashboard__hero-actions">
-        <RouterLink
-          :to="{ name: 'media-create' }"
-          class="button button--primary"
-        >
-          Medium anlegen
-        </RouterLink>
-        <RouterLink
-          :to="{ name: 'matches' }"
-          class="button button--secondary"
-        >
-          Matches ansehen
-        </RouterLink>
-      </div>
+      <aside class="dashboard__hero-side">
+        <article class="dashboard__hero-panel">
+          <p class="eyebrow">
+            Naechster Schritt
+          </p>
+          <h2 class="section-title">
+            {{ nextAction.title }}
+          </h2>
+          <p class="body-muted">
+            {{ nextAction.copy }}
+          </p>
+
+          <div class="dashboard__hero-panel-actions">
+            <RouterLink
+              :to="nextAction.to"
+              class="button button--primary"
+            >
+              {{ nextAction.label }}
+            </RouterLink>
+            <RouterLink
+              :to="focusCard.to"
+              class="button button--secondary"
+            >
+              {{ focusCard.label }}
+            </RouterLink>
+          </div>
+        </article>
+
+        <div class="dashboard__quick-actions">
+          <RouterLink
+            :to="{ name: 'media-list' }"
+            class="button button--secondary"
+          >
+            Mediathek
+          </RouterLink>
+          <RouterLink
+            :to="{ name: 'profile' }"
+            class="button button--secondary"
+          >
+            Profil
+          </RouterLink>
+          <RouterLink
+            :to="{ name: 'swipe' }"
+            class="button button--secondary"
+          >
+            Swipe
+          </RouterLink>
+        </div>
+      </aside>
     </header>
 
     <AppMessage
@@ -277,7 +327,7 @@ function toUserMessage(error: unknown, fallback: string): string {
       <AppMessage
         v-if="loadWarnings.length > 0"
         title="Nicht alle Bereiche konnten geladen werden"
-        :description="loadWarnings.join(' ')"
+        :description="loadWarnings.join('\n')"
         tone="warning"
       >
         <div class="dashboard__message-actions">
@@ -301,7 +351,8 @@ function toUserMessage(error: unknown, fallback: string): string {
               Wo dein MoodMatch gerade steht
             </h2>
             <p class="body-muted">
-              Jede Karte zeigt dir einen Bereich, den du als Naechstes vertiefen kannst.
+              Vier kompakte Karten zeigen Status, Profilreife und
+              Empfehlungslage.
             </p>
           </div>
         </div>
@@ -369,90 +420,77 @@ function toUserMessage(error: unknown, fallback: string): string {
         </div>
       </section>
 
-      <section class="page-section">
-        <div class="section-header">
-          <div class="section-header__copy">
+      <section class="dashboard__detail-grid">
+        <article class="page-card dashboard__detail-card">
+          <p class="eyebrow">
+            Aktueller Fokus
+          </p>
+          <h2 class="section-title">
+            {{ focusCard.title }}
+          </h2>
+          <p class="body-muted">
+            {{ focusCard.copy }}
+          </p>
+          <RouterLink
+            :to="focusCard.to"
+            class="button button--secondary"
+          >
+            {{ focusCard.label }}
+          </RouterLink>
+        </article>
+
+        <article class="page-card dashboard__detail-card">
+          <div class="dashboard__detail-heading">
             <p class="eyebrow">
-              Naechste Schritte
+              Zuletzt wichtig
             </p>
             <h2 class="section-title">
-              Fokus fuer diese Session
+              {{
+                recentMediaItems.length > 0
+                  ? "Neu in deiner Sammlung"
+                  : "Sammlung aufbauen"
+              }}
             </h2>
             <p class="body-muted">
-              Die wichtigsten Aktionen bleiben direkt erreichbar, ohne neue Datenanforderungen zu erzeugen.
+              {{
+                recentMediaItems.length > 0
+                  ? "Die juengsten Eintraege bleiben schnell erreichbar, ohne die Mediathek zu ueberladen."
+                  : "Sobald du erste Medien anlegst, erscheint hier ein kompakter Rueckblick auf deine Sammlung."
+              }}
             </p>
           </div>
-        </div>
 
-        <div class="dashboard__detail-grid">
-          <article class="page-card dashboard__detail-card">
-            <p class="eyebrow">
-              Naechster sinnvoller Schritt
-            </p>
-            <h2 class="section-title">
-              {{ nextAction.title }}
-            </h2>
-            <p class="body-muted">
-              {{ nextAction.copy }}
-            </p>
-            <RouterLink
-              :to="nextAction.to"
-              class="button button--primary"
+          <ul
+            v-if="recentMediaItems.length > 0"
+            class="dashboard__recent-list"
+          >
+            <li
+              v-for="item in recentMediaItems"
+              :key="item.id"
+              class="dashboard__recent-item"
             >
-              {{ nextAction.label }}
-            </RouterLink>
-          </article>
+              <div>
+                <p class="dashboard__recent-title">
+                  {{ item.title }}
+                </p>
+                <p class="dashboard__recent-meta">
+                  {{ mediaTypeLabels[item.mediaType] }} ·
+                  {{ consumptionStatusLabels[item.consumptionStatus]
+                  }}<span v-if="item.releaseYear">
+                    · {{ item.releaseYear }}</span>
+                </p>
+              </div>
+              <span class="badge"> {{ item.tags.length }} Tags </span>
+            </li>
+          </ul>
 
-          <article class="page-card dashboard__detail-card">
-            <p class="eyebrow">
-              Aktueller Fokus
-            </p>
-            <h2 class="section-title">
-              {{ focusCard.title }}
-            </h2>
-            <p class="body-muted">
-              {{ focusCard.copy }}
-            </p>
-            <RouterLink
-              :to="focusCard.to"
-              class="button button--secondary"
-            >
-              {{ focusCard.label }}
-            </RouterLink>
-          </article>
-
-          <article class="page-card dashboard__detail-card">
-            <p class="eyebrow">
-              Schnellzugriff
-            </p>
-            <h2 class="section-title">
-              Direkt in die wichtigsten Bereiche
-            </h2>
-            <p class="body-muted">
-              Sammlung pflegen, Profil verstehen oder Kandidaten im Swipe-Modus einschaetzen.
-            </p>
-            <div class="dashboard__quick-actions">
-              <RouterLink
-                :to="{ name: 'media-list' }"
-                class="button button--secondary"
-              >
-                Mediathek
-              </RouterLink>
-              <RouterLink
-                :to="{ name: 'profile' }"
-                class="button button--secondary"
-              >
-                Profil
-              </RouterLink>
-              <RouterLink
-                :to="{ name: 'swipe' }"
-                class="button button--secondary"
-              >
-                Swipe
-              </RouterLink>
-            </div>
-          </article>
-        </div>
+          <RouterLink
+            :to="{ name: 'media-list' }"
+            class="button button--secondary"
+          >
+            Zur Mediathek
+          </RouterLink>
+        </article>
       </section>
     </template>
   </section>
@@ -461,18 +499,19 @@ function toUserMessage(error: unknown, fallback: string): string {
 <style scoped>
 .dashboard__hero {
   display: grid;
-  gap: 1.5rem;
-  padding: clamp(1.5rem, 3vw, 2rem);
+  gap: 0.95rem;
+  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.9fr);
+  padding: clamp(1.08rem, 2.3vw, 1.4rem);
   background: radial-gradient(
       circle at top right,
-      color-mix(in srgb, var(--color-accent-soft) 85%, transparent),
-      transparent 35%
+      color-mix(in srgb, var(--color-accent-soft) 58%, transparent),
+      transparent 31%
     ),
     linear-gradient(
       180deg,
       color-mix(
         in srgb,
-        var(--color-surface-secondary) 78%,
+        var(--color-surface-secondary) 72%,
         var(--color-surface)
       ),
       var(--color-surface)
@@ -481,7 +520,7 @@ function toUserMessage(error: unknown, fallback: string): string {
 
 .dashboard__hero-copy {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.55rem;
 }
 
 .dashboard__hero-copy .page-copy {
@@ -494,42 +533,129 @@ function toUserMessage(error: unknown, fallback: string): string {
   gap: 0.6rem;
 }
 
-.dashboard__hero-actions {
-  display: flex;
-  flex-wrap: wrap;
+.dashboard__hero-side {
+  display: grid;
   gap: 0.75rem;
+  align-content: start;
+}
+
+.dashboard__hero-panel,
+.dashboard__detail-card {
+  display: grid;
+  gap: 0.72rem;
+}
+
+.dashboard__hero-panel {
+  padding: 0.92rem;
+  border: 1px solid var(--color-border);
+  border-radius: calc(var(--radius-lg) - 6px);
+  background: color-mix(
+    in srgb,
+    var(--color-surface-secondary) 76%,
+    var(--color-surface)
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .dashboard__grid,
 .dashboard__detail-grid {
   display: grid;
-  gap: 1rem;
+  gap: 0.8rem;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 
-.dashboard__detail-card {
-  display: grid;
-  gap: 0.75rem;
-  padding: 1.35rem;
+.dashboard__detail-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
+.dashboard__detail-card {
+  padding: 1rem;
+}
+
+.dashboard__detail-heading {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.dashboard__recent-list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard__recent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 0.72rem 0.82rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: color-mix(
+    in srgb,
+    var(--color-surface-secondary) 74%,
+    transparent
+  );
+}
+
+.dashboard__hero-panel p,
 .dashboard__detail-card p {
   margin: 0;
 }
 
+.dashboard__hero-panel-actions,
 .dashboard__quick-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 0.55rem;
+}
+
+.dashboard__quick-actions > * {
+  flex: 1 1 8rem;
+}
+
+.dashboard__recent-title,
+.dashboard__recent-meta {
+  margin: 0;
+}
+
+.dashboard__recent-title {
+  font-weight: 700;
+}
+
+.dashboard__recent-meta {
+  margin-top: 0.2rem;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
 }
 
 .dashboard__message-actions {
   margin-top: 1rem;
 }
 
+@media (max-width: 980px) {
+  .dashboard__hero {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 720px) {
   .dashboard__quick-actions > * {
     flex: 1 1 10rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .dashboard__hero-panel-actions > *,
+  .dashboard__quick-actions > * {
+    width: 100%;
+  }
+
+  .dashboard__recent-item {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 </style>

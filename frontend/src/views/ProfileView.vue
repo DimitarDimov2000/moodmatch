@@ -1,20 +1,25 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { RouterLink } from 'vue-router';
+import { computed, onMounted, ref } from "vue";
+import { RouterLink } from "vue-router";
 
-import { ApiRequestError } from '@/api/client';
-import { getProfile } from '@/api/profile';
-import AppMessage from '@/components/common/AppMessage.vue';
-import ProfileContributionCard from '@/components/profile/ProfileContributionCard.vue';
-import InterestProfileWeights from '@/components/profile/InterestProfileWeights.vue';
-import TagChip from '@/components/tags/TagChip.vue';
-import type { InterestProfileResponse } from '@/types/api';
+import { ApiRequestError } from "@/api/client";
+import { getProfile } from "@/api/profile";
+import AppMessage from "@/components/common/AppMessage.vue";
+import ProfileContributionCard from "@/components/profile/ProfileContributionCard.vue";
+import InterestProfileWeights from "@/components/profile/InterestProfileWeights.vue";
+import TagChip from "@/components/tags/TagChip.vue";
+import type { InterestProfileResponse } from "@/types/api";
 
 const profile = ref<InterestProfileResponse | null>(null);
 const loading = ref(true);
-const errorMessage = ref('');
+const errorMessage = ref("");
 
-const strongestTags = computed(() => profile.value?.weightedTags.slice(0, 6) ?? []);
+const strongestTags = computed(
+  () => profile.value?.weightedTags.slice(0, 6) ?? [],
+);
+const contributionCount = computed(
+  () => profile.value?.contributingMedia.length ?? 0,
+);
 
 onMounted(async () => {
   await loadProfile();
@@ -22,7 +27,7 @@ onMounted(async () => {
 
 async function loadProfile() {
   loading.value = true;
-  errorMessage.value = '';
+  errorMessage.value = "";
 
   try {
     profile.value = await getProfile();
@@ -38,7 +43,7 @@ function toUserMessage(error: unknown): string {
     return error.message;
   }
 
-  return 'Das Interessenprofil konnte nicht geladen werden.';
+  return "Das Interessenprofil konnte nicht geladen werden.";
 }
 </script>
 
@@ -53,8 +58,8 @@ function toUserMessage(error: unknown): string {
           So versteht MoodMatch deinen Geschmack
         </h1>
         <p class="page-copy">
-          Hier siehst du, welche konsumierten und positiv bewerteten Medien aktuell in dein
-          Profil einfliessen und welche Tags davon am staerksten gepraegt werden.
+          Hier siehst du kompakt, welche Signale dein Profil tragen und warum
+          einzelne Empfehlungen dadurch besser zu dir passen.
         </p>
       </div>
     </header>
@@ -90,7 +95,7 @@ function toUserMessage(error: unknown): string {
             Bereit fuer Matching
           </p>
           <p class="overview-stat-card__value">
-            {{ profile.isReadyForMatching ? 'Ja' : 'Noch nicht' }}
+            {{ profile.isReadyForMatching ? "Ja" : "Noch nicht" }}
           </p>
           <p class="overview-stat-card__copy">
             {{ profile.explanationMessage }}
@@ -102,7 +107,8 @@ function toUserMessage(error: unknown): string {
             Relevante Medien
           </p>
           <p class="overview-stat-card__value">
-            {{ profile.profileRelevantMediaCount }} / {{ profile.requiredProfileRelevantMediaCount }}
+            {{ profile.profileRelevantMediaCount }} /
+            {{ profile.requiredProfileRelevantMediaCount }}
           </p>
           <p class="overview-stat-card__copy">
             Mindestens {{ profile.requiredProfileRelevantMediaCount }} benoetigt
@@ -111,13 +117,13 @@ function toUserMessage(error: unknown): string {
 
         <article class="page-card overview-stat-card">
           <p class="eyebrow">
-            Starke Tags
+            Starke Signale
           </p>
           <p class="overview-stat-card__value">
             {{ strongestTags.length }}
           </p>
           <p class="overview-stat-card__copy">
-            Aktuelle Schwerpunkte in deinem Profil
+            Sichtbare Schwerpunkt-Tags
           </p>
         </article>
       </section>
@@ -138,35 +144,65 @@ function toUserMessage(error: unknown): string {
         </div>
       </AppMessage>
 
-      <section class="page-card profile-view__guide">
+      <section class="page-card profile-view__summary">
         <div class="section-header">
           <div class="section-header__copy">
             <p class="eyebrow">
-              Profil-Lesart
+              Zusammenfassung
             </p>
             <h2 class="section-title">
-              Was diese Seite zeigt
+              Deine staerksten Geschmackssignale
             </h2>
             <p class="body-muted">
-              MoodMatch nutzt keine freie Interpretation: Sichtbar wird nur, was aus deinen
-              vorhandenen Bewertungen, Favoriten und bestaetigten Tags hervorgeht.
+              {{ profile.explanationMessage }}
             </p>
           </div>
         </div>
 
-        <div
-          v-if="strongestTags.length > 0"
-          class="profile-view__spotlight"
-        >
-          <p class="profile-view__spotlight-label">
-            Aktuelle Schwerpunkt-Tags
-          </p>
-          <div class="profile-view__spotlight-tags">
-            <TagChip
-              v-for="item in strongestTags"
-              :key="item.tag.id"
-              :tag="item.tag"
-            />
+        <div class="profile-view__summary-grid">
+          <div class="profile-view__spotlight">
+            <p class="profile-view__spotlight-label">
+              Deine staerksten Geschmackssignale
+            </p>
+            <div
+              v-if="strongestTags.length > 0"
+              class="profile-view__spotlight-tags"
+            >
+              <TagChip
+                v-for="item in strongestTags"
+                :key="item.tag.id"
+                :tag="item.tag"
+              />
+            </div>
+            <p
+              v-else
+              class="body-muted"
+            >
+              Sobald mehr konsumierte Medien mit bestaetigten Tags vorliegen,
+              werden hier deine staerksten Signale sichtbar.
+            </p>
+          </div>
+
+          <div class="profile-view__summary-notes">
+            <div class="profile-view__summary-note">
+              <p class="profile-view__spotlight-label">
+                Was deine Empfehlungen praegt
+              </p>
+              <p class="body-muted">
+                Positive Bewertungen, Favoriten und bestaetigte Tags staerken
+                die Signale, die spaeter in Matches sichtbar werden.
+              </p>
+            </div>
+
+            <div class="profile-view__summary-note">
+              <p class="profile-view__spotlight-label">
+                Woher dieses Signal kommt
+              </p>
+              <p class="body-muted">
+                {{ contributionCount }} Medien tragen aktuell zu deinem Profil
+                bei.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -175,22 +211,24 @@ function toUserMessage(error: unknown): string {
         <InterestProfileWeights
           class="profile-view__weights"
           :tags="profile.weightedTags"
+          title="Deine staerksten Geschmackssignale"
         />
 
         <section class="profile-view__media">
           <div class="profile-view__section-header">
             <h2 class="section-title">
-              Medien, die das Profil praegen
+              Was deine Empfehlungen praegt
             </h2>
             <p class="body-muted">
-              Bewertungs- und Favoritenfaktoren kommen unveraendert aus dem Backend.
+              Woher dieses Signal kommt: konsumierte Medien mit Bewertung,
+              Favoritenstatus und bestaetigten Tags.
             </p>
           </div>
 
           <AppMessage
             v-if="profile.contributingMedia.length === 0"
             title="Noch keine Profilquellen"
-            description="Sobald konsumierte Medien mit positiver Bewertung und bestaetigten Tags vorhanden sind, erscheinen sie hier."
+            description="Sobald konsumierte Medien mit positiver Bewertung und bestaetigten Tags vorhanden sind, erscheinen sie hier kompakt erklaert."
           />
 
           <div
@@ -212,19 +250,25 @@ function toUserMessage(error: unknown): string {
 <style scoped>
 .profile-view__layout {
   display: grid;
-  gap: 1.5rem;
+  gap: 0.95rem;
   grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.35fr);
 }
 
-.profile-view__guide {
+.profile-view__summary {
   display: grid;
-  gap: 1rem;
-  padding: clamp(1.15rem, 2.8vw, 1.45rem);
+  gap: 0.9rem;
+  padding: clamp(0.95rem, 2.3vw, 1.1rem);
+}
+
+.profile-view__summary-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
 }
 
 .profile-view__spotlight {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.55rem;
 }
 
 .profile-view__spotlight-label {
@@ -239,17 +283,39 @@ function toUserMessage(error: unknown): string {
 .profile-view__spotlight-tags {
   display: flex;
   flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.profile-view__summary-notes {
+  display: grid;
   gap: 0.65rem;
+}
+
+.profile-view__summary-note {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.78rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: color-mix(
+    in srgb,
+    var(--color-surface-secondary) 78%,
+    var(--color-surface)
+  );
+}
+
+.profile-view__summary-note p {
+  margin: 0;
 }
 
 .profile-view__media,
 .profile-view__contributions {
   display: grid;
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
 .profile-view__section-header p {
-  margin: 0.4rem 0 0;
+  margin: 0.25rem 0 0;
 }
 
 .profile-view__message-actions {
@@ -258,6 +324,10 @@ function toUserMessage(error: unknown): string {
 
 @media (max-width: 980px) {
   .profile-view__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-view__summary-grid {
     grid-template-columns: 1fr;
   }
 }

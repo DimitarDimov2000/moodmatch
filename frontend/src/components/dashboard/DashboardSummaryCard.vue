@@ -51,8 +51,8 @@ withDefaults(
 <style scoped>
 .dashboard-summary-card {
   display: grid;
-  gap: 1rem;
-  padding: 1.35rem;
+  gap: 0.8rem;
+  padding: 1.05rem;
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--color-surface) 92%, transparent),
@@ -93,7 +93,7 @@ withDefaults(
 
 .dashboard-summary-card__body {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.25rem;
 }
 
 .dashboard-summary-card__value,
@@ -102,20 +102,20 @@ withDefaults(
 }
 
 .dashboard-summary-card__value {
-  font-size: clamp(2rem, 4vw, 2.6rem);
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
   line-height: 1;
 }
 
 .dashboard-summary-card__link {
   display: inline-flex;
   align-items: center;
-  min-height: 2rem;
-  padding: 0.25rem 0.7rem;
+  min-height: 1.8rem;
+  padding: 0.2rem 0.62rem;
   border-radius: var(--radius-full);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   color: var(--color-text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.84rem;
   font-weight: 600;
 }
 
