@@ -15,6 +15,7 @@ export function searchExternal(query: ExternalSearchQuery): Promise<ExternalSear
       mediaType: query.mediaType,
       source: query.source,
       limit: query.limit,
+      sort: query.sort,
     },
   });
 }

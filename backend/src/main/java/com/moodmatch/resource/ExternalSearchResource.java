@@ -49,8 +49,9 @@ public class ExternalSearchResource {
             @RestQuery("query") @NotBlank @Size(max = 200) String query,
             @RestQuery("mediaType") @NotBlank String mediaType,
             @RestQuery("source") @Size(max = 50) String source,
-            @RestQuery("limit") @Min(1) Integer limit) {
-        return externalSearchService.search(query, mediaType, source, limit);
+            @RestQuery("limit") @Min(1) Integer limit,
+            @RestQuery("sort") @Size(max = 30) String sort) {
+        return externalSearchService.search(query, mediaType, source, limit, sort);
     }
 
     @POST

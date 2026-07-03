@@ -45,6 +45,43 @@ describe('external api', () => {
     );
   });
 
+  it('serializes explicit youtube search sort parameters onto the shared GET client', async () => {
+    const fetchSpy = vi.spyOn(window, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          query: 'ai tutorial',
+          mediaType: 'VIDEO',
+          source: 'YOUTUBE',
+          results: [],
+          warnings: [],
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      ),
+    );
+
+    await searchExternal({
+      query: 'ai tutorial',
+      mediaType: 'VIDEO',
+      source: 'YOUTUBE',
+      sort: 'most_viewed',
+    });
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      new URL(
+        `${API_BASE_URL}/external/search?query=ai+tutorial&mediaType=VIDEO&source=YOUTUBE&sort=most_viewed`,
+        window.location.origin,
+      ).toString(),
+      expect.objectContaining({
+        method: 'GET',
+      }),
+    );
+  });
+
   it('posts import payloads onto the shared JSON client', async () => {
     const fetchSpy = vi.spyOn(window, 'fetch').mockResolvedValue(
       new Response(

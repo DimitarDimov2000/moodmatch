@@ -2,6 +2,7 @@ package com.moodmatch.external.youtube;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -63,6 +64,45 @@ class YouTubeExternalSearchProviderTest {
 
         assertEquals(1, results.size());
         assertEquals("valid12345A", results.getFirst().externalId());
+    }
+
+    @Test
+    void shouldSupportNewestAndMostViewedYoutubeSearchSorts() {
+        YouTubeExternalSearchProvider provider = new YouTubeExternalSearchProvider();
+        RecordingYouTubeGateway gateway = new RecordingYouTubeGateway();
+        provider.youTubeGateway = gateway;
+        provider.apiKey = "test-key";
+
+        provider.search(new ExternalSearchRequest("ai tutorial", MediaType.VIDEO, ExternalSearchSourceName.YOUTUBE, 10, "newest"));
+        assertEquals("date", gateway.order);
+
+        provider.search(new ExternalSearchRequest(
+                "ai tutorial",
+                MediaType.VIDEO,
+                ExternalSearchSourceName.YOUTUBE,
+                10,
+                "most_viewed"));
+        assertEquals("viewCount", gateway.order);
+    }
+
+    @Test
+    void shouldRejectUnsupportedYoutubeSearchSortsClearly() {
+        YouTubeExternalSearchProvider provider = new YouTubeExternalSearchProvider();
+        provider.youTubeGateway = new RecordingYouTubeGateway();
+        provider.apiKey = "test-key";
+
+        com.moodmatch.exception.BusinessRuleViolationException exception = assertThrows(
+                com.moodmatch.exception.BusinessRuleViolationException.class,
+                () -> provider.search(new ExternalSearchRequest(
+                        "ai tutorial",
+                        MediaType.VIDEO,
+                        ExternalSearchSourceName.YOUTUBE,
+                        10,
+                        "alphabetical")));
+
+        assertEquals(
+                "Unsupported YouTube search sort: alphabetical. Use relevance, newest, or most_viewed.",
+                exception.getMessage());
     }
 
     private static final class FakeYouTubeGateway implements YouTubeGateway {
@@ -132,6 +172,27 @@ class YouTubeExternalSearchProviderTest {
                             null,
                             List.of(),
                             null));
+        }
+
+        @Override
+        public Optional<YouTubeVideo> fetchVideo(String apiKey, String videoId) {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<String> fetchCategoryLabel(String apiKey, String categoryId) {
+            return Optional.empty();
+        }
+    }
+
+    private static final class RecordingYouTubeGateway implements YouTubeGateway {
+
+        private String order;
+
+        @Override
+        public List<YouTubeVideo> searchVideos(String apiKey, String query, int maxResults, String order) {
+            this.order = order;
+            return List.of();
         }
 
         @Override

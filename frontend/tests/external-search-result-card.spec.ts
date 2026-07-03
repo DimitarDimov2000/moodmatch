@@ -56,7 +56,9 @@ describe('ExternalSearchResultCard', () => {
     expect(wrapper.text()).toContain('English');
     expect(wrapper.text()).toContain('Quelle');
     expect(wrapper.text()).toContain('LibriVox Audiobook Catalog');
-    expect(wrapper.text()).toContain('Romantik - HIGH');
+    expect(wrapper.text()).toContain('Romantik');
+    expect(wrapper.text()).not.toContain('HIGH');
+    expect(wrapper.text()).not.toContain('Fuer dieses Ergebnis liegen noch keine gemappten Tag-Vorschlaege vor.');
     expect(wrapper.text()).toContain('LibriVox public domain audiobook catalog');
     expect(wrapper.text()).toContain('Imported into your media library.');
     expect(wrapper.text()).toContain('In Mediathek ansehen');
@@ -100,6 +102,94 @@ describe('ExternalSearchResultCard', () => {
     await wrapper.get('button.button--primary').trigger('click');
 
     expect(wrapper.emitted('import')).toHaveLength(1);
+  });
+
+  it('renders suggested fallback tags when provided by the backend', () => {
+    const wrapper = mount(ExternalSearchResultCard, {
+      global: {
+        stubs: {
+          RouterLink: {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+      props: {
+        result: {
+          source: 'RAWG',
+          externalId: '3498',
+          mediaType: 'GAME',
+          title: 'Elden Ring',
+          originalTitle: null,
+          creatorNames: [],
+          description: null,
+          releaseYear: 2022,
+          coverUrl: null,
+          sourceUrl: 'https://rawg.io/games/elden-ring',
+          externalGenres: ['Action', 'RPG'],
+          externalSubjects: ['Open World'],
+          suggestedTags: [
+            {
+              tagId: 'fallback-action',
+              tagName: 'Action',
+              tagCategory: 'GENRE',
+              sourceValue: 'Action',
+              reason: 'Suggested from normalized external metadata.',
+              confidence: 'LOW',
+            },
+            {
+              tagId: 'fallback-open-world',
+              tagName: 'Open World',
+              tagCategory: 'THEME',
+              sourceValue: 'Open World',
+              reason: 'Suggested from normalized external metadata.',
+              confidence: 'LOW',
+            },
+          ],
+          attribution: 'Metadata from RAWG',
+          warnings: [],
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain('Action');
+    expect(wrapper.text()).toContain('Open World');
+    expect(wrapper.text()).not.toContain('LOW');
+    expect(wrapper.text()).not.toContain('MEDIUM');
+    expect(wrapper.text()).not.toContain('HIGH');
+    expect(wrapper.text()).not.toContain('Fuer dieses Ergebnis liegen noch keine gemappten Tag-Vorschlaege vor.');
+  });
+
+  it('renders the empty suggested-tag message only when no suggestions exist', () => {
+    const wrapper = mount(ExternalSearchResultCard, {
+      global: {
+        stubs: {
+          RouterLink: {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+      props: {
+        result: {
+          source: 'TMDB',
+          externalId: '11',
+          mediaType: 'FILM',
+          title: 'Sparse Result',
+          originalTitle: null,
+          creatorNames: [],
+          description: null,
+          releaseYear: null,
+          coverUrl: null,
+          sourceUrl: null,
+          externalGenres: [],
+          externalSubjects: [],
+          suggestedTags: [],
+          attribution: 'Metadata from TMDB',
+          warnings: [],
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain('Fuer dieses Ergebnis liegen noch keine gemappten Tag-Vorschlaege vor.');
   });
 
   it('renders RAWG game metadata clearly', () => {

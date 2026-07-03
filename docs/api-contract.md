@@ -153,6 +153,7 @@ Query parameters:
 | `mediaType` | yes | enum | `FILM`, `SERIES`, `BOOK`, `GAME`, `AUDIOBOOK`, `PODCAST`, `VIDEO` |
 | `source` | no | enum | `AUTOMATIC`, `DEMO`, `TMDB`, `OPEN_LIBRARY`, `RAWG`, `LIBRIVOX`, `PODCAST_INDEX`, `ANILIST`, or `YOUTUBE`; omit or pass `AUTOMATIC` to search all compatible active providers |
 | `limit` | no | integer | Positive integer, capped by backend safety rules |
+| `sort` | no | enum | Explicit `source=YOUTUBE` only: `relevance`, `newest`, or `most_viewed` |
 
 Search behavior:
 
@@ -167,7 +168,9 @@ Search behavior:
 - Automatic `PODCAST` searches query `PODCAST_INDEX` when `MOODMATCH_PODCASTINDEX_KEY` and `MOODMATCH_PODCASTINDEX_SECRET` are configured.
 - If Podcast Index is not configured, automatic podcast search returns an empty result set plus a warning. Explicit `source=PODCAST_INDEX` returns `Podcast Index provider is not configured. Set MOODMATCH_PODCASTINDEX_KEY and MOODMATCH_PODCASTINDEX_SECRET.`
 - Podcast Index imports podcast shows/feeds only, never episode rows.
-- Explicit `source=YOUTUBE` searches use the official YouTube Data API `search.list` endpoint with `part=snippet`, `type=video`, `order=relevance`, and a backend default of `maxResults=10`.
+- Explicit `source=YOUTUBE` searches use the official YouTube Data API `search.list` endpoint with `part=snippet`, `type=video`, and a backend default of `maxResults=10`.
+- Explicit YouTube sort values map as follows: `relevance` -> `order=relevance`, `newest` -> `order=date`, `most_viewed` -> `order=viewCount`.
+- `most_viewed` means the YouTube API `viewCount` order, not click count.
 - `VIDEO` still has no active automatic multi-provider text-search provider in this package. Use explicit `source=YOUTUBE` for query search.
 - Anime movie results from AniList map to `FILM`; anime TV/OVA/ONA/special/short results map to `SERIES`; manga/light novel/novel/one-shot results map to `BOOK`.
 - Automatic responses use response-level `"source": "AUTOMATIC"` and preserve the real provider on every result in `results[*].source`.
@@ -197,7 +200,7 @@ Example response shape:
   "mediaType": "FILM",
   "source": "AUTOMATIC",
   "warnings": [
-    "TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Provider skipped in automatic search."
+    "TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY in the backend environment to a TMDB v3 API key. Provider skipped in automatic search."
   ],
   "results": [
     {
@@ -285,9 +288,10 @@ Resolve-by-URL response shape:
 Resolve-by-URL notes:
 
 - Current supported source: `YOUTUBE`
-- Current supported inputs: standard watch URLs, `youtu.be` short URLs, Shorts URLs, and raw video ids
+- Current supported inputs: standard watch URLs, `youtu.be` short URLs, Shorts URLs, embed URLs, and raw video ids
 - Uses the official YouTube Data API videos metadata flow with a backend-only API key
 - Missing `MOODMATCH_YOUTUBE_API_KEY` returns a clear provider configuration error instead of crashing
+- Thumbnail metadata maps into `coverUrl`, and channel title maps into `creatorNames` when available
 - Requires bearer authentication in `local-password` mode
 
 Import request shape:

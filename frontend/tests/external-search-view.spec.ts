@@ -91,6 +91,7 @@ describe('ExternalSearchView', () => {
 
     expect(wrapper.get('option[value="YOUTUBE"]').text()).toContain('offizielle Videosuche');
     expect((wrapper.get('select[name="source"]').element as HTMLSelectElement).value).toBe('YOUTUBE');
+    expect(wrapper.get('select[name="sort"]').text()).toContain('Most viewed');
     expect(wrapper.text()).toContain('separate YouTube-URL-Import');
   });
 
@@ -132,6 +133,7 @@ describe('ExternalSearchView', () => {
       query: 'ai tutorial',
       mediaType: 'VIDEO',
       source: 'YOUTUBE',
+      sort: 'relevance',
     });
     expect(wrapper.text()).toContain('AI Tutorial for Builders');
     expect(wrapper.text()).toContain('YouTube');
@@ -161,6 +163,31 @@ describe('ExternalSearchView', () => {
     expect(wrapper.text()).toContain('Provider-Hinweis');
     expect(wrapper.text()).toContain('MOODMATCH_YOUTUBE_API_KEY');
     expect(wrapper.text()).not.toContain('Suche konnte nicht abgeschlossen werden');
+  });
+
+  it('passes the selected youtube search sort through the normal external search form', async () => {
+    searchExternalMock.mockResolvedValue({
+      query: 'ai tutorial',
+      mediaType: 'VIDEO',
+      source: 'YOUTUBE',
+      warnings: [],
+      results: [],
+    });
+
+    const wrapper = mountView();
+
+    await wrapper.get('select[name="mediaType"]').setValue('VIDEO');
+    await wrapper.get('select[name="sort"]').setValue('most_viewed');
+    await wrapper.get('input[name="query"]').setValue('ai tutorial');
+    await wrapper.get('form.external-search-form').trigger('submit');
+    await flushPromises();
+
+    expect(searchExternalMock).toHaveBeenCalledWith({
+      query: 'ai tutorial',
+      mediaType: 'VIDEO',
+      source: 'YOUTUBE',
+      sort: 'most_viewed',
+    });
   });
 
   it('resolves a valid youtube url into a preview card with thumbnail metadata', async () => {
@@ -394,7 +421,9 @@ describe('ExternalSearchView', () => {
       query: 'spirited away',
       mediaType: 'FILM',
       source: 'AUTOMATIC',
-      warnings: ['TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Provider skipped in automatic search.'],
+      warnings: [
+        'TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY in the backend environment to a TMDB v3 API key. Provider skipped in automatic search.',
+      ],
       results: [
         {
           source: 'ANILIST',

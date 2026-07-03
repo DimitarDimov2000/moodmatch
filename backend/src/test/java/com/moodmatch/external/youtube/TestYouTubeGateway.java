@@ -32,11 +32,17 @@ public class TestYouTubeGateway implements YouTubeGateway {
             new AtomicReference<>(java.util.List.of(DEFAULT_VIDEO));
     private static final AtomicReference<Map<String, String>> CATEGORY_LABELS =
             new AtomicReference<>(Map.of("27", "Education"));
+    private static final AtomicReference<String> LAST_SEARCH_ORDER = new AtomicReference<>("relevance");
+    private static final AtomicReference<String> LAST_FETCHED_VIDEO_ID = new AtomicReference<>(DEFAULT_VIDEO.id());
+    private static final AtomicReference<RuntimeException> FETCH_VIDEO_EXCEPTION = new AtomicReference<>();
 
     public static void reset() {
         VIDEO.set(Optional.of(DEFAULT_VIDEO));
         SEARCH_RESULTS.set(java.util.List.of(DEFAULT_VIDEO));
         CATEGORY_LABELS.set(Map.of("27", "Education"));
+        LAST_SEARCH_ORDER.set("relevance");
+        LAST_FETCHED_VIDEO_ID.set(DEFAULT_VIDEO.id());
+        FETCH_VIDEO_EXCEPTION.set(null);
     }
 
     public static void useVideo(YouTubeVideo video) {
@@ -55,13 +61,31 @@ public class TestYouTubeGateway implements YouTubeGateway {
         CATEGORY_LABELS.set(Map.copyOf(categoryLabels));
     }
 
+    public static String lastSearchOrder() {
+        return LAST_SEARCH_ORDER.get();
+    }
+
+    public static String lastFetchedVideoId() {
+        return LAST_FETCHED_VIDEO_ID.get();
+    }
+
+    public static void useVideoFetchFailure(RuntimeException exception) {
+        FETCH_VIDEO_EXCEPTION.set(exception);
+    }
+
     @Override
     public Optional<YouTubeVideo> fetchVideo(String apiKey, String videoId) {
+        LAST_FETCHED_VIDEO_ID.set(videoId);
+        RuntimeException exception = FETCH_VIDEO_EXCEPTION.get();
+        if (exception != null) {
+            throw exception;
+        }
         return VIDEO.get().filter(video -> videoId.equals(video.id()));
     }
 
     @Override
     public java.util.List<YouTubeVideo> searchVideos(String apiKey, String query, int maxResults, String order) {
+        LAST_SEARCH_ORDER.set(order);
         return SEARCH_RESULTS.get().stream().limit(maxResults).toList();
     }
 

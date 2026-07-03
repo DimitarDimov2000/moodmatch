@@ -283,7 +283,7 @@ function fallbackForMediaType(mediaType: ExternalSearchResultResponse['mediaType
               :key="`${suggestedTag.tagId}-${suggestedTag.sourceValue}`"
               class="external-result-card__chip external-result-card__chip--suggested"
             >
-              {{ suggestedTag.tagName }} - {{ suggestedTag.confidence }}
+              {{ suggestedTag.tagName }}
             </span>
           </div>
         </div>

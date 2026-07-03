@@ -133,6 +133,7 @@ public class ExternalImportService {
                 List.of());
         Set<Tag> mappedTags = new LinkedHashSet<>(tagRepository
                 .listByIds(externalTagSuggestionService.buildSuggestions(searchResult).stream()
+                        .filter(suggestedTag -> suggestedTag.reason().startsWith("Mapped from external "))
                         .map(suggestedTag -> suggestedTag.tagId())
                         .distinct()
                         .toList()));

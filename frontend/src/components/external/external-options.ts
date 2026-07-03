@@ -1,5 +1,9 @@
 import type { MediaType } from '@/types/api-common';
-import type { ExternalSearchResponseSourceName, ExternalSearchSourceName } from '@/types/external';
+import type {
+  ExternalSearchResponseSourceName,
+  ExternalSearchSort,
+  ExternalSearchSourceName,
+} from '@/types/external';
 
 export interface ExternalOptionItem<T extends string> {
   value: T;
@@ -20,6 +24,18 @@ export const externalSourceLabels: Record<ExternalSearchResponseSourceName, stri
   ANILIST: 'AniList',
   YOUTUBE: 'YouTube',
 };
+
+export const externalSearchSortLabels: Record<ExternalSearchSort, string> = {
+  relevance: 'Relevance',
+  newest: 'Newest',
+  most_viewed: 'Most viewed',
+};
+
+export const youTubeSearchSortOptions: ExternalOptionItem<ExternalSearchSort>[] = [
+  { value: 'relevance', label: 'Relevance' },
+  { value: 'newest', label: 'Newest' },
+  { value: 'most_viewed', label: 'Most viewed' },
+];
 
 export function sourceOptionsForMediaType(
   mediaType: MediaType,

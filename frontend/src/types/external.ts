@@ -12,12 +12,14 @@ export type ExternalSearchSourceName =
   | 'YOUTUBE';
 
 export type ExternalSearchResponseSourceName = ExternalSearchSourceName | 'AUTOMATIC';
+export type ExternalSearchSort = 'relevance' | 'newest' | 'most_viewed';
 
 export interface ExternalSearchQuery {
   query: string;
   mediaType: MediaType;
   source?: ExternalSearchSourceName | 'AUTOMATIC';
   limit?: number;
+  sort?: ExternalSearchSort;
 }
 
 export interface ExternalResolveUrlRequest {

@@ -36,6 +36,8 @@ Example terminal setup before starting the backend:
 export MOODMATCH_DB_URL=jdbc:postgresql://localhost:5432/moodmatch
 export MOODMATCH_DB_USERNAME=moodmatch
 export MOODMATCH_DB_PASSWORD=moodmatch
+export QUARKUS_HTTP_CORS_ENABLED=true
+export QUARKUS_HTTP_CORS_ORIGINS=http://localhost:5173
 ```
 
 Example `psql` setup:
@@ -64,6 +66,20 @@ Current migrations:
 - `V5__add_external_import_support.sql`
 - `V6__expand_external_provider_model.sql`
 
+## Local Frontend + CORS
+
+For local frontend development on `http://localhost:5173`, the backend must enable Quarkus CORS explicitly:
+
+- `QUARKUS_HTTP_CORS_ENABLED=true`
+- `QUARKUS_HTTP_CORS_ORIGINS=http://localhost:5173`
+
+These values can be exported directly in the same terminal session as the backend:
+
+```bash
+export QUARKUS_HTTP_CORS_ENABLED=true
+export QUARKUS_HTTP_CORS_ORIGINS=http://localhost:5173
+```
+
 ## Optional TMDB Provider Setup
 
 TMDB is the first real external provider. It is currently used for `FILM` and `SERIES` searches when the backend has a valid API key.
@@ -78,10 +94,16 @@ Optional local variables:
 Example terminal setup:
 
 ```bash
-export MOODMATCH_TMDB_API_KEY=your_tmdb_api_key
+export MOODMATCH_TMDB_API_KEY=your_tmdb_v3_api_key_here
 ```
 
-If `MOODMATCH_TMDB_API_KEY` is missing, automatic film/series searches skip TMDB, return a warning, and still use other compatible providers such as AniList when available. If no compatible real provider can run, MoodMatch keeps the offline `DEMO` provider active as a fallback. No real API key is committed in this repository, and the frontend never receives the TMDB key directly.
+Important TMDB note:
+
+- MoodMatch expects the TMDB v3 API key in `MOODMATCH_TMDB_API_KEY`.
+- The backend sends this value only from the server side through the TMDB `api_key` query parameter.
+- No real API key is committed in this repository, and the frontend never receives the TMDB key directly.
+
+If `MOODMATCH_TMDB_API_KEY` is missing, automatic film/series searches skip TMDB, return a warning, and still use other compatible providers such as AniList when available. If no compatible real provider can run, MoodMatch keeps the offline `DEMO` provider active as a fallback.
 
 ## Open Library Provider Setup
 
@@ -118,7 +140,7 @@ Backend-only local variable:
 Example terminal setup:
 
 ```bash
-export MOODMATCH_RAWG_API_KEY=your_rawg_api_key
+export MOODMATCH_RAWG_API_KEY=your_rawg_api_key_here
 ```
 
 If `MOODMATCH_RAWG_API_KEY` is missing, automatic game searches use the offline `DEMO` fallback and return a warning. Explicit `source=RAWG` searches return a clear provider configuration error. Do not commit a real RAWG key; the frontend never receives the key directly.
@@ -138,8 +160,8 @@ Backend-only local variables:
 Example terminal setup:
 
 ```bash
-export MOODMATCH_PODCASTINDEX_KEY=replace-with-your-key
-export MOODMATCH_PODCASTINDEX_SECRET=replace-with-your-secret
+export MOODMATCH_PODCASTINDEX_KEY=your_podcast_index_key_here
+export MOODMATCH_PODCASTINDEX_SECRET=your_podcast_index_secret_here
 ```
 
 Notes:
@@ -170,16 +192,34 @@ YouTube query search and URL import are active in Package 2.10B.
 
 Required local variable for the backend only:
 
-- `MOODMATCH_YOUTUBE_API_KEY=replace-with-your-key`
+- `MOODMATCH_YOUTUBE_API_KEY=your_youtube_data_api_key_here`
 
 Notes:
 
 - Keep this key in the backend environment only. Do not expose it in the frontend and do not commit real keys.
 - MoodMatch uses the official YouTube Data API only. Query search goes through `search.list` with `type=video`, and URL/video-id resolution uses the video metadata flow.
-- Supported inputs are normal watch URLs, `youtu.be` links, Shorts URLs, and raw video ids.
+- Explicit YouTube search also supports a backend sort parameter with `relevance`, `newest`, or `most_viewed`.
+- Supported inputs are normal watch URLs, `youtu.be` links, Shorts URLs, embed URLs, and raw video ids.
 - Normal `VIDEO` external search can target YouTube explicitly, and the separate URL-import UI still works for known links or raw ids.
 - Thumbnail metadata is mapped into the normalized `coverUrl` field and then reused as the local media cover on import.
 - Music remains out of scope.
+
+## Provider Export Example
+
+This example keeps all provider secrets on the backend only and uses placeholders only:
+
+```bash
+export MOODMATCH_DB_URL=jdbc:postgresql://localhost:5432/moodmatch
+export MOODMATCH_DB_USERNAME=moodmatch
+export MOODMATCH_DB_PASSWORD=moodmatch
+export QUARKUS_HTTP_CORS_ENABLED=true
+export QUARKUS_HTTP_CORS_ORIGINS=http://localhost:5173
+export MOODMATCH_TMDB_API_KEY=your_tmdb_v3_api_key_here
+export MOODMATCH_RAWG_API_KEY=your_rawg_api_key_here
+export MOODMATCH_PODCASTINDEX_KEY=your_podcast_index_key_here
+export MOODMATCH_PODCASTINDEX_SECRET=your_podcast_index_secret_here
+export MOODMATCH_YOUTUBE_API_KEY=your_youtube_data_api_key_here
+```
 
 ## Future Provider Configuration
 

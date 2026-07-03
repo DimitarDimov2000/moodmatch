@@ -41,6 +41,18 @@ class YouTubeExternalUrlResolverTest {
     }
 
     @Test
+    void shouldTruncateOversizedYoutubeSubjectValuesSoThePreviewRemainsImportable() {
+        YouTubeExternalUrlResolver resolver = new YouTubeExternalUrlResolver();
+        resolver.youTubeGateway = new LongMetadataGateway();
+        resolver.apiKey = "test-key";
+
+        ExternalSearchResult result = resolver.resolve("abc123XYZ_0");
+
+        assertTrue(result.externalSubjects().stream().allMatch(subject -> subject.length() <= 255));
+        assertEquals(255, result.externalSubjects().getFirst().length());
+    }
+
+    @Test
     void shouldExposeMissingConfigurationClearly() {
         YouTubeExternalUrlResolver resolver = new YouTubeExternalUrlResolver();
         resolver.apiKey = "__missing_youtube_config__";
@@ -52,7 +64,7 @@ class YouTubeExternalUrlResolverTest {
     }
 
     @Test
-    void shouldRejectMissingVideosClearly() {
+    void shouldReturnClearNoResultMessageWhenYoutubeReturnsNoItems() {
         YouTubeExternalUrlResolver resolver = new YouTubeExternalUrlResolver();
         resolver.youTubeGateway = new MissingVideoGateway();
         resolver.apiKey = "test-key";
@@ -61,10 +73,25 @@ class YouTubeExternalUrlResolverTest {
                 BusinessRuleViolationException.class,
                 () -> resolver.resolve("abc123XYZ_0"));
 
-        assertEquals("No YouTube video was found for the provided URL or video ID.", exception.getMessage());
+        assertEquals("YouTube video could not be found or is not publicly available.", exception.getMessage());
     }
 
-    private static final class FakeYouTubeGateway implements YouTubeGateway {
+    @Test
+    void shouldStillResolvePreviewWhenOptionalCategoryLookupFails() {
+        YouTubeExternalUrlResolver resolver = new YouTubeExternalUrlResolver();
+        resolver.youTubeGateway = new CategoryLookupFailureGateway();
+        resolver.apiKey = "test-key";
+
+        ExternalSearchResult result = resolver.resolve("https://www.youtube.com/watch?v=abc123XYZ_0&feature=share");
+
+        assertEquals("abc123XYZ_0", result.externalId());
+        assertTrue(result.externalGenres().isEmpty());
+        assertEquals(
+                java.util.List.of("Vue 3", "Tutorial", "Channel: MoodMatch Dev"),
+                result.externalSubjects());
+    }
+
+    private static class FakeYouTubeGateway implements YouTubeGateway {
 
         @Override
         public java.util.List<YouTubeVideo> searchVideos(String apiKey, String query, int maxResults, String order) {
@@ -114,6 +141,40 @@ class YouTubeExternalUrlResolverTest {
         public java.util.Optional<String> fetchCategoryLabel(String apiKey, String categoryId) {
             assertTrue(false, "Category lookup should not run when the video is missing.");
             return java.util.Optional.empty();
+        }
+    }
+
+    private static final class LongMetadataGateway implements YouTubeGateway {
+
+        @Override
+        public java.util.List<YouTubeVideo> searchVideos(String apiKey, String query, int maxResults, String order) {
+            return java.util.List.of();
+        }
+
+        @Override
+        public java.util.Optional<YouTubeVideo> fetchVideo(String apiKey, String videoId) {
+            return java.util.Optional.of(new YouTubeVideo(
+                    videoId,
+                    "VueConf 2024 Keynote",
+                    "Detailed walkthrough of the new import flow.",
+                    "MoodMatch Dev",
+                    "2024-05-20T10:30:00Z",
+                    "27",
+                    java.util.List.of("x".repeat(300)),
+                    null));
+        }
+
+        @Override
+        public java.util.Optional<String> fetchCategoryLabel(String apiKey, String categoryId) {
+            return java.util.Optional.of("Education");
+        }
+    }
+
+    private static final class CategoryLookupFailureGateway extends FakeYouTubeGateway {
+
+        @Override
+        public java.util.Optional<String> fetchCategoryLabel(String apiKey, String categoryId) {
+            throw new BusinessRuleViolationException("YouTube category lookup failed with status 400.");
         }
     }
 }

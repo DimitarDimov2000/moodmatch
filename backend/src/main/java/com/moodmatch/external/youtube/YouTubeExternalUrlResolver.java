@@ -6,12 +6,15 @@ import com.moodmatch.external.adapter.ExternalSearchSourceName;
 import com.moodmatch.external.adapter.ExternalUrlResolver;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class YouTubeExternalUrlResolver implements ExternalUrlResolver {
+
+    private static final Logger LOG = Logger.getLogger(YouTubeExternalUrlResolver.class);
 
     @Inject
     YouTubeGateway youTubeGateway;
@@ -46,11 +49,9 @@ public class YouTubeExternalUrlResolver implements ExternalUrlResolver {
         String videoId = videoIdResolver.resolveVideoId(urlOrId);
         YouTubeGateway.YouTubeVideo video = youTubeGateway.fetchVideo(resolvedApiKey, videoId)
                 .orElseThrow(() -> new BusinessRuleViolationException(
-                        "No YouTube video was found for the provided URL or video ID."));
+                        "YouTube video could not be found or is not publicly available."));
 
-        String categoryLabel = blankToNull(video.categoryId()) == null
-                ? null
-                : youTubeGateway.fetchCategoryLabel(resolvedApiKey, video.categoryId()).orElse(null);
+        String categoryLabel = resolveCategoryLabel(resolvedApiKey, video.id(), video.categoryId());
 
         String title = blankToNull(video.title());
         if (title == null) {
@@ -66,5 +67,22 @@ public class YouTubeExternalUrlResolver implements ExternalUrlResolver {
 
     private String blankToNull(String value) {
         return YouTubeMetadataSupport.blankToNull(value);
+    }
+
+    private String resolveCategoryLabel(String resolvedApiKey, String videoId, String categoryId) {
+        String normalizedCategoryId = blankToNull(categoryId);
+        if (normalizedCategoryId == null) {
+            return null;
+        }
+
+        try {
+            return youTubeGateway.fetchCategoryLabel(resolvedApiKey, normalizedCategoryId).orElse(null);
+        } catch (BusinessRuleViolationException exception) {
+            LOG.debugf(
+                    "Skipping YouTube category lookup for video id %s after provider error: %s",
+                    blankToNull(videoId),
+                    exception.getMessage());
+            return null;
+        }
     }
 }

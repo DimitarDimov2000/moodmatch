@@ -15,6 +15,7 @@ public class ExternalMetadataTagNormalizer {
 
     private static final int MAX_GENRE_VALUES = 8;
     private static final int MAX_SUBJECT_VALUES = 10;
+    private static final int MAX_VALUE_LENGTH = 60;
 
     private static final Set<String> NOISY_SUBJECT_PREFIXES = Set.of(
             "format:",
@@ -27,15 +28,51 @@ public class ExternalMetadataTagNormalizer {
             "category:",
             "channel:");
 
+    private static final Set<String> NOISY_SUBJECT_VALUES = Set.of(
+            "pc",
+            "mac",
+            "macos",
+            "linux",
+            "ios",
+            "android",
+            "playstation",
+            "playstation 4",
+            "playstation 5",
+            "xbox",
+            "xbox one",
+            "xbox series s x",
+            "nintendo switch");
+
     private static final Map<String, String> CANONICAL_SYNONYMS = Map.ofEntries(
             Map.entry("science fiction", "science fiction"),
             Map.entry("sciencefiction", "science fiction"),
             Map.entry("sci fi", "science fiction"),
             Map.entry("scifi", "science fiction"),
+            Map.entry("sci-fi", "science fiction"),
             Map.entry("children", "children"),
             Map.entry("childrens", "children"),
             Map.entry("kid", "children"),
             Map.entry("kids", "children"),
+            Map.entry("anime", "anime"),
+            Map.entry("manga", "manga"),
+            Map.entry("education", "education"),
+            Map.entry("educational", "education"),
+            Map.entry("technology", "technology"),
+            Map.entry("tech", "technology"),
+            Map.entry("action", "action"),
+            Map.entry("adventure", "adventure"),
+            Map.entry("drama", "drama"),
+            Map.entry("fantasy", "fantasy"),
+            Map.entry("comedy", "comedy"),
+            Map.entry("thriller", "thriller"),
+            Map.entry("mystery", "mystery"),
+            Map.entry("horror", "horror"),
+            Map.entry("romance", "romance"),
+            Map.entry("rpg", "rpg"),
+            Map.entry("role playing", "rpg"),
+            Map.entry("roleplaying", "rpg"),
+            Map.entry("open world", "open world"),
+            Map.entry("openworld", "open world"),
             Map.entry("television", "television"),
             Map.entry("tv", "television"));
 
@@ -87,12 +124,23 @@ public class ExternalMetadataTagNormalizer {
         }
 
         String normalized = value.trim().replaceAll("\\s+", " ");
-        return normalized.isEmpty() ? null : normalized;
+        if (normalized.isEmpty()
+                || normalized.length() > MAX_VALUE_LENGTH
+                || normalized.contains("://")
+                || normalized.toLowerCase(Locale.ROOT).startsWith("www.")) {
+            return null;
+        }
+        return normalized;
     }
 
     private boolean isNoisySubject(String value) {
         String normalized = value.toLowerCase(Locale.ROOT);
-        return NOISY_SUBJECT_PREFIXES.stream().anyMatch(normalized::startsWith);
+        if (NOISY_SUBJECT_PREFIXES.stream().anyMatch(normalized::startsWith)) {
+            return true;
+        }
+
+        String canonicalValue = canonicalValue(value);
+        return canonicalValue == null || NOISY_SUBJECT_VALUES.contains(canonicalValue);
     }
 
     private String canonicalValue(String value) {

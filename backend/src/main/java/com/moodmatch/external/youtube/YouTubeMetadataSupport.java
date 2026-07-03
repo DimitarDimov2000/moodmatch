@@ -19,6 +19,8 @@ final class YouTubeMetadataSupport {
     static final String UNSET_CONFIG_SENTINEL = "__missing_youtube_config__";
 
     private static final int MAX_SUBJECT_VALUES = 12;
+    private static final int MAX_SHORT_TEXT_LENGTH = 255;
+    private static final int MAX_URL_LENGTH = 4000;
 
     private YouTubeMetadataSupport() {}
 
@@ -29,13 +31,13 @@ final class YouTubeMetadataSupport {
                 ExternalSourceMappings.toMappingSource(ExternalSearchSourceName.YOUTUBE, MediaType.VIDEO),
                 video.id(),
                 MediaType.VIDEO,
-                video.title().trim(),
+                truncate(video.title().trim(), MAX_SHORT_TEXT_LENGTH),
                 null,
                 creatorNames(video.channelTitle()),
                 sanitizeDescription(video.description()),
                 parseReleaseYear(video.publishedAt()),
-                bestThumbnailUrl(video.thumbnails()),
-                canonicalWatchUrl(video.id()),
+                truncate(bestThumbnailUrl(video.thumbnails()), MAX_URL_LENGTH),
+                truncate(canonicalWatchUrl(video.id()), MAX_URL_LENGTH),
                 externalGenres(categoryLabel),
                 externalSubjects(video.tags(), video.channelTitle(), categoryLabel),
                 List.of(),
@@ -45,12 +47,12 @@ final class YouTubeMetadataSupport {
 
     static List<String> creatorNames(String channelTitle) {
         String normalizedChannelTitle = blankToNull(channelTitle);
-        return normalizedChannelTitle == null ? List.of() : List.of(normalizedChannelTitle);
+        return sanitizeTextList(normalizedChannelTitle == null ? List.of() : List.of(normalizedChannelTitle));
     }
 
     static List<String> externalGenres(String categoryLabel) {
         String normalizedCategoryLabel = blankToNull(categoryLabel);
-        return normalizedCategoryLabel == null ? List.of() : List.of(normalizedCategoryLabel);
+        return sanitizeTextList(normalizedCategoryLabel == null ? List.of() : List.of(normalizedCategoryLabel));
     }
 
     static List<String> externalSubjects(List<String> tags, String channelTitle, String categoryLabel) {
@@ -70,7 +72,9 @@ final class YouTubeMetadataSupport {
         addIfPresent(subjects, labeledValue("Channel", channelTitle));
         addIfPresent(subjects, labeledValue("Category", categoryLabel));
 
-        return subjects.stream().limit(MAX_SUBJECT_VALUES).toList();
+        return sanitizeTextList(subjects.stream().limit(MAX_SUBJECT_VALUES).toList()).stream()
+                .limit(MAX_SUBJECT_VALUES)
+                .toList();
     }
 
     static Integer parseReleaseYear(String publishedAt) {
@@ -122,6 +126,27 @@ final class YouTubeMetadataSupport {
 
     static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private static List<String> sanitizeTextList(List<String> values) {
+        if (values == null) {
+            return List.of();
+        }
+
+        return values.stream()
+                .map(YouTubeMetadataSupport::blankToNull)
+                .filter(Objects::nonNull)
+                .map(value -> truncate(value, MAX_SHORT_TEXT_LENGTH))
+                .distinct()
+                .toList();
+    }
+
+    private static String truncate(String value, int maxLength) {
+        String normalized = blankToNull(value);
+        if (normalized == null || normalized.length() <= maxLength) {
+            return normalized;
+        }
+        return normalized.substring(0, maxLength).trim();
     }
 
     private static void addIfPresent(LinkedHashSet<String> values, String candidate) {

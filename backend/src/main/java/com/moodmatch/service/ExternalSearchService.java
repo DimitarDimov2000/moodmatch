@@ -40,23 +40,36 @@ public class ExternalSearchService {
 
     @Transactional(TxType.SUPPORTS)
     public ExternalSearchResponse search(String query, String mediaTypeRaw, String sourceRaw, Integer limit) {
+        return search(query, mediaTypeRaw, sourceRaw, limit, null);
+    }
+
+    @Transactional(TxType.SUPPORTS)
+    public ExternalSearchResponse search(String query, String mediaTypeRaw, String sourceRaw, Integer limit, String sortRaw) {
         String normalizedQuery = normalizeQuery(query);
         MediaType mediaType = parseMediaType(mediaTypeRaw);
         int safeLimit = toSafeLimit(limit, sourceRaw);
+        String normalizedSort = normalizeSort(sortRaw);
 
         if (isAutomaticSearch(sourceRaw)) {
+            if (normalizedSort != null) {
+                throw new BusinessRuleViolationException("Search sort is only supported for explicit source=YOUTUBE.");
+            }
             return searchAutomatically(normalizedQuery, mediaType, safeLimit);
         }
 
-        ExternalSearchProvider provider = resolveProvider(parseSource(sourceRaw));
+        ExternalSearchSourceName source = parseSource(sourceRaw);
+        ExternalSearchProvider provider = resolveProvider(source);
         if (!provider.supportedMediaTypes().contains(mediaType)) {
             throw new BusinessRuleViolationException(
                     "Source %s does not support media type %s.".formatted(provider.sourceName(), mediaType));
         }
+        if (normalizedSort != null && source != ExternalSearchSourceName.YOUTUBE) {
+            throw new BusinessRuleViolationException("Search sort is only supported for explicit source=YOUTUBE.");
+        }
         ensureConfigured(provider);
 
         ExternalSearchRequest request =
-                new ExternalSearchRequest(normalizedQuery, mediaType, provider.sourceName(), safeLimit);
+                new ExternalSearchRequest(normalizedQuery, mediaType, provider.sourceName(), safeLimit, normalizedSort);
         List<ExternalSearchResultResponse> results = provider.search(request).stream()
                 .map(externalResultMapper::enrichSuggestions)
                 .map(externalResultMapper::toResponse)
@@ -108,6 +121,14 @@ public class ExternalSearchService {
         return parseSource(sourceRaw) == ExternalSearchSourceName.YOUTUBE
                 ? YouTubeExternalSearchProvider.DEFAULT_MAX_RESULTS
                 : DEFAULT_LIMIT;
+    }
+
+    private String normalizeSort(String sortRaw) {
+        if (sortRaw == null || sortRaw.isBlank()) {
+            return null;
+        }
+
+        return sortRaw.trim().toLowerCase(Locale.ROOT);
     }
 
     private boolean isAutomaticSearch(String sourceRaw) {

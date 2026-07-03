@@ -86,7 +86,8 @@ public class DefaultTmdbGateway implements TmdbGateway {
         }
 
         if (response.statusCode() == 401 || response.statusCode() == 403) {
-            throw new BusinessRuleViolationException("TMDB request was rejected. Check MOODMATCH_TMDB_API_KEY.");
+            throw new BusinessRuleViolationException(
+                    "TMDB request was rejected. Check MOODMATCH_TMDB_API_KEY and confirm it is a TMDB v3 API key.");
         }
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
             throw new BusinessRuleViolationException(

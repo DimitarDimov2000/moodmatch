@@ -13,7 +13,7 @@
 
 Provider notes:
 
-- `TMDB` requires backend-only configuration through `MOODMATCH_TMDB_API_KEY`.
+- `TMDB` requires backend-only configuration through `MOODMATCH_TMDB_API_KEY`, and the expected value is the TMDB v3 API key.
 - `OPEN_LIBRARY` uses the public Search API and does not require a committed secret.
 - `LIBRIVOX` uses the public catalog API and does not require a committed secret in the current implementation.
 - `RAWG` requires backend-only configuration through `MOODMATCH_RAWG_API_KEY`.
@@ -24,6 +24,25 @@ Provider notes:
 - RAWG is used only for this non-commercial university prototype. Keep provider attribution/backlinks visible and review RAWG terms before any production or commercial deployment.
 - The frontend never stores or sends provider secrets.
 - Tests must not require live external APIs or real API keys.
+
+## Package 2.12 Verification Notes
+
+Live verification before the final Package 2.12 fixes showed:
+
+- `RAWG` worked with a real backend key.
+- `PODCAST_INDEX` worked with a real backend key and secret.
+- `YOUTUBE` query search worked with a real backend key.
+- `OPEN_LIBRARY` worked without a key.
+- `LIBRIVOX` worked without a key.
+- `ANILIST` worked without a key.
+- `TMDB` initially failed because the backend property was not mapped from `MOODMATCH_TMDB_API_KEY`.
+- `YOUTUBE` URL import initially failed in live verification and is now guarded by stricter backend metadata cleanup plus the supported URL parser.
+
+Current code expectations after Package 2.12:
+
+- TMDB reads `MOODMATCH_TMDB_API_KEY` on the backend only and uses it as the TMDB v3 `api_key` query parameter.
+- YouTube query search and URL import both use the same backend-only `MOODMATCH_YOUTUBE_API_KEY` configuration.
+- API responses must never include configured provider key values.
 
 ## Provider Plan
 
@@ -52,6 +71,7 @@ AniList does not introduce core `ANIME` or `MANGA` media types. Anime movies map
 - Automatic mode keeps explicit provider behavior unchanged, but applies the backend limit per provider before merging so one source does not dominate the mixed result set.
 - Explicit provider search, such as `source=TMDB`, `source=OPEN_LIBRARY`, or `source=ANILIST`, searches only that provider and keeps the existing provider-specific error behavior.
 - Explicit `source=PODCAST_INDEX` searches only Podcast Index podcast shows/feeds.
+- Explicit `source=YOUTUBE` searches support `sort=relevance`, `sort=newest`, or `sort=most_viewed`.
 - When a compatible provider is unconfigured in automatic mode, MoodMatch skips it, records a non-blocking warning, and returns partial results from other compatible providers when possible.
 - When the RAWG key is missing, automatic `GAME` searches fall back to the offline `DEMO` provider and return a clear warning. Explicit `source=RAWG` searches return a provider configuration error instead of silently falling back.
 - When all compatible real providers for `FILM`, `SERIES`, `BOOK`, `AUDIOBOOK`, or `GAME` are unavailable and `DEMO` can cover the media type, MoodMatch uses `DEMO` as the fallback.
@@ -67,7 +87,9 @@ Search responses are normalized before they reach the frontend:
 - `externalId`: provider-specific identifier
 - `title`, `originalTitle`, `creatorNames`, `description`, `releaseYear`, `coverUrl`, `sourceUrl`
 - `externalGenres`, `externalSubjects`
-- `suggestedTags`: local tag suggestions derived from `external_tag_mappings`
+- `suggestedTags`: internal MoodMatch tag suggestions. Explicit `external_tag_mappings` are preferred; when no explicit mapping exists, the backend may add low-confidence fallback suggestions from normalized `externalGenres` and safe `externalSubjects`.
+
+Provider metadata is preserved separately from tag suggestions. `externalGenres` and `externalSubjects` keep useful provider context for display/import auditing, while `suggestedTags` is the local normalized suggestion layer shown to the user. Confidence stays available internally and in the API payload, but the normal result-card UI renders suggested tags as clean pills without raw `LOW`, `MEDIUM`, or `HIGH` labels.
 
 Provider overlap is expected in automatic mode. The UI should therefore rely on three separate ideas at once:
 
@@ -159,8 +181,9 @@ AniList anime/manga mapping decisions:
 
 YouTube video mapping decisions:
 
-- search API: official YouTube Data API `search.list` with `part=snippet`, `type=video`, `order=relevance`, and a backend-side default of `maxResults=10`
-- `externalId`: YouTube video id from `id.videoId` for query search, or resolved from a supported watch URL, short URL, Shorts URL, or raw id for URL import
+- search API: official YouTube Data API `search.list` with `part=snippet`, `type=video`, a backend-side default of `maxResults=10`, and explicit sort support for `relevance`, `newest`, or `most_viewed`
+- `most_viewed` maps to the official YouTube API `order=viewCount`; this is view count, not click count
+- `externalId`: YouTube video id from `id.videoId` for query search, or resolved from a supported watch URL, short URL, Shorts URL, embed URL, or raw id for URL import
 - `mediaType`: always `VIDEO`
 - `title`: YouTube `snippet.title`
 - `originalTitle`: `null`
@@ -171,6 +194,8 @@ YouTube video mapping decisions:
 - `sourceUrl`: canonical watch URL, for example `https://www.youtube.com/watch?v=abc123XYZ_0`
 - `externalGenres`: the resolved YouTube category label when available for URL import; query search keeps this empty because `search.list` snippet payloads do not include category metadata
 - `externalSubjects`: YouTube tags plus compact channel/category context when useful for URL import; query search keeps compact channel context when available
+- URL import accepts standard watch URLs, watch URLs with extra query parameters, `youtu.be` URLs, Shorts URLs, embed URLs, and raw 11-character video ids. The backend resolves metadata through the same configured YouTube gateway/API key path as query search, uses `videos.list` with only `part=snippet`, `id`, and `key`, and treats optional category-label lookup failures as non-fatal so preview/import can still continue.
+- URL-import metadata is trimmed and capped to stay compatible with the backend import validation limits
 - `attribution`: `Metadata from YouTube`
 - only official YouTube Data API metadata is used; there is no scraping
 - imported YouTube search results create normal user-owned `MediaItem` rows and preserve `external_source_name = YOUTUBE` plus `media_external_refs` metadata the same way URL imports do

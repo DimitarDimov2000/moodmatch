@@ -14,9 +14,14 @@ class YouTubeVideoIdResolverTest {
     @Test
     void shouldResolveCommonYouTubeWatchUrlsShortUrlsShortsAndRawIds() {
         assertEquals("abc123XYZ_0", resolver.resolveVideoId("https://www.youtube.com/watch?v=abc123XYZ_0"));
+        assertEquals("abc123XYZ_0", resolver.resolveVideoId("https://www.youtube.com/watch?v=abc123XYZ_0&feature=share"));
         assertEquals("abc123XYZ_0", resolver.resolveVideoId("https://youtu.be/abc123XYZ_0?t=15"));
+        assertEquals("abc123XYZ_0", resolver.resolveVideoId("https://youtu.be/abc123XYZ_0/"));
         assertEquals("abc123XYZ_0", resolver.resolveVideoId("https://youtube.com/shorts/abc123XYZ_0"));
+        assertEquals("abc123XYZ_0", resolver.resolveVideoId("https://www.youtube.com/shorts/abc123XYZ_0?si=share"));
+        assertEquals("abc123XYZ_0", resolver.resolveVideoId("https://www.youtube.com/embed/abc123XYZ_0"));
         assertEquals("abc123XYZ_0", resolver.resolveVideoId("abc123XYZ_0"));
+        assertEquals("abc123XYZ_0", resolver.resolveVideoId("  abc123XYZ_0  "));
     }
 
     @Test

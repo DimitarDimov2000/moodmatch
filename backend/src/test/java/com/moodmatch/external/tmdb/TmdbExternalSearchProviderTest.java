@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +19,7 @@ class TmdbExternalSearchProviderTest {
     void shouldMapMovieSearchResultsIntoNormalizedExternalResults() {
         TmdbExternalSearchProvider provider = new TmdbExternalSearchProvider();
         provider.tmdbGateway = new FakeTmdbGateway();
-        provider.apiKey = Optional.of("test-key");
+        provider.apiKey = "test-key";
         provider.imageBaseUrl = "https://image.tmdb.org/t/p/w342";
         provider.websiteBaseUrl = "https://www.themoviedb.org";
 
@@ -44,11 +43,11 @@ class TmdbExternalSearchProviderTest {
     @Test
     void shouldExposeMissingConfigurationStateClearly() {
         TmdbExternalSearchProvider provider = new TmdbExternalSearchProvider();
-        provider.apiKey = Optional.empty();
+        provider.apiKey = "__missing_tmdb_config__";
 
         assertTrue(!provider.isConfigured());
         assertEquals(
-                "TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY.",
+                "TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY in the backend environment to a TMDB v3 API key.",
                 provider.configurationErrorMessage());
     }
 

@@ -5,15 +5,17 @@ import FormField from '@/components/common/FormField.vue';
 import {
   sourceHintForMediaType,
   sourceOptionsForMediaType,
+  youTubeSearchSortOptions,
   type ExternalSourceSelection,
 } from '@/components/external/external-options';
 import { mediaTypeOptions } from '@/components/media/media-options';
-import type { MediaType } from '@/types/api';
+import type { ExternalSearchSort, MediaType } from '@/types/api';
 
 const props = defineProps<{
   query: string;
   mediaType: MediaType;
   source: ExternalSourceSelection;
+  sort: ExternalSearchSort;
   submitting?: boolean;
 }>();
 
@@ -21,11 +23,13 @@ const emit = defineEmits<{
   'update:query': [value: string];
   'update:mediaType': [value: MediaType];
   'update:source': [value: ExternalSourceSelection];
+  'update:sort': [value: ExternalSearchSort];
   search: [];
 }>();
 
 const sourceOptions = computed(() => sourceOptionsForMediaType(props.mediaType));
 const sourceHint = computed(() => sourceHintForMediaType(props.mediaType));
+const showSort = computed(() => props.mediaType === 'VIDEO' && props.source === 'YOUTUBE');
 </script>
 
 <template>
@@ -33,7 +37,10 @@ const sourceHint = computed(() => sourceHintForMediaType(props.mediaType));
     class="external-search-form page-card"
     @submit.prevent="emit('search')"
   >
-    <div class="external-search-form__grid">
+    <div
+      class="external-search-form__grid"
+      :class="{ 'external-search-form__grid--with-sort': showSort }"
+    >
       <FormField
         label="Suchbegriff"
         hint="Suche nach Filmen, Serien, Buechern, Videos oder anderen unterstuetzten Treffern und importiere sie direkt in deine Mediathek."
@@ -92,6 +99,28 @@ const sourceHint = computed(() => sourceHintForMediaType(props.mediaType));
           </option>
         </select>
       </FormField>
+
+      <FormField
+        v-if="showSort"
+        label="YouTube-Sortierung"
+        hint="Gilt nur fuer die explizite YouTube-Suche. Automatic search bleibt leichtgewichtig und unveraendert."
+        required
+      >
+        <select
+          :value="sort"
+          class="input"
+          name="sort"
+          @change="emit('update:sort', ($event.target as HTMLSelectElement).value as ExternalSearchSort)"
+        >
+          <option
+            v-for="option in youTubeSearchSortOptions"
+            :key="option.value"
+            :value="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </select>
+      </FormField>
     </div>
 
     <div class="external-search-form__actions">
@@ -117,6 +146,10 @@ const sourceHint = computed(() => sourceHintForMediaType(props.mediaType));
   display: grid;
   gap: 1rem;
   grid-template-columns: minmax(0, 1.5fr) minmax(180px, 0.7fr) minmax(220px, 0.9fr);
+}
+
+.external-search-form__grid--with-sort {
+  grid-template-columns: minmax(0, 1.5fr) minmax(180px, 0.7fr) minmax(220px, 0.9fr) minmax(180px, 0.8fr);
 }
 
 .external-search-form__actions {

@@ -6,4 +6,14 @@ public record ExternalSearchRequest(
         String query,
         MediaType mediaType,
         ExternalSearchSourceName source,
-        int limit) {}
+        int limit,
+        String sort) {
+
+    public ExternalSearchRequest(
+            String query,
+            MediaType mediaType,
+            ExternalSearchSourceName source,
+            int limit) {
+        this(query, mediaType, source, limit, null);
+    }
+}

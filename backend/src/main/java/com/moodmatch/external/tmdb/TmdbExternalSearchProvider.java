@@ -3,7 +3,6 @@ package com.moodmatch.external.tmdb;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 import com.moodmatch.entity.MediaType;
@@ -23,12 +22,15 @@ public class TmdbExternalSearchProvider implements ExternalSearchProvider {
 
     private static final String ATTRIBUTION = "Metadata from TMDB";
     private static final Set<MediaType> SUPPORTED_MEDIA_TYPES = Set.of(MediaType.FILM, MediaType.SERIES);
+    static final String MISSING_CONFIGURATION_MESSAGE =
+            "TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY in the backend environment to a TMDB v3 API key.";
+    private static final String UNSET_CONFIG_SENTINEL = "__missing_tmdb_config__";
 
     @Inject
     TmdbGateway tmdbGateway;
 
     @ConfigProperty(name = "moodmatch.external.tmdb.api-key")
-    Optional<String> apiKey;
+    String apiKey;
 
     @ConfigProperty(name = "moodmatch.external.tmdb.image-base-url", defaultValue = "https://image.tmdb.org/t/p/w342")
     String imageBaseUrl;
@@ -48,18 +50,20 @@ public class TmdbExternalSearchProvider implements ExternalSearchProvider {
 
     @Override
     public boolean isConfigured() {
-        return apiKey.isPresent() && !apiKey.get().isBlank();
+        return configuredApiKey() != null;
     }
 
     @Override
     public String configurationErrorMessage() {
-        return "TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY.";
+        return MISSING_CONFIGURATION_MESSAGE;
     }
 
     @Override
     public List<ExternalSearchResult> search(ExternalSearchRequest request) {
-        String resolvedApiKey = apiKey.filter(value -> !value.isBlank())
-                .orElseThrow(() -> new IllegalStateException(configurationErrorMessage()));
+        String resolvedApiKey = configuredApiKey();
+        if (resolvedApiKey == null) {
+            throw new IllegalStateException(configurationErrorMessage());
+        }
         Map<Integer, String> genres = request.mediaType() == MediaType.FILM
                 ? tmdbGateway.fetchMovieGenres(resolvedApiKey)
                 : tmdbGateway.fetchSeriesGenres(resolvedApiKey);
@@ -126,6 +130,11 @@ public class TmdbExternalSearchProvider implements ExternalSearchProvider {
     }
 
     private String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value;
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String configuredApiKey() {
+        String normalizedApiKey = blankToNull(apiKey);
+        return UNSET_CONFIG_SENTINEL.equals(normalizedApiKey) ? null : normalizedApiKey;
     }
 }

@@ -282,6 +282,7 @@ Transport-level note:
 - RAWG game imports also reuse `creatorNames` for developer and publisher summaries; no dedicated developer or publisher columns are persisted.
 - AniList demonstrates the source/provider versus media-type distinction: the source can be `ANILIST`, but the core media type is still one of the existing values. Anime movies are `FILM`, anime series-style formats are `SERIES`, and manga/light novels are `BOOK`; there are no core `ANIME` or `MANGA` enum values.
 - YouTube imports reuse `creatorNames` for the channel title. There is no dedicated persisted channel column on `media_items`.
+- External provider genres/subjects remain provider metadata. Suggested tags are an internal normalized suggestion layer: explicit mappings in `external_tag_mappings` are preferred, and low-confidence fallback suggestions may be generated from safe provider metadata for previews.
 
 ### `tag_category`
 

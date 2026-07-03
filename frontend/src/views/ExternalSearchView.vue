@@ -7,6 +7,7 @@ import { ApiRequestError } from '@/api/client';
 import {
   defaultSourceSelectionForMediaType,
   externalSourceLabels,
+  externalSearchSortLabels,
   isSourceSelectionValid,
   type ExternalSourceSelection,
 } from '@/components/external/external-options';
@@ -19,12 +20,14 @@ import type {
   ExternalImportRequest,
   ExternalSearchResponse,
   ExternalSearchResultResponse,
+  ExternalSearchSort,
   MediaType,
 } from '@/types/api';
 
 const query = ref('');
 const mediaType = ref<MediaType>('FILM');
 const source = ref<ExternalSourceSelection>('AUTO');
+const sort = ref<ExternalSearchSort>('relevance');
 const loading = ref(false);
 const hasSearched = ref(false);
 const errorMessage = ref('');
@@ -94,6 +97,10 @@ const filteredResults = computed(() => {
 });
 const automaticSearchExplanation = computed(() => {
   if (searchResponse.value?.source !== 'AUTOMATIC') {
+    if (searchResponse.value?.source === 'YOUTUBE' && mediaType.value === 'VIDEO') {
+      return `Importiere einen Treffer, um ihn sofort als eigenes Medium weiterzuverwenden. Aktive YouTube-Sortierung: ${externalSearchSortLabels[sort.value]}.`;
+    }
+
     return 'Importiere einen Treffer, um ihn sofort als eigenes Medium weiterzuverwenden.';
   }
 
@@ -122,6 +129,7 @@ async function runSearch() {
       query: trimmedQuery,
       mediaType: mediaType.value,
       source: source.value === 'AUTO' ? undefined : source.value,
+      sort: mediaType.value === 'VIDEO' && source.value === 'YOUTUBE' ? sort.value : undefined,
     });
   } catch (error) {
     searchResponse.value = null;
@@ -139,6 +147,9 @@ function updateMediaType(value: MediaType) {
   mediaType.value = value;
   if (!isSourceSelectionValid(value, source.value)) {
     source.value = defaultSourceSelectionForMediaType(value);
+  }
+  if (value !== 'VIDEO') {
+    sort.value = 'relevance';
   }
 }
 
@@ -313,6 +324,7 @@ interface ImportState {
     <ExternalSearchForm
       v-model:query="query"
       v-model:source="source"
+      v-model:sort="sort"
       :media-type="mediaType"
       :submitting="loading"
       @update:media-type="updateMediaType"

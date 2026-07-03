@@ -105,7 +105,9 @@ class ExternalSearchResourceTest {
                 .body("query", is("a"))
                 .body("mediaType", is("FILM"))
                 .body("source", is("AUTOMATIC"))
-                .body("warnings[0]", is("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Provider skipped in automatic search."))
+                .body(
+                        "warnings[0]",
+                        is("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY in the backend environment to a TMDB v3 API key. Provider skipped in automatic search."))
                 .body("results.size()", is(1))
                 .body("results[0].title", is("Sen to Chihiro no Kamikakushi"))
                 .body("results[0].source", is("ANILIST"))
@@ -121,7 +123,9 @@ class ExternalSearchResourceTest {
                 .then()
                 .statusCode(400)
                 .body("code", is("BUSINESS_RULE_VIOLATION"))
-                .body("message", is("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY."));
+                .body(
+                        "message",
+                        is("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY in the backend environment to a TMDB v3 API key."));
     }
 
     @Test
@@ -188,7 +192,9 @@ class ExternalSearchResourceTest {
                 .then()
                 .statusCode(200)
                 .body("source", is("AUTOMATIC"))
-                .body("warnings[0]", is("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Provider skipped in automatic search."))
+                .body(
+                        "warnings[0]",
+                        is("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY in the backend environment to a TMDB v3 API key. Provider skipped in automatic search."))
                 .body("results.size()", is(1))
                 .body("results[0].source", is("ANILIST"))
                 .body("results[0].title", is("Shingeki no Kyojin"))
@@ -312,6 +318,108 @@ class ExternalSearchResourceTest {
     }
 
     @Test
+    void shouldResolveYoutubeWatchShortsEmbedAndRawIdInputsIntoNormalizedPreviewResults() {
+        for (String value : java.util.List.of(
+                "https://www.youtube.com/watch?v=abc123XYZ_0&feature=share",
+                "https://youtu.be/abc123XYZ_0?si=share",
+                "https://youtube.com/shorts/abc123XYZ_0?si=share",
+                "https://www.youtube.com/shorts/abc123XYZ_0?feature=share",
+                "https://www.youtube.com/embed/abc123XYZ_0",
+                "abc123XYZ_0")) {
+            given()
+                    .contentType(io.restassured.http.ContentType.JSON)
+                    .body(Map.of(
+                            "source", "YOUTUBE",
+                            "url", value))
+                    .when()
+                    .post("/api/external/resolve-url")
+                    .then()
+                    .statusCode(200)
+                    .body("externalId", is("abc123XYZ_0"))
+                    .body("coverUrl", is("https://img.youtube.test/maxres.jpg"))
+                    .body("creatorNames[0]", is("MoodMatch Dev"));
+
+            assertEquals("abc123XYZ_0", TestYouTubeGateway.lastFetchedVideoId());
+        }
+    }
+
+    @Test
+    void shouldResolveAndImportYoutubeUrlMetadataEvenWhenProviderTagsAreOversized() {
+        TestYouTubeGateway.useVideo(new com.moodmatch.external.youtube.YouTubeGateway.YouTubeVideo(
+                "abc123XYZ_0",
+                "VueConf 2024 Keynote",
+                "A practical keynote about building resilient frontend systems.",
+                "MoodMatch Dev",
+                "2024-05-20T10:30:00Z",
+                "27",
+                java.util.List.of("x".repeat(300)),
+                new com.moodmatch.external.youtube.YouTubeGateway.ThumbnailSet(
+                        null,
+                        null,
+                        "https://img.youtube.test/high.jpg",
+                        null,
+                        "https://img.youtube.test/maxres.jpg")));
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> resolved = given()
+                .contentType(io.restassured.http.ContentType.JSON)
+                .body(Map.of(
+                        "source", "YOUTUBE",
+                        "url", "https://www.youtube.com/watch?v=abc123XYZ_0"))
+                .when()
+                .post("/api/external/resolve-url")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(Map.class);
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("source", resolved.get("source"));
+        payload.put("externalId", resolved.get("externalId"));
+        payload.put("mediaType", resolved.get("mediaType"));
+        payload.put("title", resolved.get("title"));
+        payload.put("originalTitle", resolved.get("originalTitle"));
+        payload.put("creatorNames", resolved.get("creatorNames"));
+        payload.put("description", resolved.get("description"));
+        payload.put("releaseYear", resolved.get("releaseYear"));
+        payload.put("coverUrl", resolved.get("coverUrl"));
+        payload.put("sourceUrl", resolved.get("sourceUrl"));
+        payload.put("externalGenres", resolved.get("externalGenres"));
+        payload.put("externalSubjects", resolved.get("externalSubjects"));
+        payload.put("attribution", resolved.get("attribution"));
+
+        TestCurrentUserProvider.useUserA();
+        given()
+                .contentType(io.restassured.http.ContentType.JSON)
+                .body(payload)
+                .when()
+                .post("/api/external/import")
+                .then()
+                .statusCode(201)
+                .body("created", is(true))
+                .body("media.externalSourceName", is("YOUTUBE"))
+                .body("media.externalSourceId", is("abc123XYZ_0"))
+                .body("media.coverUrl", is("https://img.youtube.test/maxres.jpg"));
+    }
+
+    @Test
+    void shouldSupportExplicitYoutubeSearchSortingWithoutChangingTheResponseShape() {
+        given()
+                .queryParam("query", "ai tutorial")
+                .queryParam("mediaType", "VIDEO")
+                .queryParam("source", "YOUTUBE")
+                .queryParam("sort", "most_viewed")
+                .when()
+                .get("/api/external/search")
+                .then()
+                .statusCode(200)
+                .body("source", is("YOUTUBE"))
+                .body("results.size()", is(1));
+
+        assertEquals("viewCount", TestYouTubeGateway.lastSearchOrder());
+    }
+
+    @Test
     void shouldRejectInvalidYoutubeUrlsClearly() {
         given()
                 .contentType(io.restassured.http.ContentType.JSON)
@@ -324,6 +432,45 @@ class ExternalSearchResourceTest {
                 .statusCode(400)
                 .body("code", is("BUSINESS_RULE_VIOLATION"))
                 .body("message", is("Enter a valid YouTube URL or video ID."));
+    }
+
+    @Test
+    void shouldReturnClearNoResultMessageWhenYoutubeVideoIsUnavailable() {
+        TestYouTubeGateway.useMissingVideo();
+
+        given()
+                .contentType(io.restassured.http.ContentType.JSON)
+                .body(Map.of(
+                        "source", "YOUTUBE",
+                        "url", "abc123XYZ_0"))
+                .when()
+                .post("/api/external/resolve-url")
+                .then()
+                .statusCode(400)
+                .body("code", is("BUSINESS_RULE_VIOLATION"))
+                .body("message", is("YouTube video could not be found or is not publicly available."));
+    }
+
+    @Test
+    void shouldReturnSafeYoutubeUrlImportErrorWhenVideoLookupIsRejected() {
+        TestYouTubeGateway.useVideoFetchFailure(new com.moodmatch.exception.BusinessRuleViolationException(
+                "YouTube URL import request was rejected. Check that the URL contains a valid public video ID."));
+
+        given()
+                .contentType(io.restassured.http.ContentType.JSON)
+                .body(Map.of(
+                        "source", "YOUTUBE",
+                        "url", "https://www.youtube.com/watch?v=abc123XYZ_0&feature=share"))
+                .when()
+                .post("/api/external/resolve-url")
+                .then()
+                .statusCode(400)
+                .body("code", is("BUSINESS_RULE_VIOLATION"))
+                .body(
+                        "message",
+                        is("YouTube URL import request was rejected. Check that the URL contains a valid public video ID."));
+
+        assertEquals("abc123XYZ_0", TestYouTubeGateway.lastFetchedVideoId());
     }
 
     @Test

@@ -78,11 +78,12 @@ class ExternalSearchServiceTest {
     }
 
     @Test
-    void shouldReturnEmptySuggestedTagsWhenNoMappingsExist() {
+    void shouldReturnFallbackSuggestedTagsWhenNoMappingsExist() {
         ExternalSearchResponse response = externalSearchService.search("arrival", "FILM", "DEMO", null);
 
         assertEquals(1, response.results().size());
-        assertTrue(response.results().getFirst().suggestedTags().isEmpty());
+        assertEquals(List.of("Science Fiction", "Drama", "Zeit", "Identitaet", "Entdeckung"),
+                response.results().getFirst().suggestedTags().stream().map(suggestion -> suggestion.tagName()).toList());
         assertEquals("DEMO", response.source().name());
         assertTrue(response.warnings().isEmpty());
     }
@@ -107,9 +108,10 @@ class ExternalSearchServiceTest {
         ExternalSearchResponse response = externalSearchService.search("outer", "GAME", "DEMO", 10);
 
         assertEquals(1, response.results().size());
-        assertEquals(1, response.results().getFirst().suggestedTags().size());
-        assertEquals("Entdeckung", response.results().getFirst().suggestedTags().getFirst().tagName());
-        assertEquals("Entdeckung", response.results().getFirst().suggestedTags().getFirst().sourceValue());
+        assertTrue(response.results().getFirst().suggestedTags().stream()
+                .anyMatch(suggestion -> suggestion.tagName().equals("Entdeckung")
+                        && suggestion.sourceValue().equals("Entdeckung")
+                        && suggestion.confidence() == TagMappingConfidence.HIGH));
     }
 
     @Test
@@ -125,7 +127,9 @@ class ExternalSearchServiceTest {
         try {
             externalSearchService.search("arrival", "FILM", "TMDB", 5);
         } catch (com.moodmatch.exception.BusinessRuleViolationException exception) {
-            assertEquals("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY.", exception.getMessage());
+            assertEquals(
+                    "TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY in the backend environment to a TMDB v3 API key.",
+                    exception.getMessage());
             return;
         }
 
@@ -156,7 +160,8 @@ class ExternalSearchServiceTest {
         assertEquals("ANILIST", response.results().getFirst().source().name());
         assertEquals("SERIES", response.results().getFirst().mediaType().name());
         assertEquals(
-                List.of("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Provider skipped in automatic search."),
+                List.of(
+                        "TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY in the backend environment to a TMDB v3 API key. Provider skipped in automatic search."),
                 response.warnings());
     }
 
@@ -220,7 +225,8 @@ class ExternalSearchServiceTest {
         assertEquals("ANILIST", response.results().getFirst().source().name());
         assertEquals("FILM", response.results().getFirst().mediaType().name());
         assertEquals(
-                List.of("TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY. Provider skipped in automatic search."),
+                List.of(
+                        "TMDB provider is not configured. Set MOODMATCH_TMDB_API_KEY in the backend environment to a TMDB v3 API key. Provider skipped in automatic search."),
                 response.warnings());
     }
 
@@ -262,6 +268,13 @@ class ExternalSearchServiceTest {
         assertEquals(10, response.results().size());
         assertEquals("YouTube Result 1", response.results().getFirst().title());
         assertEquals("YouTube Result 10", response.results().get(9).title());
+    }
+
+    @Test
+    void shouldPassYoutubeExplicitSortOrderToTheGateway() {
+        externalSearchService.search("ai tutorial", "VIDEO", "YOUTUBE", null, "most_viewed");
+
+        assertEquals("viewCount", TestYouTubeGateway.lastSearchOrder());
     }
 
     @Test

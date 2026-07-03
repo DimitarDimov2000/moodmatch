@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.moodmatch.entity.MediaType;
+import com.moodmatch.exception.BusinessRuleViolationException;
 import com.moodmatch.external.adapter.ExternalSearchProvider;
 import com.moodmatch.external.adapter.ExternalSearchRequest;
 import com.moodmatch.external.adapter.ExternalSearchResult;
@@ -19,6 +20,11 @@ public class YouTubeExternalSearchProvider implements ExternalSearchProvider {
 
     public static final int DEFAULT_MAX_RESULTS = 10;
     static final String DEFAULT_ORDER = "relevance";
+    static final String DATE_ORDER = "date";
+    static final String VIEW_COUNT_ORDER = "viewCount";
+    static final String RELEVANCE_SORT = "relevance";
+    static final String NEWEST_SORT = "newest";
+    static final String MOST_VIEWED_SORT = "most_viewed";
 
     private static final Set<MediaType> SUPPORTED_MEDIA_TYPES = Set.of(MediaType.VIDEO);
 
@@ -59,7 +65,7 @@ public class YouTubeExternalSearchProvider implements ExternalSearchProvider {
                         resolvedApiKey,
                         request.query(),
                         resolveMaxResults(request.limit()),
-                        DEFAULT_ORDER)
+                        resolveOrder(request.sort()))
                 .stream()
                 .filter(video -> YouTubeMetadataSupport.blankToNull(video.id()) != null)
                 .filter(video -> YouTubeMetadataSupport.blankToNull(video.title()) != null)
@@ -73,5 +79,20 @@ public class YouTubeExternalSearchProvider implements ExternalSearchProvider {
 
     private String configuredApiKey() {
         return YouTubeMetadataSupport.configuredApiKey(apiKey);
+    }
+
+    private String resolveOrder(String sort) {
+        String normalizedSort = YouTubeMetadataSupport.blankToNull(sort);
+        if (normalizedSort == null || RELEVANCE_SORT.equals(normalizedSort)) {
+            return DEFAULT_ORDER;
+        }
+        if (NEWEST_SORT.equals(normalizedSort)) {
+            return DATE_ORDER;
+        }
+        if (MOST_VIEWED_SORT.equals(normalizedSort)) {
+            return VIEW_COUNT_ORDER;
+        }
+        throw new BusinessRuleViolationException(
+                "Unsupported YouTube search sort: %s. Use relevance, newest, or most_viewed.".formatted(sort));
     }
 }
