@@ -10,8 +10,13 @@ vite.config.*.tmp
 .env
 .env.*
 !.env.example
+!.env.local.example
+!backend/.env.example
+!frontend/.env.example
+!frontend/.env.local.example
 backend/.env
 backend/.env.local
+frontend/.env.local
 
 # Backend and Maven build output
 target/

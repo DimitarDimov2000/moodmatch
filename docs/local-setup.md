@@ -1,273 +1,113 @@
 # Local Setup
 
-This guide describes the current local development setup for MoodMatch.
+This guide describes the standard local development and authenticated demo-QA setup for MoodMatch.
+
+The goal is repeatability:
+
+- keep real secrets out of Git
+- stop manually exporting backend variables for every session
+- make protected-route QA easy for Codex and manual browser checks
 
 ## Prerequisites
 
 - Java 21
 - Node.js and npm
 - PostgreSQL
+- `curl`
 
-## PostgreSQL For The Dev Profile
+## 1. Start PostgreSQL Locally
 
-The backend development profile expects PostgreSQL on:
+The local backend expects PostgreSQL on:
 
 - host: `localhost`
 - port: `5432`
 - database: `moodmatch`
-- user: `moodmatch`
-- password: `moodmatch`
 
-Optional local overrides:
-
-- `MOODMATCH_DB_URL`
-- `MOODMATCH_DB_USERNAME`
-- `MOODMATCH_DB_PASSWORD`
-
-The current backend dev profile expects these variables to be present. For the same local database as this guide, set them to:
-
-- `MOODMATCH_DB_URL=jdbc:postgresql://localhost:5432/moodmatch`
-- `MOODMATCH_DB_USERNAME=moodmatch`
-- `MOODMATCH_DB_PASSWORD=moodmatch`
-
-Example terminal setup before starting the backend:
+If you still need a local database and user, one simple setup is:
 
 ```bash
-export MOODMATCH_DB_URL=jdbc:postgresql://localhost:5432/moodmatch
-export MOODMATCH_DB_USERNAME=moodmatch
-export MOODMATCH_DB_PASSWORD=moodmatch
-export QUARKUS_HTTP_CORS_ENABLED=true
-export QUARKUS_HTTP_CORS_ORIGINS=http://localhost:5173
+psql postgres
 ```
-
-Example `psql` setup:
 
 ```sql
 CREATE USER moodmatch WITH PASSWORD 'moodmatch';
 CREATE DATABASE moodmatch OWNER moodmatch;
 ```
 
-If your local PostgreSQL setup requires it, connect as a superuser first:
+If you already use different local credentials, keep them local and put them into your root `.env.local`.
+
+## 2. Create Local Env Files
+
+Copy the committed examples first:
 
 ```bash
-psql postgres
+cp .env.local.example .env.local
+cp frontend/.env.local.example frontend/.env.local
 ```
 
-## Flyway
+Files to keep local only:
 
-Flyway runs automatically when the backend starts. It validates the committed migrations and applies them before the app serves requests.
+- `.env.local`
+- `backend/.env.local`
+- `frontend/.env.local`
 
-Current migrations:
+Example files are safe to commit because they contain placeholders only:
 
-- `V1__init_schema.sql`
-- `V2__seed_starter_tags.sql`
-- `V3__add_app_users_and_media_ownership.sql`
-- `V4__add_local_password_auth.sql`
-- `V5__add_external_import_support.sql`
-- `V6__expand_external_provider_model.sql`
+- `.env.local.example`
+- `frontend/.env.local.example`
+- `backend/.env.example`
 
-## Local Frontend + CORS
+## 3. Fill Local Env Vars Safely
 
-For local frontend development on `http://localhost:5173`, the backend must enable Quarkus CORS explicitly:
+Edit the new root `.env.local` and set your real local-only values.
 
-- `QUARKUS_HTTP_CORS_ENABLED=true`
-- `QUARKUS_HTTP_CORS_ORIGINS=http://localhost:5173`
-
-These values can be exported directly in the same terminal session as the backend:
-
-```bash
-export QUARKUS_HTTP_CORS_ENABLED=true
-export QUARKUS_HTTP_CORS_ORIGINS=http://localhost:5173
-```
-
-## Optional TMDB Provider Setup
-
-TMDB is the first real external provider. It is currently used for `FILM` and `SERIES` searches when the backend has a valid API key.
-
-Optional local variables:
-
-- `MOODMATCH_TMDB_API_KEY`
-- `MOODMATCH_TMDB_BASE_URL`
-- `MOODMATCH_TMDB_IMAGE_BASE_URL`
-- `MOODMATCH_TMDB_WEBSITE_BASE_URL`
-
-Example terminal setup:
-
-```bash
-export MOODMATCH_TMDB_API_KEY=your_tmdb_v3_api_key_here
-```
-
-Important TMDB note:
-
-- MoodMatch expects the TMDB v3 API key in `MOODMATCH_TMDB_API_KEY`.
-- The backend sends this value only from the server side through the TMDB `api_key` query parameter.
-- No real API key is committed in this repository, and the frontend never receives the TMDB key directly.
-
-If `MOODMATCH_TMDB_API_KEY` is missing, automatic film/series searches skip TMDB, return a warning, and still use other compatible providers such as AniList when available. If no compatible real provider can run, MoodMatch keeps the offline `DEMO` provider active as a fallback.
-
-## Open Library Provider Setup
-
-Open Library is the active real provider for `BOOK` searches in Package 2.
-
-Notes:
-
-- No secret or paid API key is required for the implemented public search flow.
-- Do not commit any personal contact header or experimental credentials to the repository.
-- If you need endpoint overrides for debugging, they should stay local-only and out of committed secrets.
-
-## LibriVox Provider Setup
-
-LibriVox is the active real provider for `AUDIOBOOK` searches in Package 2.6.
-
-Optional local variables:
-
-- `MOODMATCH_LIBRIVOX_BASE_URL`
-
-Notes:
-
-- No secret or paid API key is required for the implemented public catalog integration.
-- The LibriVox catalog only covers public-domain audiobooks, so missing modern titles are expected.
-- The current prototype imports metadata only. It does not build playback, chapters, streaming, or progress tracking.
-
-## Optional RAWG Provider Setup
-
-RAWG is the active real provider for `GAME` searches in Package 2.7.
-
-Backend-only local variable:
-
-- `MOODMATCH_RAWG_API_KEY`
-
-Example terminal setup:
-
-```bash
-export MOODMATCH_RAWG_API_KEY=your_rawg_api_key_here
-```
-
-If `MOODMATCH_RAWG_API_KEY` is missing, automatic game searches use the offline `DEMO` fallback and return a warning. Explicit `source=RAWG` searches return a clear provider configuration error. Do not commit a real RAWG key; the frontend never receives the key directly.
-
-RAWG is included for non-commercial university prototype usage. Review RAWG attribution and usage terms before any production deployment.
-
-## Optional Podcast Index Provider Setup
-
-Podcast Index is the active real provider for `PODCAST` podcast-show search in Package 2.9.
-
-Backend-only local variables:
-
-- `MOODMATCH_PODCASTINDEX_KEY`
-- `MOODMATCH_PODCASTINDEX_SECRET`
-- `MOODMATCH_PODCASTINDEX_BASE_URL`
-
-Example terminal setup:
-
-```bash
-export MOODMATCH_PODCASTINDEX_KEY=your_podcast_index_key_here
-export MOODMATCH_PODCASTINDEX_SECRET=your_podcast_index_secret_here
-```
-
-Notes:
-
-- Configure these variables only on the backend side. The frontend never receives the key or secret.
-- If the key or secret is missing, automatic podcast search returns a clear warning and no results instead of crashing.
-- Explicit `source=PODCAST_INDEX` searches return a clear provider configuration error until both values are set.
-- The current prototype imports podcast shows/feeds only. It does not import individual episodes, crawl RSS feeds, play audio, or track playback progress.
-
-## AniList Provider Setup
-
-AniList is the active real provider for anime/manga metadata in Package 2.8.
-
-Optional local variable:
-
-- `MOODMATCH_ANILIST_BASE_URL`
-
-Notes:
-
-- No secret or API key is required.
-- AniList can be selected explicitly and is also included automatically for compatible `FILM`, `SERIES`, and `BOOK` searches.
-- Anime movies import as `FILM`, anime TV/OVA/ONA/special/short formats import as `SERIES`, and manga/light novel/novel/one-shot formats import as `BOOK`.
-- MoodMatch does not add core `ANIME` or `MANGA` media types.
-
-## YouTube Provider Setup
-
-YouTube query search and URL import are active in Package 2.10B.
-
-Required local variable for the backend only:
-
-- `MOODMATCH_YOUTUBE_API_KEY=your_youtube_data_api_key_here`
-
-Notes:
-
-- Keep this key in the backend environment only. Do not expose it in the frontend and do not commit real keys.
-- MoodMatch uses the official YouTube Data API only. Query search goes through `search.list` with `type=video`, and URL/video-id resolution uses the video metadata flow.
-- Explicit YouTube search also supports a backend sort parameter with `relevance`, `newest`, or `most_viewed`.
-- Supported inputs are normal watch URLs, `youtu.be` links, Shorts URLs, embed URLs, and raw video ids.
-- Normal `VIDEO` external search can target YouTube explicitly, and the separate URL-import UI still works for known links or raw ids.
-- Thumbnail metadata is mapped into the normalized `coverUrl` field and then reused as the local media cover on import.
-- Music remains out of scope.
-
-## Provider Export Example
-
-This example keeps all provider secrets on the backend only and uses placeholders only:
-
-```bash
-export MOODMATCH_DB_URL=jdbc:postgresql://localhost:5432/moodmatch
-export MOODMATCH_DB_USERNAME=moodmatch
-export MOODMATCH_DB_PASSWORD=moodmatch
-export QUARKUS_HTTP_CORS_ENABLED=true
-export QUARKUS_HTTP_CORS_ORIGINS=http://localhost:5173
-export MOODMATCH_TMDB_API_KEY=your_tmdb_v3_api_key_here
-export MOODMATCH_RAWG_API_KEY=your_rawg_api_key_here
-export MOODMATCH_PODCASTINDEX_KEY=your_podcast_index_key_here
-export MOODMATCH_PODCASTINDEX_SECRET=your_podcast_index_secret_here
-export MOODMATCH_YOUTUBE_API_KEY=your_youtube_data_api_key_here
-```
-
-## Future Provider Configuration
-
-Reserved or optional names that are not part of the current YouTube import flow:
-
-- `MOODMATCH_ANILIST_BASE_URL`
-
-Provider scope notes:
-
-- IGDB is a backup/future game provider and is not active.
-- Music is out of scope.
-
-## Optional IntelliJ / PostgreSQL Inspection
-
-This is optional and not required to run the app.
-
-If you start the backend from IntelliJ IDEA instead of a terminal, you can set the same variables in the Run/Debug configuration environment:
+Core backend values:
 
 - `MOODMATCH_DB_URL`
 - `MOODMATCH_DB_USERNAME`
 - `MOODMATCH_DB_PASSWORD`
+- `MOODMATCH_AUTH_MODE=local-password`
+- `MOODMATCH_PRIVATE_ENDPOINT_POLICY=permit`
+- `QUARKUS_HTTP_CORS_ENABLED=true`
+- `QUARKUS_HTTP_CORS_ORIGINS=http://localhost:5173`
+- `QUARKUS_HTTP_CORS_METHODS=GET,POST,PUT,PATCH,DELETE,OPTIONS`
+- `QUARKUS_HTTP_CORS_HEADERS=Accept,Authorization,Content-Type,Origin,X-Requested-With`
 
-For the local setup in this guide, use the same values shown above.
+Optional backend-only provider keys:
 
-If you want to inspect the local database in IntelliJ IDEA, the Database tool window can connect with:
+- `MOODMATCH_TMDB_API_KEY`
+- `MOODMATCH_RAWG_API_KEY`
+- `MOODMATCH_PODCASTINDEX_KEY`
+- `MOODMATCH_PODCASTINDEX_SECRET`
+- `MOODMATCH_YOUTUBE_API_KEY`
 
-- host: `localhost`
-- port: `5432`
-- database: `moodmatch`
-- user: `moodmatch`
-- password: `moodmatch`
+Optional local demo-QA account values used by the helper script:
 
-Useful tables to inspect:
+- `MOODMATCH_DEMO_EMAIL`
+- `MOODMATCH_DEMO_PASSWORD`
+- `MOODMATCH_DEMO_DISPLAY_NAME`
 
-- `media_items`
-- `tags`
-- `media_tags`
-- `media_external_refs`
-- `external_tag_mappings`
-- `flyway_schema_history`
+The frontend local file should normally stay as:
 
-If IntelliJ shows an SQL warning because no data source is configured yet, that only means IntelliJ is not connected to a database for SQL assistance. It does not mean Flyway is broken or that the app failed to apply migrations.
+```dotenv
+VITE_AUTH_MODE=local-password
+VITE_API_BASE_URL=http://localhost:8080
+```
 
-## Start The Backend
+Important safety rules:
+
+- Do not commit `.env.local`.
+- Do not commit `frontend/.env.local`.
+- Do not commit real API keys.
+- Do not commit personal credentials.
+
+## 4. Start The Backend
+
+The backend local helper reads the root `.env.local`, exports the variables for the current process, and starts Quarkus dev mode.
 
 ```bash
 cd backend
-./mvnw quarkus:dev
+./scripts/dev-local.sh
 ```
 
 Default backend URL:
@@ -282,21 +122,11 @@ Quick smoke check:
 curl http://localhost:8080/api/health
 ```
 
-## Run Backend Tests
+Flyway migrations still run automatically on backend startup.
 
-```bash
-cd backend
-./mvnw test
-```
+## 5. Start The Frontend
 
-Notes:
-
-- Backend tests use the Quarkus test profile with H2 in PostgreSQL compatibility mode.
-- Resource tests start a local Quarkus HTTP server during the test run.
-
-## Frontend Setup And Run
-
-Install dependencies:
+If dependencies are not installed yet:
 
 ```bash
 cd frontend
@@ -316,39 +146,103 @@ Default frontend URL:
 http://localhost:5173
 ```
 
-## Frontend API Configuration
+## 6. Create Or Check The Local Demo User
 
-The frontend uses `/api` for backend requests.
+Use the local helper from the project root:
 
-In local Vite development:
+```bash
+./scripts/dev-create-demo-user.sh
+```
 
-- `frontend/vite.config.ts` proxies `/api` to `http://localhost:8080`
+What it does:
 
-Optional override:
+- reads `MOODMATCH_DEMO_EMAIL`, `MOODMATCH_DEMO_PASSWORD`, and `MOODMATCH_DEMO_DISPLAY_NAME` from the root `.env.local`
+- talks to the local backend at `http://localhost:8080` by default
+- sends `POST /api/auth/register`
+- if the user already exists, checks the configured credentials with `POST /api/auth/login`
 
-- `VITE_API_BASE_URL` can point the frontend at a different backend base URL
-- if set, the frontend normalizes it to an `/api` base path
+This is local QA only:
 
-## Frontend Checks
+- no bypass login
+- no backend auth changes
+- no seeded demo user migration
+
+## 7. Demo QA Login Instructions
+
+After the helper succeeds:
+
+1. Open `http://localhost:5173`.
+2. Log in with `MOODMATCH_DEMO_EMAIL` and `MOODMATCH_DEMO_PASSWORD` from your root `.env.local`.
+3. Continue with the authenticated verification flow below.
+
+## 8. Standard Codex / Manual Browser QA Workflow
+
+Use this exact order for reliable authenticated QA:
+
+1. PostgreSQL is running.
+2. Backend is running on `http://localhost:8080`.
+3. Frontend is running on `http://localhost:5173`.
+4. Demo user exists.
+5. Log in with the local demo account.
+6. Verify protected routes:
+   `Dashboard`, `Profile`, `External Search`, `Media Library`, `Candidates`, `Swipe`, `Matches`
+7. Check the DE/EN language switch.
+8. Check the dark/light/system theme switch.
+9. Check both desktop and mobile widths.
+
+## 9. Run Backend Tests Cleanly
+
+Use the clean backend helper instead of a shell that may still contain local exports:
+
+```bash
+cd backend
+./scripts/test-clean.sh
+```
+
+This script:
+
+- does not load `.env.local`
+- unsets common auth, DB, CORS, OIDC, and provider variables before running tests
+- runs `./mvnw test`
+
+## 10. Run Frontend Checks
+
+Run the standard frontend checks:
 
 ```bash
 cd frontend
-npm run lint
-npm run test
-npm run build
+npm run lint && npm run test && npm run build
 ```
 
-Useful additional check:
+Useful extra check:
 
 ```bash
 cd frontend
 npm run typecheck
 ```
 
-## Quick End-To-End Demo Startup
+## Provider Notes
 
-1. Start PostgreSQL locally.
-2. Start the backend with `cd backend && ./mvnw quarkus:dev`.
-3. Start the frontend with `cd frontend && npm run dev`.
-4. Open the frontend and inspect the dashboard, media flows, profile, matches, swipe mode, and external search preview.
-5. Log in, search films/series and books, import one result, and verify it appears in the media library.
+Provider behavior is unchanged. Local secrets stay backend-only.
+
+Current provider notes:
+
+- TMDB for `FILM` and `SERIES` uses `MOODMATCH_TMDB_API_KEY` when configured.
+- Open Library for `BOOK` does not need a secret in the current integration.
+- LibriVox for `AUDIOBOOK` does not need a secret in the current integration.
+- RAWG for `GAME` uses `MOODMATCH_RAWG_API_KEY` when configured.
+- Podcast Index for `PODCAST` uses `MOODMATCH_PODCASTINDEX_KEY` and `MOODMATCH_PODCASTINDEX_SECRET` when configured.
+- AniList does not need a secret in the current integration.
+- YouTube search and URL import use `MOODMATCH_YOUTUBE_API_KEY` on the backend only.
+
+If provider keys are missing, the existing application behavior stays the same. This package does not change provider logic.
+
+## Security Reminder
+
+Never commit any of the following:
+
+- `.env.local`
+- `backend/.env.local`
+- `frontend/.env.local`
+- real API keys
+- real personal credentials

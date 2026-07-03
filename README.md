@@ -47,6 +47,8 @@ Project setup and verification:
 - [Local Setup](docs/local-setup.md)
 - [Phase 19 Checkpoint](docs/checkpoint-phase-19.md)
 
+The local setup guide now includes the standard backend startup script, frontend local env file, demo-user helper flow, clean backend test command, and the authenticated QA checklist for protected routes.
+
 Core reference docs:
 
 - [Architecture](docs/architecture.md)

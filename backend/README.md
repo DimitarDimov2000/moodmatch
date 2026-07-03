@@ -17,6 +17,14 @@ The backend owns validation rules, persistence, Flyway migrations, DTO mapping, 
 
 ## Development Setup
 
+The local development workflow uses the root `.env.local` file plus the helper scripts in `backend/scripts/`.
+
+Create your local env file from the committed example:
+
+```bash
+cp ../.env.local.example ../.env.local
+```
+
 The development profile uses PostgreSQL on:
 
 - host: `localhost`
@@ -31,7 +39,7 @@ Start dev mode:
 
 ```bash
 cd backend
-./mvnw quarkus:dev
+./scripts/dev-local.sh
 ```
 
 Default backend URL:
@@ -52,10 +60,10 @@ Run backend tests:
 
 ```bash
 cd backend
-./mvnw test
+./scripts/test-clean.sh
 ```
 
-Tests use the Quarkus test profile with H2 in PostgreSQL compatibility mode plus Flyway migrations.
+Tests use the Quarkus test profile with H2 in PostgreSQL compatibility mode plus Flyway migrations. The clean test helper intentionally avoids loading the root `.env.local` file and unsets common leaking auth/provider variables first.
 
 For full local project setup, frontend commands, and checkpoint context, see:
 
