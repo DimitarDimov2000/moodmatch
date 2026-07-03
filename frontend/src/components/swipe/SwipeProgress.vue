@@ -71,8 +71,8 @@ const progressPercent = computed(() => {
   display: grid;
   gap: 1rem;
   padding: 1.25rem 1.25rem 1.1rem;
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(10, 16, 36, 0.76);
+  border-color: var(--theme-swipe-panel-border);
+  background: var(--theme-swipe-panel-background);
   backdrop-filter: blur(18px);
 }
 
@@ -85,11 +85,11 @@ const progressPercent = computed(() => {
 }
 
 .swipe-progress .eyebrow {
-  color: #ffb4b8;
+  color: var(--theme-swipe-eyebrow-color);
 }
 
 .swipe-progress .section-title {
-  color: #fff;
+  color: var(--theme-swipe-panel-emphasis-text);
 }
 
 .swipe-progress__pill {
@@ -97,10 +97,10 @@ const progressPercent = computed(() => {
   align-items: center;
   min-height: 2rem;
   padding: 0.35rem 0.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--theme-swipe-panel-strong-border);
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: var(--theme-swipe-panel-pill-background);
+  color: var(--theme-swipe-panel-pill-color);
   font-size: 0.9rem;
   font-weight: 600;
 }
@@ -109,7 +109,7 @@ const progressPercent = computed(() => {
   height: 0.7rem;
   overflow: hidden;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--theme-swipe-panel-pill-background);
 }
 
 .swipe-progress__bar-fill {
@@ -133,13 +133,13 @@ const progressPercent = computed(() => {
 
 .swipe-progress__stats div {
   padding: 0.85rem 0.95rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--theme-swipe-panel-border);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--theme-swipe-panel-soft-background);
 }
 
 .swipe-progress__stats dt {
-  color: rgba(236, 239, 255, 0.62);
+  color: var(--theme-swipe-panel-soft-text);
   font-size: 0.82rem;
 }
 
@@ -147,7 +147,7 @@ const progressPercent = computed(() => {
   margin: 0.35rem 0 0;
   font-size: 1.2rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--theme-swipe-panel-emphasis-text);
 }
 
 @media (max-width: 820px) {

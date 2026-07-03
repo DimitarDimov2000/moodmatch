@@ -83,8 +83,8 @@ const emit = defineEmits<{
   display: grid;
   gap: 0.9rem;
   padding: 1rem;
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(10, 16, 36, 0.76);
+  border-color: var(--theme-swipe-panel-border);
+  background: var(--theme-swipe-panel-background);
   backdrop-filter: blur(18px);
 }
 
@@ -98,11 +98,11 @@ const emit = defineEmits<{
 }
 
 .swipe-decision-controls__copy .eyebrow {
-  color: #ffb4b8;
+  color: var(--theme-swipe-eyebrow-color);
 }
 
 .swipe-decision-controls__copy .body-muted {
-  color: rgba(236, 239, 255, 0.72);
+  color: var(--theme-swipe-panel-copy-text);
 }
 
 .swipe-decision-controls__buttons {
@@ -131,27 +131,27 @@ const emit = defineEmits<{
 }
 
 .swipe-decision-controls__hint {
-  color: rgba(236, 239, 255, 0.6);
+  color: var(--theme-swipe-panel-soft-text);
   font-size: 0.82rem;
 }
 
 .swipe-decision-controls__button--skip {
-  background: rgba(255, 182, 193, 0.1);
-  border-color: rgba(255, 182, 193, 0.22);
-  color: #ffb4b8;
+  background: var(--theme-swipe-skip-button-background);
+  border-color: var(--theme-swipe-skip-button-border);
+  color: var(--theme-swipe-skip-button-text);
 }
 
 .swipe-decision-controls__button--details {
-  background: rgba(190, 196, 255, 0.1);
-  border-color: rgba(190, 196, 255, 0.22);
-  color: #c7c5ff;
+  background: var(--theme-swipe-details-button-background);
+  border-color: var(--theme-swipe-details-button-border);
+  color: var(--theme-swipe-details-button-text);
 }
 
 .swipe-decision-controls__button--like {
-  background: linear-gradient(180deg, rgba(255, 74, 124, 0.92), rgba(229, 49, 98, 0.92));
-  border-color: rgba(255, 255, 255, 0.18);
+  background: var(--theme-swipe-like-button-background);
+  border-color: var(--theme-swipe-like-button-border);
   color: #fff;
-  box-shadow: 0 12px 24px rgba(229, 49, 98, 0.24);
+  box-shadow: var(--theme-swipe-like-button-shadow);
 }
 
 @media (max-width: 640px) {
@@ -159,7 +159,7 @@ const emit = defineEmits<{
     position: sticky;
     bottom: max(0.65rem, env(safe-area-inset-bottom));
     z-index: 2;
-    box-shadow: 0 16px 34px rgba(4, 10, 24, 0.34);
+    box-shadow: var(--theme-swipe-sticky-shadow);
   }
 
   .swipe-decision-controls__copy {

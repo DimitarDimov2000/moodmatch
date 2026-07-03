@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
-import { RouterLink, useRouter } from 'vue-router';
+import { RouterLink, useRoute, useRouter } from 'vue-router';
 
+import ThemePreferenceSwitch from '@/components/common/ThemePreferenceSwitch.vue';
 import { useAppStore } from '@/stores/app';
 import { useAuthStore } from '@/stores/auth';
 
 const appStore = useAppStore();
 const authStore = useAuthStore();
+const route = useRoute();
 const router = useRouter();
 const { appTitle, navigationItems } = storeToRefs(appStore);
 const { isAuthenticated, userDisplayName } = storeToRefs(authStore);
@@ -15,6 +17,10 @@ const { isAuthenticated, userDisplayName } = storeToRefs(authStore);
 const visibleNavigationItems = computed(() =>
   authStore.canAccessProtectedRoutes ? navigationItems.value : [],
 );
+const currentRouteTitle = computed(() =>
+  typeof route.meta.title === 'string' ? route.meta.title : appTitle.value,
+);
+const isImmersiveRoute = computed(() => route.name === 'swipe');
 
 const authStatusLabel = computed(() => {
   if (authStore.mode === 'local-demo') {
@@ -47,59 +53,86 @@ async function handleLogout() {
 </script>
 
 <template>
-  <div class="app-shell">
+  <div
+    class="app-shell"
+    :class="{ 'app-shell--immersive': isImmersiveRoute }"
+  >
     <header class="app-shell__header">
       <div class="app-shell__header-inner page-shell">
-        <RouterLink
-          :to="{ name: 'dashboard' }"
-          class="app-shell__brand"
-        >
-          <span class="app-shell__brand-mark">MM</span>
-          <span>{{ appTitle }}</span>
-        </RouterLink>
+        <div class="app-shell__masthead">
+          <div class="app-shell__brand-group">
+            <RouterLink
+              :to="{ name: 'dashboard' }"
+              class="app-shell__brand"
+            >
+              <span class="app-shell__brand-mark">MM</span>
+              <span class="app-shell__brand-name">{{ appTitle }}</span>
+            </RouterLink>
 
-        <nav
-          v-if="visibleNavigationItems.length > 0"
-          class="app-shell__nav"
-          aria-label="Primary navigation"
-        >
-          <RouterLink
-            v-for="item in visibleNavigationItems"
-            :key="item.label"
-            :to="item.to"
-            class="app-shell__nav-link"
-          >
-            {{ item.label }}
-          </RouterLink>
-        </nav>
-
-        <div class="app-shell__auth">
-          <div class="app-shell__auth-copy">
-            <span class="app-shell__auth-label">{{ authStatusLabel }}</span>
-            <span class="app-shell__auth-description">{{ authStatusDescription }}</span>
+            <div class="app-shell__route-copy">
+              <span class="app-shell__route-label">Current section</span>
+              <span class="app-shell__route-title">{{ currentRouteTitle }}</span>
+            </div>
           </div>
 
-          <RouterLink
-            v-if="authStore.isAuthRequiredMode && !isAuthenticated"
-            :to="{ name: 'login' }"
-            class="button button--secondary app-shell__auth-action"
-          >
-            Anmelden
-          </RouterLink>
+          <div class="app-shell__header-tools">
+            <div class="app-shell__preferences">
+              <ThemePreferenceSwitch class="app-shell__preference-control" />
+            </div>
 
-          <button
-            v-else-if="isAuthenticated"
-            class="button button--secondary app-shell__auth-action"
-            type="button"
-            @click="handleLogout"
+            <div class="app-shell__auth">
+              <div class="app-shell__auth-copy">
+                <span class="app-shell__auth-label">{{ authStatusLabel }}</span>
+                <span class="app-shell__auth-description">{{ authStatusDescription }}</span>
+              </div>
+
+              <RouterLink
+                v-if="authStore.isAuthRequiredMode && !isAuthenticated"
+                :to="{ name: 'login' }"
+                class="button button--secondary app-shell__auth-action"
+              >
+                Anmelden
+              </RouterLink>
+
+              <button
+                v-else-if="isAuthenticated"
+                class="button button--secondary app-shell__auth-action"
+                type="button"
+                @click="handleLogout"
+              >
+                Abmelden
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div
+          v-if="visibleNavigationItems.length > 0"
+          class="app-shell__nav-frame"
+          data-testid="primary-nav-frame"
+        >
+          <nav
+            class="app-shell__nav"
+            aria-label="Primary navigation"
           >
-            Abmelden
-          </button>
+            <RouterLink
+              v-for="item in visibleNavigationItems"
+              :key="item.label"
+              :to="item.to"
+              class="app-shell__nav-link"
+              :title="item.label"
+            >
+              {{ item.label }}
+            </RouterLink>
+          </nav>
         </div>
       </div>
     </header>
 
-    <main class="page-shell app-shell__content">
+    <main
+      class="page-shell app-shell__content"
+      :class="{ 'app-shell__content--immersive': isImmersiveRoute }"
+    >
       <slot />
     </main>
   </div>
@@ -107,32 +140,73 @@ async function handleLogout() {
 
 <style scoped>
 .app-shell {
+  position: relative;
   min-height: 100vh;
-  background: var(--color-background);
+  background: var(--theme-app-shell-background);
+}
+
+.app-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: var(--theme-app-shell-overlay);
+  pointer-events: none;
 }
 
 .app-shell__header {
   position: sticky;
   top: 0;
-  z-index: 10;
-  background: var(--color-surface-secondary);
-  border-bottom: 1px solid var(--color-border);
+  z-index: 20;
+  padding-top: max(0px, env(safe-area-inset-top));
+  background: var(--theme-app-shell-header-background);
+  backdrop-filter: blur(18px);
+}
+
+.app-shell__header::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: var(--theme-app-shell-header-rule);
 }
 
 .app-shell__header-inner {
+  display: grid;
+  gap: 0.85rem;
+  overflow-x: clip;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.app-shell__masthead {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  min-height: 4.5rem;
+  min-width: 0;
+}
+
+.app-shell__masthead > * {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.app-shell__brand-group {
+  display: flex;
+  align-items: center;
+  gap: 0.95rem;
+  min-width: 0;
 }
 
 .app-shell__brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.8rem;
+  min-width: 0;
   color: var(--color-text-primary);
-  font-size: 1rem;
+  font-size: 1.02rem;
   font-weight: 700;
 }
 
@@ -140,79 +214,214 @@ async function handleLogout() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.8rem;
+  height: 2.8rem;
   border-radius: var(--radius-full);
-  background: var(--color-accent-soft);
-  color: var(--color-accent-dark);
+  background: var(--theme-brand-mark-background);
+  color: #fff;
+  border: 1px solid var(--theme-brand-mark-border);
+  box-shadow: var(--shadow-accent);
+}
+
+.app-shell__brand-name {
+  letter-spacing: -0.02em;
+}
+
+.app-shell__route-copy {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.app-shell__route-label {
+  color: var(--color-text-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-shell__route-title {
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell__nav-frame {
+  overflow: hidden;
+  padding: 0.35rem;
   border: 1px solid var(--color-border);
+  border-radius: calc(var(--radius-lg) - 2px);
+  background: var(--theme-app-shell-frame-background);
+  box-shadow: var(--theme-app-shell-frame-shadow);
 }
 
 .app-shell__nav {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.app-shell__header-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.app-shell__preferences {
+  display: flex;
+  align-items: center;
   gap: 0.75rem;
+  min-width: 0;
 }
 
 .app-shell__auth {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  gap: 0.85rem;
+  min-width: 0;
 }
 
 .app-shell__auth-copy {
   display: grid;
-  gap: 0.15rem;
+  gap: 0.18rem;
+  max-width: 24rem;
   text-align: right;
 }
 
 .app-shell__auth-label {
+  color: var(--color-text-primary);
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--color-text-primary);
 }
 
 .app-shell__auth-description {
-  max-width: 20rem;
   color: var(--color-text-secondary);
   font-size: 0.84rem;
   line-height: 1.4;
 }
 
 .app-shell__nav-link {
-  padding: 0.625rem 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.66rem 0.95rem;
+  border: 1px solid transparent;
   border-radius: var(--radius-full);
   color: var(--color-text-secondary);
-  transition: background-color 160ms ease, color 160ms ease;
+  white-space: nowrap;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
 }
 
-.app-shell__nav-link:hover,
+.app-shell__nav-link:hover {
+  background: var(--theme-app-shell-link-hover-background);
+  border-color: var(--theme-app-shell-link-hover-border);
+  color: var(--color-text-primary);
+  transform: translateY(-1px);
+}
+
 .app-shell__nav-link.router-link-active {
-  background: var(--color-accent-soft);
-  color: var(--color-accent-dark);
+  background: var(--theme-app-shell-link-active-background);
+  border-color: var(--theme-app-shell-link-active-border);
+  color: var(--theme-app-shell-link-active-color);
+  box-shadow: var(--theme-app-shell-link-active-shadow);
 }
 
 .app-shell__content {
-  padding-top: 2rem;
-  padding-bottom: 2rem;
+  position: relative;
+  z-index: 1;
+  padding-top: clamp(0.9rem, 2vw, 1.35rem);
+  padding-bottom: calc(2.4rem + env(safe-area-inset-bottom));
 }
 
-@media (max-width: 640px) {
-  .app-shell__header-inner {
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+.app-shell__content--immersive {
+  padding-top: 0.75rem;
+}
+
+@media (max-width: 780px) {
+  .app-shell__masthead {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-shell__brand-group,
+  .app-shell__header-tools,
+  .app-shell__preferences,
+  .app-shell__auth {
+    width: 100%;
+  }
+
+  .app-shell__header-tools {
+    justify-content: stretch;
+  }
+
+  .app-shell__preferences {
+    justify-content: flex-start;
   }
 
   .app-shell__auth {
-    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     justify-content: space-between;
   }
 
   .app-shell__auth-copy {
     text-align: left;
+  }
+
+  .app-shell__auth-description {
+    display: none;
+  }
+
+  .app-shell__nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.1rem;
+    scrollbar-width: none;
+  }
+
+  .app-shell__nav::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .app-shell__header-inner {
+    gap: 0.7rem;
+    padding-top: 0.85rem;
+    padding-bottom: 0.8rem;
+  }
+
+  .app-shell__brand-group {
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  .app-shell__route-copy {
+    display: none;
+  }
+
+  .app-shell__brand-mark {
+    width: 2.55rem;
+    height: 2.55rem;
+  }
+
+  .app-shell__nav-link {
+    min-height: 2.55rem;
+    padding-inline: 0.88rem;
   }
 }
 </style>

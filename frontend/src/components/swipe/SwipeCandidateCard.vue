@@ -786,8 +786,8 @@ defineExpose({
   padding: 0.4rem 0.9rem;
   border: 1px solid transparent;
   border-radius: var(--radius-full);
-  background: rgba(15, 23, 42, 0.82);
-  color: #fff;
+  background: var(--theme-swipe-intent-background);
+  color: var(--theme-swipe-intent-text);
   font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -824,7 +824,7 @@ defineExpose({
 }
 
 .swipe-candidate-card--dragging {
-  box-shadow: 0 24px 54px rgba(15, 23, 42, 0.2);
+  box-shadow: var(--theme-swipe-drag-shadow);
 }
 
 .swipe-candidate-card--locked {
@@ -871,13 +871,11 @@ defineExpose({
   display: grid;
   place-items: center;
   padding: 2rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--theme-swipe-cover-fallback-text);
   font-size: clamp(1.45rem, 4vw, 2rem);
   font-weight: 700;
   text-align: center;
-  background:
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.2), transparent 40%),
-    radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.14), transparent 32%);
+  background: var(--theme-swipe-cover-fallback-overlay);
 }
 
 .swipe-candidate-card__cover-overlay {
@@ -887,12 +885,7 @@ defineExpose({
   flex-direction: column;
   justify-content: space-between;
   padding: 1rem;
-  background: linear-gradient(
-    180deg,
-    rgba(15, 23, 42, 0.12) 0%,
-    rgba(15, 23, 42, 0.05) 25%,
-    rgba(15, 23, 42, 0.82) 100%
-  );
+  background: var(--theme-swipe-cover-overlay);
 }
 
 .swipe-candidate-card__hero-top {
@@ -907,11 +900,11 @@ defineExpose({
   align-items: center;
   min-height: 2rem;
   padding: 0.35rem 0.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid var(--theme-swipe-type-pill-border);
   border-radius: var(--radius-full);
   backdrop-filter: blur(12px);
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: var(--theme-swipe-type-pill-background);
+  color: var(--theme-swipe-type-pill-text);
   font-size: 0.84rem;
   font-weight: 700;
 }
@@ -924,20 +917,20 @@ defineExpose({
   padding: 0.7rem 0.8rem;
   border-radius: 1.1rem;
   backdrop-filter: blur(14px);
-  background: rgba(15, 23, 42, 0.72);
+  background: var(--theme-swipe-score-background);
   color: #fff;
 }
 
 .swipe-candidate-card__score-badge--success {
-  background: color-mix(in srgb, var(--color-success) 42%, rgba(15, 23, 42, 0.72));
+  background: var(--theme-swipe-score-success-background);
 }
 
 .swipe-candidate-card__score-badge--accent {
-  background: color-mix(in srgb, var(--color-accent) 38%, rgba(15, 23, 42, 0.72));
+  background: var(--theme-swipe-score-accent-background);
 }
 
 .swipe-candidate-card__score-badge--muted {
-  background: rgba(15, 23, 42, 0.72);
+  background: var(--theme-swipe-score-background);
 }
 
 .swipe-candidate-card__score-label {
@@ -948,7 +941,7 @@ defineExpose({
 .swipe-candidate-card__score-caption {
   font-size: 0.76rem;
   text-align: right;
-  color: rgba(255, 255, 255, 0.84);
+  color: var(--theme-swipe-score-caption);
 }
 
 .swipe-candidate-card__hero-copy {

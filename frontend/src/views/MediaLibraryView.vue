@@ -201,7 +201,7 @@ function toUserMessage(error: unknown): string {
 .media-library__tags {
   align-self: start;
   position: sticky;
-  top: 6rem;
+  top: var(--shell-sticky-offset);
 }
 
 .media-library__message-actions {
@@ -222,4 +222,3 @@ function toUserMessage(error: unknown): string {
   }
 }
 </style>
-

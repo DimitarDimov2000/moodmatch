@@ -485,11 +485,8 @@ function toMatchesErrorMessage(error: unknown): string {
   padding: clamp(1rem, 2vw, 1.6rem);
   border-radius: 2rem;
   overflow: hidden;
-  background:
-    radial-gradient(circle at top center, rgba(124, 92, 252, 0.26), transparent 34%),
-    radial-gradient(circle at bottom center, rgba(236, 72, 153, 0.18), transparent 36%),
-    linear-gradient(180deg, #0f1630 0%, #0a1024 100%);
-  color: #f8f7ff;
+  background: var(--theme-swipe-background);
+  color: var(--theme-swipe-text);
   box-shadow: 0 28px 60px rgba(8, 15, 32, 0.28);
 }
 
@@ -497,9 +494,7 @@ function toMatchesErrorMessage(error: unknown): string {
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 28%);
+  background: var(--theme-swipe-overlay);
   pointer-events: none;
 }
 
@@ -533,7 +528,7 @@ function toMatchesErrorMessage(error: unknown): string {
 }
 
 .swipe-view__eyebrow {
-  color: #ffb4b8;
+  color: var(--theme-swipe-eyebrow-color);
   font-size: 0.86rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -541,13 +536,14 @@ function toMatchesErrorMessage(error: unknown): string {
 }
 
 .swipe-view__title {
+  color: var(--theme-swipe-title-color);
   font-size: clamp(2rem, 5vw, 3rem);
   line-height: 0.98;
 }
 
 .swipe-view__copy,
 .swipe-view__footnote {
-  color: rgba(236, 239, 255, 0.78);
+  color: var(--theme-swipe-muted-text);
 }
 
 .swipe-view__actions,
@@ -560,15 +556,15 @@ function toMatchesErrorMessage(error: unknown): string {
 .swipe-view__action-button,
 .swipe-view__message-button {
   min-height: 2.9rem;
-  border-color: rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  border-color: var(--theme-swipe-action-border);
+  background: var(--theme-swipe-action-background);
+  color: var(--theme-swipe-panel-pill-color);
   backdrop-filter: blur(14px);
 }
 
 .swipe-view__action-button--ghost,
 .swipe-view__message-button--ghost {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--theme-swipe-action-background-ghost);
 }
 
 .swipe-view__deck {
@@ -602,30 +598,30 @@ function toMatchesErrorMessage(error: unknown): string {
   position: relative;
   z-index: 1;
   padding: 1.1rem 1.15rem;
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(11, 17, 36, 0.72);
+  border-color: var(--theme-swipe-panel-border);
+  background: var(--theme-swipe-panel-background);
   box-shadow: none;
   backdrop-filter: blur(18px);
 }
 
 .swipe-view :deep(.app-message__title) {
-  color: #fff;
+  color: var(--theme-swipe-panel-emphasis-text);
 }
 
 .swipe-view :deep(.app-message__description) {
-  color: rgba(236, 239, 255, 0.78);
+  color: var(--theme-swipe-muted-text);
 }
 
 .swipe-view :deep(.app-message--warning) {
-  background: rgba(68, 42, 9, 0.74);
+  background: var(--theme-swipe-message-warning-background);
 }
 
 .swipe-view :deep(.app-message--error) {
-  background: rgba(74, 20, 33, 0.78);
+  background: var(--theme-swipe-message-error-background);
 }
 
 .swipe-view :deep(.app-message--info) {
-  background: rgba(17, 31, 67, 0.76);
+  background: var(--theme-swipe-message-info-background);
 }
 
 @media (max-width: 720px) {

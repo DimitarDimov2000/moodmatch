@@ -4,11 +4,14 @@ import { createApp } from 'vue';
 import { configureApiClientAuth } from './api/client';
 import App from './App.vue';
 import { createAppRouter } from './router';
+import { initializeTheme } from './composables/useTheme';
 import { useAuthStore } from './stores/auth';
 import './assets/styles/tokens.css';
 import './assets/styles/base.css';
 
 async function bootstrap() {
+  initializeTheme();
+
   const app = createApp(App);
   const pinia = createPinia();
   const router = createAppRouter({ pinia });

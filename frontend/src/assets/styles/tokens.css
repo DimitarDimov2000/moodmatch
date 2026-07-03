@@ -1,43 +1,342 @@
 :root {
-  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  color-scheme: dark;
+  --font-sans: Inter, 'Avenir Next', 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
 
-  --color-background: #f6f7fb;
-  --color-surface: #ffffff;
-  --color-surface-secondary: #f9fafb;
-  --color-surface-muted: #f2f4f8;
+  --color-background: #070b18;
+  --color-background-alt: #0d1328;
+  --color-surface: rgba(18, 24, 46, 0.84);
+  --color-surface-strong: rgba(28, 36, 66, 0.92);
+  --color-surface-secondary: rgba(34, 43, 78, 0.72);
+  --color-surface-muted: rgba(155, 169, 211, 0.12);
+  --color-surface-overlay: rgba(7, 11, 24, 0.76);
 
-  --color-border: #e3e7ef;
-  --color-border-strong: #cbd3df;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border-strong: rgba(255, 255, 255, 0.18);
 
-  --color-text-primary: #111827;
-  --color-text-secondary: #4b5563;
-  --color-text-muted: #8a94a6;
+  --color-text-primary: #f5f7ff;
+  --color-text-secondary: rgba(229, 233, 255, 0.8);
+  --color-text-muted: rgba(175, 186, 220, 0.62);
 
-  --color-accent: #7c5cfc;
-  --color-accent-dark: #5e4cff;
-  --color-accent-soft: #f1edff;
+  --color-accent: #ff4f87;
+  --color-accent-dark: #ff2f75;
+  --color-accent-soft: rgba(255, 79, 135, 0.16);
+  --color-accent-secondary: #8b7cff;
 
-  --color-success: #10b981;
-  --color-success-soft: #ecfdf5;
+  --color-success: #35d4a0;
+  --color-success-soft: rgba(53, 212, 160, 0.14);
 
-  --color-warning: #f59e0b;
-  --color-warning-soft: #fffbeb;
+  --color-warning: #ffba62;
+  --color-warning-soft: rgba(255, 186, 98, 0.16);
 
-  --color-error: #ef4444;
-  --color-error-soft: #fef2f2;
+  --color-error: #ff7b9b;
+  --color-error-soft: rgba(255, 123, 155, 0.16);
+  --color-danger: var(--color-error);
+  --color-danger-soft: var(--color-error-soft);
 
-  --color-info: #3b82f6;
-  --color-info-soft: #eff6ff;
+  --color-info: #77a5ff;
+  --color-info-soft: rgba(119, 165, 255, 0.16);
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
   --radius-full: 9999px;
 
-  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-swipe-card: 0 18px 45px rgba(15, 23, 42, 0.16);
+  --shadow-card:
+    0 24px 60px rgba(3, 7, 18, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --shadow-card-hover:
+    0 30px 72px rgba(3, 7, 18, 0.48),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --shadow-accent: 0 18px 36px rgba(255, 47, 117, 0.22);
+  --shadow-shell: 0 24px 70px rgba(2, 6, 16, 0.55);
+  --shadow-swipe-card: 0 28px 60px rgba(6, 11, 24, 0.34);
 
-  --page-max-width: 1280px;
-  --page-padding: clamp(1rem, 2vw, 2rem);
+  --theme-html-background:
+    radial-gradient(circle at top left, rgba(139, 124, 255, 0.18), transparent 24%),
+    radial-gradient(circle at top right, rgba(255, 79, 135, 0.16), transparent 24%),
+    linear-gradient(180deg, var(--color-background) 0%, #040711 100%);
+  --theme-selection-background: rgba(255, 79, 135, 0.24);
+  --theme-selection-text: #fff;
+  --theme-option-background: #121931;
+  --theme-input-background: linear-gradient(180deg, rgba(12, 17, 34, 0.82), rgba(21, 28, 52, 0.94));
+  --theme-input-disabled-background: linear-gradient(180deg, rgba(14, 18, 34, 0.7), rgba(18, 22, 40, 0.76));
+  --theme-card-background: linear-gradient(180deg, rgba(29, 37, 68, 0.88) 0%, rgba(16, 22, 43, 0.96) 100%);
+  --theme-card-highlight: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 34%);
+  --theme-eyebrow-color: #ffb4c8;
+  --theme-button-hover-shadow: 0 14px 28px rgba(5, 9, 19, 0.26);
+  --theme-button-primary-border: rgba(255, 255, 255, 0.12);
+  --theme-button-primary-text: #fff;
+  --theme-button-ghost-hover-background: rgba(255, 255, 255, 0.06);
+  --theme-badge-background: rgba(255, 255, 255, 0.06);
+  --theme-badge-accent-text: #ffd6e4;
+  --theme-badge-success-text: #9ff0d0;
+  --theme-badge-warning-text: #ffd29a;
+  --theme-badge-error-text: #ffc0cf;
+
+  --theme-app-shell-background:
+    radial-gradient(circle at 0% 0%, rgba(139, 124, 255, 0.14), transparent 26%),
+    radial-gradient(circle at 100% 0%, rgba(255, 79, 135, 0.14), transparent 24%),
+    linear-gradient(180deg, var(--color-background) 0%, #050814 100%);
+  --theme-app-shell-overlay:
+    radial-gradient(circle at 14% 18%, rgba(255, 79, 135, 0.12), transparent 22%),
+    radial-gradient(circle at 82% 0%, rgba(139, 124, 255, 0.13), transparent 26%);
+  --theme-app-shell-header-background: linear-gradient(180deg, rgba(7, 11, 24, 0.92), rgba(7, 11, 24, 0.74) 72%, transparent);
+  --theme-app-shell-header-rule:
+    linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--color-border) 78%, white 6%) 14%,
+      color-mix(in srgb, var(--color-border) 78%, white 6%) 86%,
+      transparent
+    );
+  --theme-app-shell-frame-background: rgba(16, 22, 43, 0.6);
+  --theme-app-shell-frame-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 30px rgba(3, 7, 18, 0.18);
+  --theme-app-shell-link-hover-background: rgba(255, 255, 255, 0.06);
+  --theme-app-shell-link-hover-border: rgba(255, 255, 255, 0.06);
+  --theme-app-shell-link-active-background: linear-gradient(135deg, rgba(255, 79, 135, 0.22), rgba(139, 124, 255, 0.22));
+  --theme-app-shell-link-active-border: rgba(255, 255, 255, 0.1);
+  --theme-app-shell-link-active-color: #fff;
+  --theme-app-shell-link-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --theme-brand-mark-background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.2), transparent 42%),
+    linear-gradient(135deg, rgba(255, 79, 135, 0.92), rgba(139, 124, 255, 0.86));
+  --theme-brand-mark-border: rgba(255, 255, 255, 0.14);
+
+  --theme-control-label-color: rgba(229, 233, 255, 0.7);
+  --theme-control-background: rgba(13, 19, 40, 0.62);
+  --theme-control-border: rgba(255, 255, 255, 0.12);
+  --theme-control-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 24px rgba(3, 7, 18, 0.16);
+  --theme-control-button-color: var(--color-text-secondary);
+  --theme-control-button-hover-background: rgba(255, 255, 255, 0.06);
+  --theme-control-button-active-background: linear-gradient(135deg, rgba(255, 79, 135, 0.22), rgba(139, 124, 255, 0.22));
+  --theme-control-button-active-border: rgba(255, 255, 255, 0.12);
+  --theme-control-button-active-color: #fff;
+  --theme-control-button-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  --theme-message-rail-background: rgba(255, 255, 255, 0.08);
+  --theme-message-neutral-background: linear-gradient(180deg, rgba(27, 34, 60, 0.86), rgba(18, 24, 46, 0.92));
+  --theme-message-error-background: linear-gradient(180deg, rgba(66, 21, 38, 0.9), rgba(40, 15, 24, 0.94));
+  --theme-message-warning-background: linear-gradient(180deg, rgba(69, 41, 14, 0.9), rgba(41, 26, 11, 0.94));
+  --theme-message-info-background: linear-gradient(180deg, rgba(20, 39, 76, 0.9), rgba(13, 25, 52, 0.94));
+
+  --theme-login-tabs-background: rgba(255, 255, 255, 0.05);
+  --theme-login-tab-active-background: color-mix(in srgb, var(--color-surface-strong) 88%, white 4%);
+  --theme-login-tab-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  --theme-swipe-background:
+    radial-gradient(circle at top center, rgba(124, 92, 252, 0.26), transparent 34%),
+    radial-gradient(circle at bottom center, rgba(236, 72, 153, 0.18), transparent 36%),
+    linear-gradient(180deg, #0f1630 0%, #0a1024 100%);
+  --theme-swipe-overlay:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 28%);
+  --theme-swipe-text: #f8f7ff;
+  --theme-swipe-title-color: #fff;
+  --theme-swipe-muted-text: rgba(236, 239, 255, 0.78);
+  --theme-swipe-eyebrow-color: #ffb4b8;
+  --theme-swipe-action-background: rgba(255, 255, 255, 0.08);
+  --theme-swipe-action-background-ghost: rgba(255, 255, 255, 0.04);
+  --theme-swipe-action-border: rgba(255, 255, 255, 0.12);
+  --theme-swipe-panel-background: rgba(10, 16, 36, 0.76);
+  --theme-swipe-panel-border: rgba(255, 255, 255, 0.1);
+  --theme-swipe-panel-strong-border: rgba(255, 255, 255, 0.12);
+  --theme-swipe-panel-soft-background: rgba(255, 255, 255, 0.05);
+  --theme-swipe-panel-pill-background: rgba(255, 255, 255, 0.08);
+  --theme-swipe-panel-pill-color: #fff;
+  --theme-swipe-panel-soft-text: rgba(236, 239, 255, 0.62);
+  --theme-swipe-panel-emphasis-text: #fff;
+  --theme-swipe-panel-copy-text: rgba(236, 239, 255, 0.72);
+  --theme-swipe-message-warning-background: rgba(68, 42, 9, 0.74);
+  --theme-swipe-message-error-background: rgba(74, 20, 33, 0.78);
+  --theme-swipe-message-info-background: rgba(17, 31, 67, 0.76);
+  --theme-swipe-intent-background: rgba(15, 23, 42, 0.82);
+  --theme-swipe-intent-text: #fff;
+  --theme-swipe-cover-fallback-text: rgba(255, 255, 255, 0.9);
+  --theme-swipe-cover-fallback-overlay:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.2), transparent 40%),
+    radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.14), transparent 32%);
+  --theme-swipe-cover-overlay:
+    linear-gradient(
+      180deg,
+      rgba(15, 23, 42, 0.12) 0%,
+      rgba(15, 23, 42, 0.05) 25%,
+      rgba(15, 23, 42, 0.82) 100%
+    );
+  --theme-swipe-type-pill-background: rgba(255, 255, 255, 0.12);
+  --theme-swipe-type-pill-border: rgba(255, 255, 255, 0.18);
+  --theme-swipe-type-pill-text: #fff;
+  --theme-swipe-score-background: rgba(15, 23, 42, 0.72);
+  --theme-swipe-score-success-background: color-mix(in srgb, var(--color-success) 42%, rgba(15, 23, 42, 0.72));
+  --theme-swipe-score-accent-background: color-mix(in srgb, var(--color-accent) 38%, rgba(15, 23, 42, 0.72));
+  --theme-swipe-score-caption: rgba(255, 255, 255, 0.84);
+  --theme-swipe-drag-shadow: 0 24px 54px rgba(15, 23, 42, 0.2);
+  --theme-swipe-sticky-shadow: 0 16px 34px rgba(4, 10, 24, 0.34);
+  --theme-swipe-skip-button-background: rgba(255, 182, 193, 0.1);
+  --theme-swipe-skip-button-border: rgba(255, 182, 193, 0.22);
+  --theme-swipe-skip-button-text: #ffb4b8;
+  --theme-swipe-details-button-background: rgba(190, 196, 255, 0.1);
+  --theme-swipe-details-button-border: rgba(190, 196, 255, 0.22);
+  --theme-swipe-details-button-text: #c7c5ff;
+  --theme-swipe-like-button-background: linear-gradient(180deg, rgba(255, 74, 124, 0.92), rgba(229, 49, 98, 0.92));
+  --theme-swipe-like-button-border: rgba(255, 255, 255, 0.18);
+  --theme-swipe-like-button-shadow: 0 12px 24px rgba(229, 49, 98, 0.24);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 2rem;
+  --space-8: 2.5rem;
+  --space-9: 3rem;
+  --space-10: 4rem;
+
+  --page-max-width: 1200px;
+  --page-padding: clamp(1rem, 3vw, 2rem);
+  --content-gap: clamp(1rem, 2.4vw, 1.6rem);
+  --shell-sticky-offset: 8.75rem;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --color-background: #fdf7f2;
+  --color-background-alt: #f4e8e1;
+  --color-surface: rgba(255, 250, 246, 0.84);
+  --color-surface-strong: rgba(255, 247, 240, 0.96);
+  --color-surface-secondary: rgba(247, 236, 229, 0.78);
+  --color-surface-muted: rgba(116, 81, 62, 0.1);
+  --color-surface-overlay: rgba(248, 239, 232, 0.82);
+
+  --color-border: rgba(109, 78, 60, 0.12);
+  --color-border-strong: rgba(109, 78, 60, 0.22);
+
+  --color-text-primary: #271826;
+  --color-text-secondary: rgba(58, 42, 53, 0.78);
+  --color-text-muted: rgba(92, 72, 83, 0.62);
+
+  --shadow-card:
+    0 24px 60px rgba(125, 87, 70, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --shadow-card-hover:
+    0 30px 72px rgba(125, 87, 70, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  --shadow-accent: 0 18px 36px rgba(255, 47, 117, 0.18);
+  --shadow-shell: 0 24px 70px rgba(152, 118, 101, 0.16);
+  --shadow-swipe-card: 0 24px 56px rgba(121, 94, 80, 0.16);
+
+  --theme-html-background:
+    radial-gradient(circle at top left, rgba(255, 79, 135, 0.14), transparent 26%),
+    radial-gradient(circle at top right, rgba(139, 124, 255, 0.12), transparent 24%),
+    linear-gradient(180deg, #fffaf6 0%, #f7eee8 56%, #f0e3de 100%);
+  --theme-selection-background: rgba(255, 79, 135, 0.18);
+  --theme-selection-text: #2b1a27;
+  --theme-option-background: #fff7f2;
+  --theme-input-background: linear-gradient(180deg, rgba(255, 252, 248, 0.96), rgba(248, 239, 232, 0.98));
+  --theme-input-disabled-background: linear-gradient(180deg, rgba(249, 242, 237, 0.92), rgba(243, 233, 225, 0.96));
+  --theme-card-background: linear-gradient(180deg, rgba(255, 251, 247, 0.9) 0%, rgba(248, 240, 234, 0.96) 100%);
+  --theme-card-highlight: linear-gradient(180deg, rgba(255, 255, 255, 0.64), transparent 34%);
+  --theme-eyebrow-color: #b54873;
+  --theme-button-hover-shadow: 0 14px 28px rgba(125, 87, 70, 0.14);
+  --theme-button-primary-border: rgba(255, 255, 255, 0.16);
+  --theme-button-primary-text: #fff;
+  --theme-button-ghost-hover-background: rgba(88, 64, 77, 0.06);
+  --theme-badge-background: rgba(97, 73, 66, 0.06);
+  --theme-badge-accent-text: #a63a69;
+  --theme-badge-success-text: #187455;
+  --theme-badge-warning-text: #925723;
+  --theme-badge-error-text: #a24962;
+
+  --theme-app-shell-background:
+    radial-gradient(circle at 0% 0%, rgba(139, 124, 255, 0.16), transparent 28%),
+    radial-gradient(circle at 100% 0%, rgba(255, 79, 135, 0.14), transparent 26%),
+    linear-gradient(180deg, #fffaf5 0%, #f4ebe5 100%);
+  --theme-app-shell-overlay:
+    radial-gradient(circle at 14% 18%, rgba(255, 79, 135, 0.1), transparent 22%),
+    radial-gradient(circle at 82% 0%, rgba(139, 124, 255, 0.11), transparent 26%);
+  --theme-app-shell-header-background: linear-gradient(180deg, rgba(252, 245, 239, 0.96), rgba(252, 245, 239, 0.8) 72%, transparent);
+  --theme-app-shell-header-rule:
+    linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--color-border) 88%, white 24%) 14%,
+      color-mix(in srgb, var(--color-border) 88%, white 24%) 86%,
+      transparent
+    );
+  --theme-app-shell-frame-background: rgba(255, 248, 242, 0.76);
+  --theme-app-shell-frame-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.64),
+    0 12px 30px rgba(128, 98, 84, 0.12);
+  --theme-app-shell-link-hover-background: rgba(88, 64, 77, 0.06);
+  --theme-app-shell-link-hover-border: rgba(88, 64, 77, 0.08);
+  --theme-app-shell-link-active-background: linear-gradient(135deg, rgba(255, 79, 135, 0.16), rgba(139, 124, 255, 0.18));
+  --theme-app-shell-link-active-border: rgba(120, 89, 108, 0.14);
+  --theme-app-shell-link-active-color: var(--color-text-primary);
+  --theme-app-shell-link-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  --theme-brand-mark-border: rgba(255, 255, 255, 0.38);
+
+  --theme-control-label-color: rgba(71, 50, 63, 0.68);
+  --theme-control-background: rgba(255, 248, 242, 0.86);
+  --theme-control-border: rgba(109, 78, 60, 0.12);
+  --theme-control-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 10px 24px rgba(128, 98, 84, 0.12);
+  --theme-control-button-color: rgba(71, 50, 63, 0.74);
+  --theme-control-button-hover-background: rgba(88, 64, 77, 0.06);
+  --theme-control-button-active-background: linear-gradient(135deg, rgba(255, 79, 135, 0.18), rgba(139, 124, 255, 0.2));
+  --theme-control-button-active-border: rgba(120, 89, 108, 0.14);
+  --theme-control-button-active-color: var(--color-text-primary);
+  --theme-control-button-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+
+  --theme-message-rail-background: rgba(103, 76, 66, 0.12);
+  --theme-message-neutral-background: linear-gradient(180deg, rgba(255, 250, 245, 0.96), rgba(248, 240, 234, 0.98));
+  --theme-message-error-background: linear-gradient(180deg, rgba(255, 236, 240, 0.96), rgba(252, 226, 232, 0.98));
+  --theme-message-warning-background: linear-gradient(180deg, rgba(255, 244, 229, 0.96), rgba(253, 236, 214, 0.98));
+  --theme-message-info-background: linear-gradient(180deg, rgba(240, 245, 255, 0.96), rgba(232, 240, 255, 0.98));
+
+  --theme-login-tabs-background: rgba(255, 255, 255, 0.42);
+  --theme-login-tab-active-background: color-mix(in srgb, var(--color-surface-strong) 92%, white 14%);
+  --theme-login-tab-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+
+  --theme-swipe-background:
+    radial-gradient(circle at top center, rgba(139, 124, 255, 0.14), transparent 34%),
+    radial-gradient(circle at bottom center, rgba(255, 79, 135, 0.12), transparent 36%),
+    linear-gradient(180deg, rgba(255, 250, 245, 0.98) 0%, rgba(248, 239, 232, 0.98) 100%);
+  --theme-swipe-overlay:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.24), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 28%);
+  --theme-swipe-text: var(--color-text-primary);
+  --theme-swipe-title-color: var(--color-text-primary);
+  --theme-swipe-muted-text: rgba(64, 46, 58, 0.74);
+  --theme-swipe-eyebrow-color: #b54873;
+  --theme-swipe-action-background: rgba(255, 255, 255, 0.54);
+  --theme-swipe-action-background-ghost: rgba(255, 255, 255, 0.34);
+  --theme-swipe-action-border: rgba(109, 78, 60, 0.12);
+  --theme-swipe-panel-background: rgba(255, 248, 241, 0.76);
+  --theme-swipe-panel-border: rgba(109, 78, 60, 0.1);
+  --theme-swipe-panel-strong-border: rgba(109, 78, 60, 0.14);
+  --theme-swipe-panel-soft-background: rgba(255, 255, 255, 0.48);
+  --theme-swipe-panel-pill-background: rgba(255, 255, 255, 0.7);
+  --theme-swipe-panel-pill-color: var(--color-text-primary);
+  --theme-swipe-panel-soft-text: rgba(81, 62, 74, 0.62);
+  --theme-swipe-panel-emphasis-text: var(--color-text-primary);
+  --theme-swipe-panel-copy-text: rgba(64, 46, 58, 0.72);
+  --theme-swipe-message-warning-background: rgba(255, 239, 217, 0.88);
+  --theme-swipe-message-error-background: rgba(255, 230, 236, 0.9);
+  --theme-swipe-message-info-background: rgba(238, 243, 255, 0.9);
+  --theme-swipe-drag-shadow: 0 24px 54px rgba(128, 98, 84, 0.18);
+  --theme-swipe-sticky-shadow: 0 16px 34px rgba(128, 98, 84, 0.2);
+  --theme-swipe-skip-button-background: rgba(255, 110, 152, 0.11);
+  --theme-swipe-skip-button-border: rgba(255, 110, 152, 0.22);
+  --theme-swipe-skip-button-text: #b54873;
+  --theme-swipe-details-button-background: rgba(139, 124, 255, 0.1);
+  --theme-swipe-details-button-border: rgba(139, 124, 255, 0.22);
+  --theme-swipe-details-button-text: #6b59dc;
+  --theme-swipe-like-button-border: rgba(255, 255, 255, 0.24);
+  --theme-swipe-like-button-shadow: 0 12px 24px rgba(229, 49, 98, 0.22);
 }

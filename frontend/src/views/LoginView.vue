@@ -219,8 +219,8 @@ async function handleRegister() {
 .login-view__panel {
   display: grid;
   gap: 1.25rem;
-  max-width: 36rem;
-  padding: 1.25rem;
+  width: min(100%, 38rem);
+  padding: clamp(1.1rem, 2.6vw, 1.4rem);
 }
 
 .login-view__tabs {
@@ -228,7 +228,7 @@ async function handleRegister() {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
   padding: 0.25rem;
-  background: var(--color-surface-secondary);
+  background: var(--theme-login-tabs-background);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
@@ -243,9 +243,9 @@ async function handleRegister() {
 }
 
 .login-view__tab--active {
-  background: var(--color-surface);
+  background: var(--theme-login-tab-active-background);
   color: var(--color-text-primary);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--theme-login-tab-active-shadow);
 }
 
 .login-view__form {
@@ -254,12 +254,7 @@ async function handleRegister() {
 }
 
 .login-view__input {
-  width: 100%;
-  min-height: 2.75rem;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
+  background: var(--theme-input-background);
 }
 
 .login-view__input:focus {
@@ -268,6 +263,13 @@ async function handleRegister() {
 }
 
 .login-view__submit {
-  justify-self: start;
+  justify-self: stretch;
+}
+
+@media (min-width: 640px) {
+  .login-view__submit {
+    width: auto;
+    justify-self: start;
+  }
 }
 </style>
