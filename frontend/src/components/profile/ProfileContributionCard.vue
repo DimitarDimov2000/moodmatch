@@ -27,11 +27,14 @@ defineProps<{
           {{ commitmentLevelLabels[contribution.media.commitmentLevel] }} ·
           Bewertung {{ contribution.media.rating ?? 'keine' }}
         </p>
+        <p class="profile-contribution-card__copy">
+          Dieses Medium staerkt dein Profil ueber die unten sichtbaren Tags.
+        </p>
       </div>
 
       <div class="profile-contribution-card__stats">
-        <span>Rating {{ formatDecimal(contribution.ratingWeight) ?? contribution.ratingWeight }}</span>
-        <span>Favorit {{ formatDecimal(contribution.favouriteFactor) ?? contribution.favouriteFactor }}</span>
+        <span>Bewertungssignal {{ formatDecimal(contribution.ratingWeight) ?? contribution.ratingWeight }}</span>
+        <span>Favoriten-Bonus {{ formatDecimal(contribution.favouriteFactor) ?? contribution.favouriteFactor }}</span>
       </div>
     </div>
 
@@ -57,7 +60,7 @@ defineProps<{
 .profile-contribution-card {
   display: grid;
   gap: 1rem;
-  padding: 1.5rem;
+  padding: clamp(1.15rem, 2.8vw, 1.5rem);
 }
 
 .profile-contribution-card__header {
@@ -68,7 +71,8 @@ defineProps<{
 }
 
 .profile-contribution-card__title,
-.profile-contribution-card__meta {
+.profile-contribution-card__meta,
+.profile-contribution-card__copy {
   margin: 0;
 }
 
@@ -78,6 +82,11 @@ defineProps<{
 }
 
 .profile-contribution-card__meta {
+  color: var(--color-text-secondary);
+}
+
+.profile-contribution-card__copy {
+  margin-top: 0.6rem;
   color: var(--color-text-secondary);
 }
 

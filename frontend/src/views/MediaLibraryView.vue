@@ -18,6 +18,7 @@ const errorMessage = ref('');
 const consumedCount = computed(
   () => mediaItems.value.filter((item) => item.consumptionStatus === 'CONSUMED').length,
 );
+const taggedCount = computed(() => mediaItems.value.filter((item) => item.tags.length > 0).length);
 
 onMounted(async () => {
   await loadPageData();
@@ -55,11 +56,12 @@ function toUserMessage(error: unknown): string {
           Media Library
         </p>
         <h1 class="page-title">
-          Lokale Medien verwalten
+          Deine Mediathek
         </h1>
         <p class="page-copy">
           Deine lokale Sammlung ist die Grundlage fuer Profilbildung und spaeteres Matching.
-          Favoriten bleiben dabei ein eigenes Signal und bedeuten nicht Merken oder Zur Liste.
+          Hier pflegst du konsumierte Medien, Kandidaten und die Tags, die sie fuer dein Profil
+          aussagekraeftig machen.
         </p>
       </div>
 
@@ -73,34 +75,40 @@ function toUserMessage(error: unknown): string {
       </div>
     </header>
 
-    <section class="media-library__summary">
-      <article class="page-card media-library__summary-card">
+    <section class="overview-stats">
+      <article class="page-card overview-stat-card">
         <p class="eyebrow">
           Sammlung
         </p>
-        <h2>{{ mediaItems.length }}</h2>
-        <p class="body-muted">
+        <p class="overview-stat-card__value">
+          {{ mediaItems.length }}
+        </p>
+        <p class="overview-stat-card__copy">
           Medien insgesamt
         </p>
       </article>
 
-      <article class="page-card media-library__summary-card">
+      <article class="page-card overview-stat-card overview-stat-card--success">
         <p class="eyebrow">
           Konsumiert
         </p>
-        <h2>{{ consumedCount }}</h2>
-        <p class="body-muted">
-          Grundlage fuer Favoriten und Profilsignale
+        <p class="overview-stat-card__value">
+          {{ consumedCount }}
+        </p>
+        <p class="overview-stat-card__copy">
+          Grundlage fuer Profil und Favoriten
         </p>
       </article>
 
-      <article class="page-card media-library__summary-card">
+      <article class="page-card overview-stat-card overview-stat-card--info">
         <p class="eyebrow">
-          Tags
+          Tag-Basis
         </p>
-        <h2>{{ tags.length }}</h2>
-        <p class="body-muted">
-          Ueber die Tag API geladen
+        <p class="overview-stat-card__value">
+          {{ taggedCount }}
+        </p>
+        <p class="overview-stat-card__copy">
+          Medien mit bestaetigten Tags
         </p>
       </article>
     </section>
@@ -134,12 +142,26 @@ function toUserMessage(error: unknown): string {
       class="media-library__layout"
     >
       <section class="media-library__content">
+        <div class="section-header">
+          <div class="section-header__copy">
+            <p class="eyebrow">
+              Sammlung
+            </p>
+            <h2 class="section-title">
+              Angelegte Medien
+            </h2>
+            <p class="body-muted">
+              Karten zeigen Status, Herkunft, Tags und den schnellsten Weg zu Details.
+            </p>
+          </div>
+        </div>
+
         <AppMessage
           v-if="mediaItems.length === 0"
           title="Noch keine Medien angelegt"
-          description="Lege zuerst konsumierte Medien oder Kandidaten an, damit MoodMatch spaeter sinnvoll vergleichen kann."
+          description="Lege zuerst konsumierte Medien oder Kandidaten an, damit MoodMatch Profil, Sammlung und spaetere Vergleiche sinnvoll aufbauen kann."
         >
-          <div class="media-library__message-actions">
+          <div class="state-actions">
             <RouterLink
               :to="{ name: 'media-create' }"
               class="button button--primary"
@@ -164,28 +186,13 @@ function toUserMessage(error: unknown): string {
       <TagCategoryList
         class="media-library__tags"
         :tags="tags"
-        title="Verfuegbare Tags"
+        title="Tag-Kompass"
       />
     </div>
   </section>
 </template>
 
 <style scoped>
-.media-library__summary {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.media-library__summary-card {
-  padding: 1.25rem;
-}
-
-.media-library__summary-card h2,
-.media-library__summary-card p {
-  margin: 0.35rem 0 0;
-}
-
 .media-library__layout {
   display: grid;
   gap: 1.5rem;
@@ -209,10 +216,6 @@ function toUserMessage(error: unknown): string {
 }
 
 @media (max-width: 980px) {
-  .media-library__summary {
-    grid-template-columns: 1fr;
-  }
-
   .media-library__layout {
     grid-template-columns: 1fr;
   }

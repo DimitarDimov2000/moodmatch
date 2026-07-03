@@ -41,54 +41,115 @@ const meaningfulMatchCount = computed(
     matching.value?.matches.filter((item) => item.relativeScore !== null)
       .length ?? 0,
 );
+const mediaCount = computed(() => media.value?.length ?? 0);
+const candidateCount = computed(
+  () => candidateSelection.value?.candidates.length ?? 0,
+);
 const bestMatch = computed<MatchResultResponse | null>(
   () => matching.value?.matches[0] ?? null,
 );
 
 const heroTitle = computed(() => {
-  if (
-    (media.value?.length ?? 0) === 0 &&
-    (candidateSelection.value?.candidates.length ?? 0) === 0
-  ) {
-    return "Lege zuerst konsumierte Medien oder Kandidaten an.";
+  if (mediaCount.value === 0 && candidateCount.value === 0) {
+    return "Willkommen in deinem MoodMatch-Ueberblick.";
   }
 
   if (profile.value && !profile.value.isReadyForMatching) {
-    return "Dein Profil braucht noch mehr bewertete Medien.";
+    return "Dein Profil ist fast bereit fuer aussagekraeftige Matches.";
   }
 
   if (matching.value?.scoresSuppressed) {
-    return "Matches sind da, aber noch nicht sauber vergleichbar.";
+    return "Deine Kandidatenliste steht, die Vergleichsbasis waechst noch.";
   }
 
   if (bestMatch.value?.relativeScore !== null) {
     return `${bestMatch.value?.candidate.media.title} fuehrt aktuell deine Matches an.`;
   }
 
-  return "Dein lokales MoodMatch-Dashboard zeigt den Stand von Profil, Kandidaten und Matches.";
+  return "Dein Home-Bereich zeigt Sammlung, Profil und Empfehlungen auf einen Blick.";
 });
 
 const heroCopy = computed(() => {
-  if (
-    (media.value?.length ?? 0) === 0 &&
-    (candidateSelection.value?.candidates.length ?? 0) === 0
-  ) {
-    return "Sobald du konsumierte Medien oder Kandidaten anlegst, erscheinen hier direkte Einstiege in Profil, Match-Vergleich und Medienpflege.";
+  if (mediaCount.value === 0 && candidateCount.value === 0) {
+    return "Sobald du erste Medien oder Wunschkandidaten anlegst, fuehrt dich dieser Bereich direkt zu Profilaufbau, Sammlung und Match-Vergleich.";
   }
 
   if (profile.value && !profile.value.isReadyForMatching) {
-    return profile.value.explanationMessage;
+    return `${profile.value.explanationMessage} Konzentriere dich jetzt auf konsumierte Medien mit Bewertung und bestaetigten Tags.`;
   }
 
   if (matching.value?.scoresSuppressed) {
-    return matching.value.explanationMessage;
+    return `${matching.value.explanationMessage} Ohne genug Vergleichsdaten bleibt MoodMatch bewusst vorsichtig.`;
   }
 
   if (bestMatch.value?.relativeScore !== null) {
-    return "Die Prozentangabe bleibt bewusst relativ und erscheint nur, wenn das Backend genug vergleichbare Kandidaten erkennt.";
+    return "Die Prozentzahl ist bewusst relativ und erscheint nur dann, wenn mehrere Kandidaten sinnvoll miteinander verglichen werden koennen.";
   }
 
-  return "Alle vier Bereiche werden ausschliesslich aus bestehenden Frontend-API-Aufrufen zusammengesetzt, ohne eigenes Dashboard-Backend.";
+  return "Nutze diesen Bereich, um schnell zu sehen, wo dein Profil steht und welcher naechste Schritt gerade am meisten bringt.";
+});
+
+const nextAction = computed(() => {
+  if (mediaCount.value === 0) {
+    return {
+      title: "Erstes Medium anlegen",
+      copy: "Lege ein konsumiertes Medium oder einen Wunschkandidaten an, damit Sammlung, Profil und spaetere Matches sichtbar werden.",
+      to: { name: "media-create" as const },
+      label: "Medium anlegen",
+    };
+  }
+
+  if (profile.value && !profile.value.isReadyForMatching) {
+    return {
+      title: "Profil weiter fuellen",
+      copy: "Bewerte weitere konsumierte Medien und bestaetige Tags, damit aus einzelnen Eindruecken ein belastbares Geschmacksprofil wird.",
+      to: { name: "profile" as const },
+      label: "Profil ansehen",
+    };
+  }
+
+  if (candidateCount.value === 0) {
+    return {
+      title: "Kandidaten sammeln",
+      copy: "Sobald du Wunschkandidaten hinterlegst, kann MoodMatch sie mit deinem Profil vergleichen und spaeter priorisieren.",
+      to: { name: "media-create" as const },
+      label: "Kandidat anlegen",
+    };
+  }
+
+  return {
+    title: "Matches vergleichen",
+    copy: "Dein Profil ist bereit. Vergleiche jetzt die staerksten Vorschlaege und sieh dir an, warum einzelne Titel gut zu dir passen.",
+    to: { name: "matches" as const },
+    label: "Zu den Matches",
+  };
+});
+
+const focusCard = computed(() => {
+  if (bestMatch.value) {
+    return {
+      title: bestMatch.value.candidate.media.title,
+      copy: bestMatch.value.explanationMessage,
+      to: { name: "matches" as const },
+      label: "Match lesen",
+    };
+  }
+
+  if (candidateCount.value > 0) {
+    return {
+      title: "Kandidaten warten auf Vergleich",
+      copy: "Deine Liste ist vorhanden. Sobald Profil und Tag-Basis stark genug sind, werden hier klare Favoriten sichtbar.",
+      to: { name: "candidates" as const },
+      label: "Kandidaten ansehen",
+    };
+  }
+
+  return {
+    title: "Noch kein Match-Favorit",
+    copy: "Mit mehr Profilsignalen und Kandidaten zeigt dir dieser Bereich spaeter den aktuell vielversprechendsten Vorschlag.",
+    to: { name: "candidates" as const },
+    label: "Zur Kandidatenliste",
+  };
 });
 
 onMounted(async () => {
@@ -169,6 +230,24 @@ function toUserMessage(error: unknown, fallback: string): string {
         <p class="page-copy">
           {{ heroCopy }}
         </p>
+
+        <div class="dashboard__hero-badges">
+          <span class="badge">
+            {{ mediaCount }} Medien
+          </span>
+          <span
+            class="badge"
+            :class="profile?.isReadyForMatching ? 'badge--success' : 'badge--warning'"
+          >
+            {{ profile?.isReadyForMatching ? 'Profil bereit' : 'Profil im Aufbau' }}
+          </span>
+          <span
+            class="badge"
+            :class="meaningfulMatchCount > 0 ? 'badge--accent' : ''"
+          >
+            {{ meaningfulMatchCount }} aussagekraeftige Matches
+          </span>
+        </div>
       </div>
 
       <div class="dashboard__hero-actions">
@@ -212,107 +291,168 @@ function toUserMessage(error: unknown, fallback: string): string {
         </div>
       </AppMessage>
 
-      <section class="dashboard__grid">
-        <DashboardSummaryCard
-          eyebrow="Medien"
-          :value="String(media?.length ?? '–')"
-          title="Lokale Mediensammlung"
-          :description="
-            media
-              ? `${consumedCount} konsumiert, ${media.length - consumedCount} weitere Eintraege mit lokal bestaetigten Daten.`
-              : 'Medien konnten in dieser Uebersicht nicht geladen werden.'
-          "
-          :link-to="{ name: 'media-list' }"
-          link-label="Zur Sammlung"
-          tone="info"
-        />
+      <section class="page-section">
+        <div class="section-header">
+          <div class="section-header__copy">
+            <p class="eyebrow">
+              Uebersicht
+            </p>
+            <h2 class="section-title">
+              Wo dein MoodMatch gerade steht
+            </h2>
+            <p class="body-muted">
+              Jede Karte zeigt dir einen Bereich, den du als Naechstes vertiefen kannst.
+            </p>
+          </div>
+        </div>
 
-        <DashboardSummaryCard
-          eyebrow="Profil"
-          :value="
-            profile
-              ? `${profile.profileRelevantMediaCount}/${profile.requiredProfileRelevantMediaCount}`
-              : '–'
-          "
-          title="Matching-Basis"
-          :description="
-            profile
-              ? `${profile.isReadyForMatching ? 'Bereit fuer Vergleiche.' : 'Noch nicht bereit.'} ${profileTagCount} gewichtete Tags sind aktuell sichtbar.`
-              : 'Das Interessenprofil konnte in dieser Uebersicht nicht geladen werden.'
-          "
-          :link-to="{ name: 'profile' }"
-          link-label="Profil ansehen"
-          :tone="profile?.isReadyForMatching ? 'success' : 'warning'"
-        />
+        <div class="dashboard__grid">
+          <DashboardSummaryCard
+            eyebrow="Medien"
+            :value="String(media?.length ?? '–')"
+            title="Lokale Mediensammlung"
+            :description="
+              media
+                ? `${consumedCount} konsumiert, ${media.length - consumedCount} weitere Eintraege in deiner Sammlung.`
+                : 'Medien konnten in dieser Uebersicht nicht geladen werden.'
+            "
+            :link-to="{ name: 'media-list' }"
+            link-label="Zur Sammlung"
+            tone="info"
+          />
 
-        <DashboardSummaryCard
-          eyebrow="Kandidaten"
-          :value="String(candidateSelection?.candidates.length ?? '–')"
-          title="Vorschlaege fuer spaeter"
-          :description="
-            candidateSelection
-              ? `${candidateReadyCount} matching-bereit, ${candidateSelection.candidates.length - candidateReadyCount} noch ohne vollstaendige Tag-Basis.`
-              : 'Die Kandidaten konnten in dieser Uebersicht nicht geladen werden.'
-          "
-          :link-to="{ name: 'candidates' }"
-          link-label="Kandidaten pruefen"
-          tone="default"
-        />
+          <DashboardSummaryCard
+            eyebrow="Profil"
+            :value="
+              profile
+                ? `${profile.profileRelevantMediaCount}/${profile.requiredProfileRelevantMediaCount}`
+                : '–'
+            "
+            title="Matching-Basis"
+            :description="
+              profile
+                ? `${profile.isReadyForMatching ? 'Bereit fuer Vergleiche.' : 'Noch nicht bereit.'} ${profileTagCount} sichtbare Schwerpunkt-Tags.`
+                : 'Das Interessenprofil konnte in dieser Uebersicht nicht geladen werden.'
+            "
+            :link-to="{ name: 'profile' }"
+            link-label="Profil ansehen"
+            :tone="profile?.isReadyForMatching ? 'success' : 'warning'"
+          />
 
-        <DashboardSummaryCard
-          eyebrow="Matches"
-          :value="String(matching?.matches.length ?? '–')"
-          title="Erklaerbare Vergleiche"
-          :description="
-            matching
-              ? `${meaningfulMatchCount} mit Prozentangabe. ${matching.scoresSuppressed ? 'Scores sind derzeit noch unterdrueckt.' : 'Keine neue Backend-Logik noetig.'}`
-              : 'Die Match-Ergebnisse konnten in dieser Uebersicht nicht geladen werden.'
-          "
-          :link-to="{ name: 'matches' }"
-          link-label="Matches lesen"
-          :tone="matching?.scoresSuppressed ? 'warning' : 'success'"
-        />
+          <DashboardSummaryCard
+            eyebrow="Kandidaten"
+            :value="String(candidateSelection?.candidates.length ?? '–')"
+            title="Vorschlaege fuer spaeter"
+            :description="
+              candidateSelection
+                ? `${candidateReadyCount} vergleichsbereit, ${candidateSelection.candidates.length - candidateReadyCount} brauchen noch mehr erwartete Tags.`
+                : 'Die Kandidaten konnten in dieser Uebersicht nicht geladen werden.'
+            "
+            :link-to="{ name: 'candidates' }"
+            link-label="Kandidaten pruefen"
+            tone="default"
+          />
+
+          <DashboardSummaryCard
+            eyebrow="Matches"
+            :value="String(matching?.matches.length ?? '–')"
+            title="Erklaerbare Vergleiche"
+            :description="
+              matching
+                ? `${meaningfulMatchCount} mit Prozentangabe. ${matching.scoresSuppressed ? 'Scores warten noch auf mehr Vergleichsdaten.' : 'Begruendungen und Prozentwerte sind bereit.'}`
+                : 'Die Match-Ergebnisse konnten in dieser Uebersicht nicht geladen werden.'
+            "
+            :link-to="{ name: 'matches' }"
+            link-label="Matches lesen"
+            :tone="matching?.scoresSuppressed ? 'warning' : 'success'"
+          />
+        </div>
       </section>
 
-      <section class="dashboard__detail-grid">
-        <article class="page-card dashboard__detail-card">
-          <p class="eyebrow">
-            Naechster sinnvoller Schritt
-          </p>
-          <h2 class="section-title">
-            {{
-              profile?.isReadyForMatching
-                ? "Match-Karten vergleichen"
-                : "Profil weiter fuellen"
-            }}
-          </h2>
-          <p class="body-muted">
-            {{
-              profile?.isReadyForMatching
-                ? "Die Match-Ansicht zeigt dir jetzt Ueberschneidungen, unvollstaendige Kandidaten und bewusste No-Score-Faelle nebeneinander."
-                : "Fuer aussagekraeftige Prozentwerte brauchst du mindestens drei konsumierte Medien mit Bewertung ab 4 und bestaetigten Tags."
-            }}
-          </p>
-        </article>
+      <section class="page-section">
+        <div class="section-header">
+          <div class="section-header__copy">
+            <p class="eyebrow">
+              Naechste Schritte
+            </p>
+            <h2 class="section-title">
+              Fokus fuer diese Session
+            </h2>
+            <p class="body-muted">
+              Die wichtigsten Aktionen bleiben direkt erreichbar, ohne neue Datenanforderungen zu erzeugen.
+            </p>
+          </div>
+        </div>
 
-        <article class="page-card dashboard__detail-card">
-          <p class="eyebrow">
-            Aktueller Fokus
-          </p>
-          <h2 class="section-title">
-            {{
-              bestMatch?.candidate.media.title ??
-                "Noch kein fuehrender Match-Kandidat"
-            }}
-          </h2>
-          <p class="body-muted">
-            {{
-              bestMatch
-                ? bestMatch.explanationMessage
-                : "Sobald Kandidaten vorhanden sind, erscheint hier die aktuell bestplatzierte Match-Zusammenfassung aus dem bestehenden Match-API-Aufruf."
-            }}
-          </p>
-        </article>
+        <div class="dashboard__detail-grid">
+          <article class="page-card dashboard__detail-card">
+            <p class="eyebrow">
+              Naechster sinnvoller Schritt
+            </p>
+            <h2 class="section-title">
+              {{ nextAction.title }}
+            </h2>
+            <p class="body-muted">
+              {{ nextAction.copy }}
+            </p>
+            <RouterLink
+              :to="nextAction.to"
+              class="button button--primary"
+            >
+              {{ nextAction.label }}
+            </RouterLink>
+          </article>
+
+          <article class="page-card dashboard__detail-card">
+            <p class="eyebrow">
+              Aktueller Fokus
+            </p>
+            <h2 class="section-title">
+              {{ focusCard.title }}
+            </h2>
+            <p class="body-muted">
+              {{ focusCard.copy }}
+            </p>
+            <RouterLink
+              :to="focusCard.to"
+              class="button button--secondary"
+            >
+              {{ focusCard.label }}
+            </RouterLink>
+          </article>
+
+          <article class="page-card dashboard__detail-card">
+            <p class="eyebrow">
+              Schnellzugriff
+            </p>
+            <h2 class="section-title">
+              Direkt in die wichtigsten Bereiche
+            </h2>
+            <p class="body-muted">
+              Sammlung pflegen, Profil verstehen oder Kandidaten im Swipe-Modus einschaetzen.
+            </p>
+            <div class="dashboard__quick-actions">
+              <RouterLink
+                :to="{ name: 'media-list' }"
+                class="button button--secondary"
+              >
+                Mediathek
+              </RouterLink>
+              <RouterLink
+                :to="{ name: 'profile' }"
+                class="button button--secondary"
+              >
+                Profil
+              </RouterLink>
+              <RouterLink
+                :to="{ name: 'swipe' }"
+                class="button button--secondary"
+              >
+                Swipe
+              </RouterLink>
+            </div>
+          </article>
+        </div>
       </section>
     </template>
   </section>
@@ -341,11 +481,17 @@ function toUserMessage(error: unknown, fallback: string): string {
 
 .dashboard__hero-copy {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.65rem;
 }
 
 .dashboard__hero-copy .page-copy {
   margin: 0;
+}
+
+.dashboard__hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
 }
 
 .dashboard__hero-actions {
@@ -363,7 +509,7 @@ function toUserMessage(error: unknown, fallback: string): string {
 
 .dashboard__detail-card {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.75rem;
   padding: 1.35rem;
 }
 
@@ -371,7 +517,19 @@ function toUserMessage(error: unknown, fallback: string): string {
   margin: 0;
 }
 
+.dashboard__quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .dashboard__message-actions {
   margin-top: 1rem;
+}
+
+@media (max-width: 720px) {
+  .dashboard__quick-actions > * {
+    flex: 1 1 10rem;
+  }
 }
 </style>

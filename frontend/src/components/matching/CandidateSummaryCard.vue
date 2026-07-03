@@ -32,27 +32,68 @@ const statusLabel = computed(() =>
     ? "Matching bereit"
     : "Tags fehlen fuer Matching",
 );
+
+const helperCopy = computed(() =>
+  props.candidate.isCompleteForMatching
+    ? "Dieser Kandidat hat genug erwartete Tags fuer einen sinnvollen Vergleich."
+    : "Ergaenze erwartete Tags, damit MoodMatch diese Option sauber vergleichen kann.",
+);
 </script>
 
 <template>
   <article class="candidate-summary-card page-card">
-    <div class="candidate-summary-card__header">
-      <div>
-        <p class="eyebrow">
-          {{ title }}
-        </p>
-        <h3 class="candidate-summary-card__title">
-          {{ candidate.media.title }}
-        </h3>
+    <div class="candidate-summary-card__media">
+      <img
+        v-if="candidate.media.coverUrl"
+        :src="candidate.media.coverUrl"
+        :alt="`Cover von ${candidate.media.title}`"
+        class="candidate-summary-card__cover"
+      >
+      <div
+        v-else
+        class="candidate-summary-card__cover candidate-summary-card__cover--placeholder"
+      >
+        {{ candidate.media.title.slice(0, 1).toUpperCase() }}
+      </div>
+
+      <div class="candidate-summary-card__copy">
+        <div class="candidate-summary-card__header">
+          <div>
+            <p class="eyebrow">
+              {{ title }}
+            </p>
+            <h3 class="candidate-summary-card__title">
+              {{ candidate.media.title }}
+            </h3>
+          </div>
+
+          <span
+            class="candidate-summary-card__status"
+            :class="statusToneClass"
+          >
+            {{ statusLabel }}
+          </span>
+        </div>
+
+        <div class="candidate-summary-card__pill-row">
+          <span class="badge badge--accent">
+            {{ mediaTypeLabels[candidate.media.mediaType] }}
+          </span>
+          <span class="badge">
+            {{ consumptionStatusLabels[candidate.media.consumptionStatus] }}
+          </span>
+          <span class="badge">
+            {{ commitmentLevelLabels[candidate.media.commitmentLevel] }}
+          </span>
+        </div>
+
         <p class="candidate-summary-card__meta">
-          {{ mediaTypeLabels[candidate.media.mediaType] }} ·
-          {{ consumptionStatusLabels[candidate.media.consumptionStatus] }} ·
-          {{ commitmentLevelLabels[candidate.media.commitmentLevel] }}
+          {{ helperCopy }}
         </p>
 
         <dl class="candidate-summary-card__facts">
           <div>
-            <dt>Tags</dt>
+            <dt>Erwartete Tags</dt>
             <dd>{{ candidate.media.tags.length }}</dd>
           </div>
           <div>
@@ -60,18 +101,11 @@ const statusLabel = computed(() =>
             <dd>{{ candidate.media.releaseYear ?? "–" }}</dd>
           </div>
           <div>
-            <dt>Status</dt>
-            <dd>{{ statusLabel }}</dd>
+            <dt>Vergleich</dt>
+            <dd>{{ candidate.isCompleteForMatching ? "Bereit" : "Unvollstaendig" }}</dd>
           </div>
         </dl>
       </div>
-
-      <span
-        class="candidate-summary-card__status"
-        :class="statusToneClass"
-      >
-        {{ statusLabel }}
-      </span>
     </div>
 
     <p
@@ -105,15 +139,44 @@ const statusLabel = computed(() =>
 <style scoped>
 .candidate-summary-card {
   display: grid;
+  gap: 1.15rem;
+  padding: clamp(1.15rem, 2.8vw, 1.5rem);
+}
+
+.candidate-summary-card__media {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
   gap: 1rem;
-  padding: 1.5rem;
+  align-items: start;
+}
+
+.candidate-summary-card__cover {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: calc(var(--radius-lg) - 6px);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+}
+
+.candidate-summary-card__cover--placeholder {
+  display: grid;
+  place-items: center;
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.candidate-summary-card__copy {
+  display: grid;
+  gap: 0.8rem;
 }
 
 .candidate-summary-card__header {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .candidate-summary-card__title,
@@ -125,12 +188,18 @@ const statusLabel = computed(() =>
 
 .candidate-summary-card__title {
   margin-top: 0.35rem;
-  font-size: 1.2rem;
+  font-size: clamp(1.15rem, 2vw, 1.28rem);
 }
 
 .candidate-summary-card__meta,
 .candidate-summary-card__note {
   color: var(--color-text-secondary);
+}
+
+.candidate-summary-card__pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
 }
 
 .candidate-summary-card__note,
@@ -142,7 +211,7 @@ const statusLabel = computed(() =>
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.65rem;
-  margin: 0.9rem 0 0;
+  margin: 0;
 }
 
 .candidate-summary-card__facts div {
@@ -197,6 +266,16 @@ const statusLabel = computed(() =>
   display: flex;
   flex-wrap: wrap;
   gap: 0.65rem;
+}
+
+@media (max-width: 720px) {
+  .candidate-summary-card__media {
+    grid-template-columns: 1fr;
+  }
+
+  .candidate-summary-card__cover {
+    max-width: 7rem;
+  }
 }
 
 @media (max-width: 640px) {

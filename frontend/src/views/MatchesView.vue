@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import { RouterLink } from "vue-router";
 
 import { ApiRequestError } from "@/api/client";
 import { getMatches } from "@/api/matches";
@@ -36,6 +37,35 @@ const noScoreCount = computed(
 const bestMatch = computed<MatchResultResponse | null>(
   () => matching.value?.matches[0] ?? null,
 );
+const profileReady = computed(
+  () => matching.value?.interestProfile.isReadyForMatching ?? false,
+);
+const emptyState = computed(() => {
+  if (!matching.value) {
+    return {
+      title: "Keine Match-Ergebnisse vorhanden",
+      description: "Die Match-Daten sind gerade nicht verfuegbar.",
+      to: { name: "candidates" as const },
+      label: "Kandidaten ansehen",
+    };
+  }
+
+  if (!profileReady.value) {
+    return {
+      title: "Profil noch nicht bereit fuer Matches",
+      description: matching.value.interestProfile.explanationMessage,
+      to: { name: "profile" as const },
+      label: "Profil verbessern",
+    };
+  }
+
+  return {
+    title: "Noch keine Match-Ergebnisse vorhanden",
+    description: "Lege Kandidaten mit WANT_TO_CONSUME Status an, damit MoodMatch sie mit deinem Profil vergleichen kann.",
+    to: { name: "candidates" as const },
+    label: "Kandidaten ansehen",
+  };
+});
 
 onMounted(async () => {
   await loadMatches();
@@ -71,44 +101,49 @@ function toUserMessage(error: unknown): string {
           Matches
         </p>
         <h1 class="page-title">
-          Erklaerbare Match-Ergebnisse
+          Warum diese Titel zu dir passen
         </h1>
         <p class="page-copy">
-          Diese Ansicht zeigt Scores nur dann als Prozent, wenn das Backend sie
-          als sinnvoll bewertet. Unzureichende Daten oder fehlende
-          Vergleichbarkeit bleiben deshalb explizit sichtbar und werden nicht
-          als 0 % dargestellt.
+          MoodMatch zeigt Prozentwerte nur dann, wenn genug Vergleichsbasis vorhanden ist.
+          Fehlende Prozentzahlen bleiben deshalb bewusst sichtbar, statt als 0 % missverstanden
+          zu werden.
         </p>
       </div>
     </header>
 
-    <section class="matches-view__summary">
-      <article class="page-card matches-view__summary-card">
+    <section class="overview-stats">
+      <article class="page-card overview-stat-card">
         <p class="eyebrow">
           Kandidaten
         </p>
-        <h2>{{ matching?.matches.length ?? 0 }}</h2>
-        <p class="body-muted">
+        <p class="overview-stat-card__value">
+          {{ matching?.matches.length ?? 0 }}
+        </p>
+        <p class="overview-stat-card__copy">
           Aktuell ausgewertete Vorschlaege
         </p>
       </article>
 
-      <article class="page-card matches-view__summary-card">
+      <article class="page-card overview-stat-card overview-stat-card--success">
         <p class="eyebrow">
           Aussagekraeftige Scores
         </p>
-        <h2>{{ meaningfulScoreCount }}</h2>
-        <p class="body-muted">
+        <p class="overview-stat-card__value">
+          {{ meaningfulScoreCount }}
+        </p>
+        <p class="overview-stat-card__copy">
           Nur mit relativer Prozentangabe
         </p>
       </article>
 
-      <article class="page-card matches-view__summary-card">
+      <article class="page-card overview-stat-card overview-stat-card--warning">
         <p class="eyebrow">
-          Ohne Prozentangabe
+          Noch nicht vergleichbar
         </p>
-        <h2>{{ noScoreCount }}</h2>
-        <p class="body-muted">
+        <p class="overview-stat-card__value">
+          {{ noScoreCount }}
+        </p>
+        <p class="overview-stat-card__copy">
           Davon {{ incompleteCount }} mit unvollstaendiger Datenbasis
         </p>
       </article>
@@ -139,6 +174,22 @@ function toUserMessage(error: unknown): string {
     </AppMessage>
 
     <template v-else-if="matching">
+      <AppMessage
+        v-if="!profileReady"
+        title="Dein Profil braucht noch mehr Signale"
+        :description="matching.interestProfile.explanationMessage"
+        tone="warning"
+      >
+        <div class="state-actions">
+          <RouterLink
+            :to="{ name: 'profile' }"
+            class="button button--secondary"
+          >
+            Profil ansehen
+          </RouterLink>
+        </div>
+      </AppMessage>
+
       <AppMessage
         v-if="matching.scoresSuppressed"
         title="Scores derzeit unterdrueckt"
@@ -182,6 +233,9 @@ function toUserMessage(error: unknown): string {
               {{ bestMatch.candidate.media.title }}
             </h2>
             <p class="body-muted">
+              {{ bestMatch.explanationMessage }}
+            </p>
+            <p class="body-muted matches-view__highlight-note">
               {{ matching.scoringMethodNote }}
             </p>
           </div>
@@ -195,14 +249,37 @@ function toUserMessage(error: unknown): string {
 
       <AppMessage
         v-if="matching.matches.length === 0"
-        title="Keine Match-Ergebnisse vorhanden"
-        description="Noch keine Kandidaten mit WANT_TO_CONSUME Status verfuegbar."
-      />
+        :title="emptyState.title"
+        :description="emptyState.description"
+      >
+        <div class="state-actions">
+          <RouterLink
+            :to="emptyState.to"
+            class="button button--primary"
+          >
+            {{ emptyState.label }}
+          </RouterLink>
+        </div>
+      </AppMessage>
 
       <div
         v-else
         class="matches-view__list"
       >
+        <div class="section-header">
+          <div class="section-header__copy">
+            <p class="eyebrow">
+              Match-Karten
+            </p>
+            <h2 class="section-title">
+              Vorschlaege mit Begruendung
+            </h2>
+            <p class="body-muted">
+              Jede Karte verbindet Kandidat, Match-Wert und eine erklaerbare Einordnung derselben Datenbasis.
+            </p>
+          </div>
+        </div>
+
         <article
           v-for="result in matching.matches"
           :key="result.candidate.media.id"
@@ -241,22 +318,10 @@ function toUserMessage(error: unknown): string {
 </template>
 
 <style scoped>
-.matches-view__summary {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.matches-view__summary-card,
 .matches-view__note-card,
 .matches-view__highlight,
 .matches-view__match-card {
   padding: 1.25rem;
-}
-
-.matches-view__summary-card h2,
-.matches-view__summary-card p {
-  margin: 0.35rem 0 0;
 }
 
 .matches-view__hero {
@@ -287,6 +352,10 @@ function toUserMessage(error: unknown): string {
 
 .matches-view__highlight-copy p {
   margin: 0.4rem 0 0;
+}
+
+.matches-view__highlight-note {
+  font-size: 0.92rem;
 }
 
 .matches-view__list {
@@ -330,7 +399,6 @@ function toUserMessage(error: unknown): string {
 }
 
 @media (max-width: 980px) {
-  .matches-view__summary,
   .matches-view__hero {
     grid-template-columns: 1fr;
   }

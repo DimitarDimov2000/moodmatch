@@ -113,31 +113,39 @@ async function handleRegister() {
     />
 
     <section class="page-card login-view__panel">
-      <div
-        class="login-view__tabs"
-        role="tablist"
-        aria-label="Authentication mode"
-      >
-        <button
-          class="login-view__tab"
-          :class="{ 'login-view__tab--active': activePanel === 'login' }"
-          type="button"
-          role="tab"
-          :aria-selected="activePanel === 'login'"
-          @click="activePanel = 'login'"
+      <div class="login-view__panel-header">
+        <div
+          class="login-view__tabs"
+          role="tablist"
+          aria-label="Authentication mode"
         >
-          Login
-        </button>
-        <button
-          class="login-view__tab"
-          :class="{ 'login-view__tab--active': activePanel === 'register' }"
-          type="button"
-          role="tab"
-          :aria-selected="activePanel === 'register'"
-          @click="activePanel = 'register'"
-        >
-          Create account
-        </button>
+          <button
+            data-testid="auth-tab-login"
+            class="login-view__tab"
+            :class="{ 'login-view__tab--active': activePanel === 'login' }"
+            type="button"
+            role="tab"
+            :aria-selected="activePanel === 'login'"
+            @click="activePanel = 'login'"
+          >
+            Login
+          </button>
+          <button
+            data-testid="auth-tab-register"
+            class="login-view__tab"
+            :class="{ 'login-view__tab--active': activePanel === 'register' }"
+            type="button"
+            role="tab"
+            :aria-selected="activePanel === 'register'"
+            @click="activePanel = 'register'"
+          >
+            Create account
+          </button>
+        </div>
+
+        <p class="login-view__panel-copy">
+          Use your existing account or create a private space for your library, taste profile, and matches.
+        </p>
       </div>
 
       <form
@@ -249,10 +257,10 @@ async function handleRegister() {
 
 .login-view__intro {
   display: grid;
-  gap: 0.85rem;
+  gap: 0.95rem;
   width: min(100%, 38rem);
   justify-items: center;
-  padding-top: clamp(0.4rem, 1vw, 0.7rem);
+  padding-top: clamp(0.65rem, 1.4vw, 0.95rem);
   text-align: center;
 }
 
@@ -264,36 +272,40 @@ async function handleRegister() {
 
 .login-view__brand-lockup {
   display: inline-grid;
-  gap: 0.55rem;
+  gap: 0.7rem;
   min-width: 0;
   justify-items: center;
 }
 
 .login-view__brand-mark {
-  width: clamp(5.6rem, 13vw, 7rem);
-  height: clamp(5.6rem, 13vw, 7rem);
+  width: clamp(6.9rem, 18vw, 8.8rem);
+  height: clamp(6.9rem, 18vw, 8.8rem);
 }
 
 .login-view__brand-copy {
   display: grid;
-  gap: 0.15rem;
+  gap: 0.2rem;
 }
 
 .login-view__brand-name {
   color: var(--color-text-primary);
-  font-size: clamp(1.55rem, 3.6vw, 2rem);
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
   font-weight: 800;
   letter-spacing: -0.04em;
 }
 
 .login-view__brand-subtitle {
   color: var(--color-text-secondary);
-  font-size: 0.98rem;
+  font-size: clamp(0.92rem, 2vw, 1rem);
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .login-view :deep(.page-title) {
-  max-width: 12ch;
+  max-width: none;
+  font-size: clamp(1.8rem, 6.2vw, 3.2rem);
+  line-height: 1.02;
+  white-space: nowrap;
 }
 
 .login-view :deep(.page-copy) {
@@ -306,31 +318,59 @@ async function handleRegister() {
   gap: 1.25rem;
   width: min(100%, 38rem);
   padding: clamp(1.1rem, 2.6vw, 1.4rem);
+  background:
+    var(--theme-login-panel-glow),
+    var(--theme-card-background);
+}
+
+.login-view__panel-header {
+  display: grid;
+  gap: 0.75rem;
 }
 
 .login-view__tabs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
-  padding: 0.25rem;
+  padding: 0.3rem;
   background: var(--theme-login-tabs-background);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--theme-login-tabs-border);
   border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .login-view__tab {
+  position: relative;
   min-height: 2.5rem;
   padding: 0.5rem 0.75rem;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--color-text-secondary);
   font-weight: 700;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .login-view__tab--active {
   background: var(--theme-login-tab-active-background);
   color: var(--color-text-primary);
   box-shadow: var(--theme-login-tab-active-shadow);
+  border-color: var(--theme-login-tab-active-border);
+}
+
+.login-view__tab:hover {
+  color: var(--color-text-primary);
+}
+
+.login-view__panel-copy {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
 }
 
 .login-view__form {
@@ -366,6 +406,10 @@ async function handleRegister() {
 
   .login-view__brand-subtitle {
     font-size: 0.9rem;
+  }
+
+  .login-view__panel-copy {
+    font-size: 0.92rem;
   }
 }
 </style>

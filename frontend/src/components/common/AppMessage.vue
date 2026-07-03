@@ -1,10 +1,25 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+
 const props = withDefaults(defineProps<{
   title: string;
   description: string;
   tone?: 'neutral' | 'error' | 'warning' | 'info';
 }>(), {
   tone: 'neutral',
+});
+
+const toneLabel = computed(() => {
+  switch (props.tone) {
+    case 'error':
+      return 'Problem';
+    case 'warning':
+      return 'Hinweis';
+    case 'info':
+      return 'Status';
+    default:
+      return 'Info';
+  }
 });
 </script>
 
@@ -14,6 +29,9 @@ const props = withDefaults(defineProps<{
     :class="`app-message--${props.tone}`"
     :role="props.tone === 'error' ? 'alert' : 'status'"
   >
+    <p class="app-message__eyebrow eyebrow">
+      {{ toneLabel }}
+    </p>
     <h2 class="app-message__title">
       {{ props.title }}
     </h2>
@@ -75,8 +93,12 @@ const props = withDefaults(defineProps<{
   background: var(--color-info);
 }
 
+.app-message__eyebrow,
 .app-message__title {
   margin: 0;
+}
+
+.app-message__title {
   font-size: 1rem;
   font-weight: 700;
 }

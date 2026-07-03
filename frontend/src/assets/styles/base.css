@@ -175,6 +175,12 @@ textarea {
   min-width: 0;
 }
 
+.page-section {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
 .page-header {
   display: flex;
   flex-wrap: wrap;
@@ -208,6 +214,27 @@ textarea {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
+}
+
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.9rem 1.2rem;
+}
+
+.section-header > * {
+  min-width: 0;
+}
+
+.section-header__copy {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.section-header__copy p {
+  margin: 0;
 }
 
 .button {
@@ -356,6 +383,64 @@ textarea {
   gap: 0.8rem;
 }
 
+.overview-stats {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.overview-stat-card {
+  display: grid;
+  gap: 0.55rem;
+  padding: clamp(1.1rem, 2.5vw, 1.35rem);
+  min-width: 0;
+}
+
+.overview-stat-card--info {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-info-soft) 62%, var(--theme-card-background)),
+    var(--theme-card-background)
+  );
+}
+
+.overview-stat-card--success {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-success-soft) 72%, var(--theme-card-background)),
+    var(--theme-card-background)
+  );
+}
+
+.overview-stat-card--warning {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-warning-soft) 72%, var(--theme-card-background)),
+    var(--theme-card-background)
+  );
+}
+
+.overview-stat-card__value,
+.overview-stat-card__title,
+.overview-stat-card__copy {
+  margin: 0;
+}
+
+.overview-stat-card__value {
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.overview-stat-card__title {
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.overview-stat-card__copy {
+  color: var(--color-text-secondary);
+}
+
 .state-actions {
   display: flex;
   flex-wrap: wrap;
@@ -408,6 +493,10 @@ textarea {
   .responsive-grid--metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .overview-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 540px) {
@@ -415,6 +504,7 @@ textarea {
     width: 100%;
   }
 
+  .overview-stats,
   .responsive-grid--metrics,
   .responsive-grid--cards {
     grid-template-columns: 1fr;

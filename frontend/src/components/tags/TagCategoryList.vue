@@ -21,7 +21,7 @@ const groupedTags = computed(() => groupTagsByCategory(props.tags));
         {{ title ?? 'Tags' }}
       </h2>
       <p class="body-muted">
-        Nach Kategorie gruppiert.
+        {{ tags.length }} Tags, gruppiert nach Kategorie.
       </p>
     </div>
 
@@ -93,4 +93,3 @@ const groupedTags = computed(() => groupTagsByCategory(props.tags));
   gap: 0.65rem;
 }
 </style>
-

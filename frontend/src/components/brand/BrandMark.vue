@@ -17,9 +17,10 @@ const props = defineProps({
 });
 
 const { resolvedTheme } = useTheme();
+const activeTheme = computed(() => props.theme ?? resolvedTheme.value);
 
 const brandMarkUrl = computed(() =>
-  (props.theme ?? resolvedTheme.value) === 'light'
+  activeTheme.value === 'light'
     ? moodmatchIconWhiteUrl
     : moodmatchLogoDarkUrl,
 );
@@ -29,6 +30,7 @@ const brandMarkUrl = computed(() =>
   <img
     :data-testid="props.testId"
     class="brand-mark"
+    :class="`brand-mark--${activeTheme}`"
     :src="brandMarkUrl"
     alt=""
     decoding="async"
@@ -43,5 +45,10 @@ const brandMarkUrl = computed(() =>
   height: 100%;
   object-fit: contain;
   object-position: center;
+}
+
+.brand-mark--light {
+  transform: scale(1.2);
+  transform-origin: center;
 }
 </style>

@@ -96,24 +96,29 @@ const stateToneClass = computed(() => {
       </div>
     </div>
 
-    <dl class="match-explanation__metrics">
-      <div>
-        <dt>Matching-Tags</dt>
-        <dd>{{ result.matchingTagCount }} / {{ result.candidateTagCount }}</dd>
-      </div>
-      <div>
-        <dt>Raw Score</dt>
-        <dd>{{ rawScoreLabel ?? "Nicht verfuegbar" }}</dd>
-      </div>
-      <div>
-        <dt>Precision</dt>
-        <dd>{{ precisionFactorLabel ?? "Nicht verfuegbar" }}</dd>
-      </div>
-      <div>
-        <dt>Adjusted Score</dt>
-        <dd>{{ adjustedScoreLabel ?? "Nicht verfuegbar" }}</dd>
-      </div>
-    </dl>
+    <details class="match-explanation__details">
+      <summary class="match-explanation__summary">
+        Score-Hintergrund ansehen
+      </summary>
+      <dl class="match-explanation__metrics">
+        <div>
+          <dt>Profiltreffer</dt>
+          <dd>{{ result.matchingTagCount }} / {{ result.candidateTagCount }} Tags</dd>
+        </div>
+        <div>
+          <dt>Rohwert</dt>
+          <dd>{{ rawScoreLabel ?? "Nicht verfuegbar" }}</dd>
+        </div>
+        <div>
+          <dt>Vergleichssicherheit</dt>
+          <dd>{{ precisionFactorLabel ?? "Nicht verfuegbar" }}</dd>
+        </div>
+        <div>
+          <dt>Berechneter Endwert</dt>
+          <dd>{{ adjustedScoreLabel ?? "Nicht verfuegbar" }}</dd>
+        </div>
+      </dl>
+    </details>
   </section>
 </template>
 
@@ -194,6 +199,22 @@ const stateToneClass = computed(() => {
   gap: 0.75rem;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   margin: 0;
+}
+
+.match-explanation__details {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.match-explanation__summary {
+  color: var(--color-text-secondary);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.match-explanation__summary::-webkit-details-marker {
+  display: none;
 }
 
 .match-explanation__metrics div {

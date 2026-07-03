@@ -92,6 +92,8 @@ describe('auth UI foundation', () => {
 
   it('shows login and create-account forms without a Google button', async () => {
     const { wrapper } = await mountAppAtRoute('/login');
+    const loginTab = wrapper.get('[data-testid="auth-tab-login"]');
+    const registerTab = wrapper.get('[data-testid="auth-tab-register"]');
 
     expect(wrapper.find('[data-testid="login-brand-lockup"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="login-brand-mark"]').exists()).toBe(true);
@@ -104,13 +106,15 @@ describe('auth UI foundation', () => {
     expect(wrapper.text()).toContain('Create account');
     expect(wrapper.text()).not.toContain('Continue with Google');
     expect(wrapper.find('[data-testid="google-signin-container"]').exists()).toBe(false);
+    expect(loginTab.attributes('aria-selected')).toBe('true');
+    expect(loginTab.classes()).toContain('login-view__tab--active');
+    expect(registerTab.attributes('aria-selected')).toBe('false');
 
-    await wrapper
-      .findAll('button')
-      .find((candidate) => candidate.text() === 'Create account')
-      ?.trigger('click');
+    await registerTab.trigger('click');
 
     expect(wrapper.text()).toContain('Create your MoodMatch account');
+    expect(registerTab.attributes('aria-selected')).toBe('true');
+    expect(registerTab.classes()).toContain('login-view__tab--active');
     expect(wrapper.find('input[autocomplete="new-password"]').exists()).toBe(true);
   });
 

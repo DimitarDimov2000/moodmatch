@@ -50,10 +50,11 @@ function toUserMessage(error: unknown): string {
           Kandidaten
         </p>
         <h1 class="page-title">
-          Kandidaten fuer spaeteres Matching
+          Kandidaten fuer dein naechstes Match
         </h1>
         <p class="page-copy">
-          Diese Liste zeigt vorhandene Kandidaten fuer spaeteres Matching. Der Swipe-Modus ist als eigene Ansicht getrennt und aendert diese Uebersicht nicht.
+          Diese Liste sammelt Titel, die du spaeter mit deinem Profil vergleichen willst.
+          Der Swipe-Modus bleibt davon getrennt und dient nur als eigener Bewertungsfluss.
         </p>
       </div>
 
@@ -67,33 +68,39 @@ function toUserMessage(error: unknown): string {
       </div>
     </header>
 
-    <section class="candidates-view__summary">
-      <article class="page-card candidates-view__summary-card">
+    <section class="overview-stats">
+      <article class="page-card overview-stat-card">
         <p class="eyebrow">
           Insgesamt
         </p>
-        <h2>{{ candidates.length }}</h2>
-        <p class="body-muted">
+        <p class="overview-stat-card__value">
+          {{ candidates.length }}
+        </p>
+        <p class="overview-stat-card__copy">
           WANT_TO_CONSUME Medien
         </p>
       </article>
 
-      <article class="page-card candidates-view__summary-card">
+      <article class="page-card overview-stat-card overview-stat-card--success">
         <p class="eyebrow">
           Matching bereit
         </p>
-        <h2>{{ completeCount }}</h2>
-        <p class="body-muted">
+        <p class="overview-stat-card__value">
+          {{ completeCount }}
+        </p>
+        <p class="overview-stat-card__copy">
           Kandidaten mit erwarteten Tags
         </p>
       </article>
 
-      <article class="page-card candidates-view__summary-card">
+      <article class="page-card overview-stat-card overview-stat-card--warning">
         <p class="eyebrow">
-          Noch unvollstaendig
+          Braucht Pflege
         </p>
-        <h2>{{ incompleteCount }}</h2>
-        <p class="body-muted">
+        <p class="overview-stat-card__value">
+          {{ incompleteCount }}
+        </p>
+        <p class="overview-stat-card__copy">
           Ohne ausreichende Matching-Daten
         </p>
       </article>
@@ -126,9 +133,9 @@ function toUserMessage(error: unknown): string {
     <AppMessage
       v-else-if="candidates.length === 0"
       title="Noch keine Medienvorschlaege vorhanden"
-      description="Lege zuerst Kandidaten mit WANT_TO_CONSUME Status an. Swipe und externe Suche sind eigene Ansichten und fuellen diese Liste nicht automatisch."
+      description="Lege zuerst Kandidaten mit WANT_TO_CONSUME Status an. Swipe und externe Suche bleiben bewusst getrennte Schritte und fuellen diese Liste nicht automatisch."
     >
-      <div class="candidates-view__message-actions">
+      <div class="state-actions">
         <RouterLink
           :to="{ name: 'media-create' }"
           class="button button--primary"
@@ -142,6 +149,20 @@ function toUserMessage(error: unknown): string {
       v-else
       class="candidates-view__list"
     >
+      <div class="section-header">
+        <div class="section-header__copy">
+          <p class="eyebrow">
+            Vergleichsliste
+          </p>
+          <h2 class="section-title">
+            Kandidaten mit erklaerbarer Datenbasis
+          </h2>
+          <p class="body-muted">
+            Vollstaendige Kandidaten koennen direkt gematcht werden. Unvollstaendige Kandidaten zeigen dir klar, was noch fehlt.
+          </p>
+        </div>
+      </div>
+
       <CandidateSummaryCard
         v-for="candidate in candidates"
         :key="candidate.media.id"
@@ -152,21 +173,6 @@ function toUserMessage(error: unknown): string {
 </template>
 
 <style scoped>
-.candidates-view__summary {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.candidates-view__summary-card {
-  padding: 1.25rem;
-}
-
-.candidates-view__summary-card h2,
-.candidates-view__summary-card p {
-  margin: 0.35rem 0 0;
-}
-
 .candidates-view__list {
   display: grid;
   gap: 1rem;
@@ -174,11 +180,5 @@ function toUserMessage(error: unknown): string {
 
 .candidates-view__message-actions {
   margin-top: 1rem;
-}
-
-@media (max-width: 980px) {
-  .candidates-view__summary {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

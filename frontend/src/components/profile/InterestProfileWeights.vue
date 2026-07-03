@@ -12,17 +12,17 @@ defineProps<{
 <template>
   <section class="interest-profile-weights page-card">
     <div class="interest-profile-weights__header">
-      <div>
+      <div class="interest-profile-weights__copy">
         <p class="eyebrow">
           Profil-Gewichte
         </p>
         <h2 class="section-title">
           {{ title ?? 'Interessenprofil nach Tags' }}
         </h2>
+        <p class="body-muted">
+          Hohe Werte bedeuten: Dieses Thema oder Gefuehl taucht in deinen positiv bewerteten Medien besonders stark auf.
+        </p>
       </div>
-      <p class="body-muted">
-        Gewichte kommen direkt aus dem Backend und werden hier nur erklaert.
-      </p>
     </div>
 
     <p
@@ -65,8 +65,13 @@ defineProps<{
   gap: 0.75rem;
 }
 
-.interest-profile-weights__header p {
-  margin: 0.35rem 0 0;
+.interest-profile-weights__copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.interest-profile-weights__copy p {
+  margin: 0;
 }
 
 .interest-profile-weights__list {
