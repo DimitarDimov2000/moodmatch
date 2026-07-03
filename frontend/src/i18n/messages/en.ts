@@ -483,7 +483,7 @@ export const enMessages = {
   mediaCreate: {
     eyebrow: 'New media',
     title: 'Add media manually',
-    intro: 'This view intentionally stays local and only uses the existing backend API. External search or import remain separate.',
+    intro: 'Create titles directly in your library here. External search and provider imports stay separate.',
     loadingTitle: 'Preparing form',
     loadingDescription: 'Available tags are loading.',
     unavailableTitle: 'The form could not be prepared',

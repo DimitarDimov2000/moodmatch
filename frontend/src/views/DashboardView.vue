@@ -293,7 +293,7 @@ const matchesSummaryDescription = computed(() => {
     return t("dashboard.summaryMatchesFallback");
   }
 
-  return matching.value.scoresSuppressed
+  return matching.value.scoresSuppressed || meaningfulMatchCount.value === 0
     ? t("dashboard.summaryMatchesWaitingDescription", { count: meaningfulMatchCount.value })
     : t("dashboard.summaryMatchesReadyDescription", { count: meaningfulMatchCount.value });
 });

@@ -483,7 +483,7 @@ export const deMessages = {
   mediaCreate: {
     eyebrow: 'Neues Medium',
     title: 'Medium manuell erfassen',
-    intro: 'Diese Ansicht bleibt bewusst lokal und nutzt nur die vorhandene Backend API. Externe Suche oder Import folgen später.',
+    intro: 'Hier legst du Titel direkt in deiner Mediathek an. Externe Suche und Provider-Importe bleiben davon getrennt.',
     loadingTitle: 'Formular wird vorbereitet',
     loadingDescription: 'Verfügbare Tags werden geladen.',
     unavailableTitle: 'Formular konnte nicht vorbereitet werden',
