@@ -9,7 +9,7 @@ import { i18n } from "@/i18n";
 
 const props = withDefaults(
   defineProps<{
-    score: string | null;
+    score: number | string | null;
     suppressed?: boolean;
     insufficientLabel?: string;
   }>(),

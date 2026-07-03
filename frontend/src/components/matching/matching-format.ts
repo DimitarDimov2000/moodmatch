@@ -38,7 +38,7 @@ export const mediaTypeLabels = createDynamicLabelLookup(getMatchingMediaTypeLabe
 export const consumptionStatusLabels = createDynamicLabelLookup(getMatchingConsumptionStatusLabel);
 export const commitmentLevelLabels = createDynamicLabelLookup(getMatchingCommitmentLevelLabel);
 
-export function formatDecimal(value: string | null): string | null {
+export function formatDecimal(value: number | string | null): string | null {
   if (value === null) {
     return null;
   }
@@ -46,13 +46,13 @@ export function formatDecimal(value: string | null): string | null {
   const parsed = Number(value);
 
   if (Number.isNaN(parsed)) {
-    return value;
+    return String(value);
   }
 
   return createNumberFormatter(2).format(parsed);
 }
 
-export function formatPercentage(value: string | null): string | null {
+export function formatPercentage(value: number | string | null): string | null {
   if (value === null) {
     return null;
   }
@@ -66,7 +66,7 @@ export function formatPercentage(value: string | null): string | null {
   return `${createNumberFormatter(1).format(parsed)}${i18n.global.t('formatting.percentSuffix')}`;
 }
 
-export function getScoreTone(score: string | null): 'muted' | 'warning' | 'accent' | 'success' {
+export function getScoreTone(score: number | string | null): 'muted' | 'warning' | 'accent' | 'success' {
   if (score === null) {
     return 'muted';
   }

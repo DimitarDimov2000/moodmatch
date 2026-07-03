@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 
 import FormField from '@/components/common/FormField.vue';
 import { i18n } from '@/i18n';
@@ -56,11 +56,22 @@ const emit = defineEmits<{
 const { t } = i18n.global;
 
 const model = reactive<MediaFormModel>(createModel(props.initialMedia ?? null));
+const hasTitleInteracted = ref(false);
 
 watch(
   () => props.initialMedia,
   (media) => {
     Object.assign(model, createModel(media ?? null));
+    hasTitleInteracted.value = false;
+  },
+);
+
+watch(
+  () => model.title,
+  (title, previousTitle) => {
+    if (title !== previousTitle) {
+      hasTitleInteracted.value = true;
+    }
   },
 );
 
@@ -115,9 +126,17 @@ const localErrors = computed<Record<string, string>>(() => {
   return errors;
 });
 
+const visibleLocalErrors = computed<Record<string, string>>(() => {
+  const { title, ...rest } = localErrors.value;
+
+  return {
+    ...rest,
+    ...(title && hasTitleInteracted.value ? { title } : {}),
+  };
+});
 const mergedErrors = computed(() => ({
   ...props.apiErrors,
-  ...localErrors.value,
+  ...visibleLocalErrors.value,
 }));
 
 const canSubmit = computed(() => Object.keys(localErrors.value).length === 0);
