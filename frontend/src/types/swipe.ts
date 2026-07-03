@@ -1,7 +1,7 @@
 import type { CandidateMediaResponse, MatchResultResponse } from './api';
 
-export type SwipeDecisionAction = 'like' | 'reject' | 'skip';
-export type SwipeGestureIntent = SwipeDecisionAction | 'preview' | 'none';
+export type SwipeDecisionAction = 'like' | 'skip';
+export type SwipeGestureIntent = SwipeDecisionAction | 'none';
 
 export interface SwipeQueueItem {
   candidate: CandidateMediaResponse;
@@ -10,6 +10,5 @@ export interface SwipeQueueItem {
 
 export interface SwipeQueueStats {
   liked: number;
-  rejected: number;
   skipped: number;
 }

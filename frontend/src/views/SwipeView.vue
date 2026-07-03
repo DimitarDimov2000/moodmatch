@@ -1,24 +1,29 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
-import { RouterLink, useRouter } from 'vue-router';
+import { RouterLink } from 'vue-router';
 
 import { ApiRequestError } from '@/api/client';
 import { listCandidates } from '@/api/candidates';
 import { getMatches } from '@/api/matches';
-import { updateMediaStatus } from '@/api/media';
 import AppMessage from '@/components/common/AppMessage.vue';
 import SwipeCandidateCard from '@/components/swipe/SwipeCandidateCard.vue';
 import SwipeDecisionControls from '@/components/swipe/SwipeDecisionControls.vue';
 import SwipeProgress from '@/components/swipe/SwipeProgress.vue';
-import type { MatchResultResponse, UpdateMediaConsumptionStatusRequest } from '@/types/api';
-import type { SwipeDecisionAction, SwipeQueueItem, SwipeQueueStats } from '@/types/swipe';
+import type {
+  MatchResultResponse,
+  MatchingResponse,
+} from '@/types/api';
+import type {
+  SwipeDecisionAction,
+  SwipeQueueItem,
+  SwipeQueueStats,
+} from '@/types/swipe';
 
 interface SwipeCandidateCardHandle {
   playDecisionAnimation: (action: SwipeDecisionAction) => Promise<void>;
   resetGesturePosition: () => void;
 }
 
-const router = useRouter();
 const activeCardRef = ref<SwipeCandidateCardHandle | null>(null);
 const queue = ref<SwipeQueueItem[]>([]);
 const totalCount = ref(0);
@@ -26,22 +31,45 @@ const loading = ref(true);
 const fatalErrorMessage = ref('');
 const matchWarningMessage = ref('');
 const actionErrorMessage = ref('');
-const pendingReject = ref(false);
 const decisionPending = ref(false);
-const matchInsightsAvailable = ref(false);
+const detailsExpanded = ref(false);
+const matching = ref<MatchingResponse | null>(null);
 const liveMessage = ref('');
 const stats = reactive<SwipeQueueStats>({
   liked: 0,
-  rejected: 0,
   skipped: 0,
 });
 
 const currentItem = computed(() => queue.value[0] ?? null);
+const nextItem = computed(() => queue.value[1] ?? null);
 const remainingCount = computed(() => queue.value.length);
 const hasQueue = computed(() => totalCount.value > 0);
-const interactionLocked = computed(() => pendingReject.value || decisionPending.value);
+const interactionLocked = computed(() => decisionPending.value);
+const matchInsightsAvailable = computed(() => matching.value !== null);
+const profileReady = computed(() => matching.value?.interestProfile.isReadyForMatching ?? null);
+const scoresSuppressed = computed(() => matching.value?.scoresSuppressed ?? false);
+const profileStatusMessage = computed(
+  () =>
+    matching.value?.interestProfile.explanationMessage
+    ?? matching.value?.explanationMessage
+    ?? 'Ein paar weitere starke Bewertungen helfen MoodMatch beim Einordnen.',
+);
 const showDoneState = computed(
   () => !loading.value && !fatalErrorMessage.value && hasQueue.value && remainingCount.value === 0,
+);
+const showProfileWarmupBanner = computed(
+  () => !loading.value && !fatalErrorMessage.value && profileReady.value === false && hasQueue.value,
+);
+const showProfileWarmupEmptyState = computed(
+  () => !loading.value && !fatalErrorMessage.value && !hasQueue.value && profileReady.value === false,
+);
+const showNoRecommendationsState = computed(
+  () =>
+    !loading.value &&
+    !fatalErrorMessage.value &&
+    !showDoneState.value &&
+    !hasQueue.value &&
+    profileReady.value !== false,
 );
 
 onMounted(async () => {
@@ -58,12 +86,11 @@ async function loadQueue() {
   fatalErrorMessage.value = '';
   matchWarningMessage.value = '';
   actionErrorMessage.value = '';
-  pendingReject.value = false;
   decisionPending.value = false;
-  matchInsightsAvailable.value = false;
+  detailsExpanded.value = false;
+  matching.value = null;
   liveMessage.value = '';
   stats.liked = 0;
-  stats.rejected = 0;
   stats.skipped = 0;
 
   const [candidatesResult, matchesResult] = await Promise.allSettled([
@@ -81,7 +108,7 @@ async function loadQueue() {
 
   const matchesById = new Map<string, MatchResultResponse>();
   if (matchesResult.status === 'fulfilled') {
-    matchInsightsAvailable.value = true;
+    matching.value = matchesResult.value;
     for (const match of matchesResult.value.matches) {
       matchesById.set(match.candidate.media.id, match);
     }
@@ -115,8 +142,8 @@ async function handleLike() {
   stats.liked += 1;
   const nextTitle = removeCurrentItem();
   liveMessage.value = nextTitle
-    ? `${title} wurde lokal geliket. ${nextTitle} ist jetzt aktiv.`
-    : `${title} wurde lokal geliket.`;
+    ? `${title} wurde geliket. ${nextTitle} ist jetzt aktiv.`
+    : `${title} wurde geliket.`;
   decisionPending.value = false;
 }
 
@@ -134,59 +161,30 @@ async function handleSkip() {
   stats.skipped += 1;
   const nextTitle = removeCurrentItem();
   liveMessage.value = nextTitle
-    ? `${title} wurde fuer spaeter uebersprungen. ${nextTitle} ist jetzt aktiv.`
-    : `${title} wurde fuer spaeter uebersprungen.`;
+    ? `${title} wurde fuer spaeter zur Seite gelegt. ${nextTitle} ist jetzt aktiv.`
+    : `${title} wurde fuer spaeter zur Seite gelegt.`;
   decisionPending.value = false;
 }
 
-async function handleReject() {
+function handleDetailsToggle() {
   if (!currentItem.value || interactionLocked.value) {
     return;
   }
 
-  pendingReject.value = true;
   actionErrorMessage.value = '';
-  const title = currentItem.value.candidate.media.title;
-
-  const request: UpdateMediaConsumptionStatusRequest = {
-    consumptionStatus: 'NOT_INTERESTED',
-    rating: null,
-    isFavourite: false,
-    confirmDestructiveChange: false,
-  };
-
-  try {
-    await updateMediaStatus(currentItem.value.candidate.media.id, request);
-    await activeCardRef.value?.playDecisionAnimation('reject');
-    stats.rejected += 1;
-    const nextTitle = removeCurrentItem();
-    liveMessage.value = nextTitle
-      ? `${title} wurde auf Kein Interesse gesetzt. ${nextTitle} ist jetzt aktiv.`
-      : `${title} wurde auf Kein Interesse gesetzt.`;
-  } catch (error) {
-    actionErrorMessage.value = toRejectErrorMessage(error);
-    liveMessage.value = `Ablehnen von ${title} ist fehlgeschlagen.`;
-    activeCardRef.value?.resetGesturePosition();
-  } finally {
-    pendingReject.value = false;
-  }
+  detailsExpanded.value = !detailsExpanded.value;
+  liveMessage.value = detailsExpanded.value
+    ? `Mehr Details zu ${currentItem.value.candidate.media.title} wurden geoeffnet.`
+    : `Mehr Details zu ${currentItem.value.candidate.media.title} wurden geschlossen.`;
 }
 
-async function openDetails() {
-  if (!currentItem.value || interactionLocked.value) {
-    return;
-  }
-
-  actionErrorMessage.value = '';
-  await router.push({
-    name: 'media-detail',
-    params: {
-      id: currentItem.value.candidate.media.id,
-    },
-  });
+function handleDetailsLoadError(message: string) {
+  actionErrorMessage.value = message;
+  liveMessage.value = `Details fuer ${currentItem.value?.candidate.media.title ?? 'den Titel'} konnten nicht geladen werden.`;
 }
 
 function removeCurrentItem(): string | null {
+  detailsExpanded.value = false;
   queue.value = queue.value.slice(1);
   return queue.value[0]?.candidate.media.title ?? null;
 }
@@ -215,30 +213,19 @@ function handleWindowKeydown(event: KeyboardEvent) {
 
   if (event.key === 'ArrowLeft') {
     event.preventDefault();
-    void handleReject();
-    return;
-  }
-
-  if (event.key === 'ArrowDown' || event.key.toLowerCase() === 's') {
-    event.preventDefault();
     void handleSkip();
     return;
   }
 
   if (event.key === 'Enter') {
     event.preventDefault();
-    void openDetails();
+    handleDetailsToggle();
   }
 }
 
 function handleGestureDecision(action: SwipeDecisionAction) {
   if (action === 'like') {
     void handleLike();
-    return;
-  }
-
-  if (action === 'reject') {
-    void handleReject();
     return;
   }
 
@@ -258,49 +245,47 @@ function toCandidatesErrorMessage(error: unknown): string {
     return error.message;
   }
 
-  return 'Die Kandidaten konnten nicht geladen werden.';
+  return 'Die Empfehlungen konnten nicht geladen werden.';
 }
 
 function toMatchesErrorMessage(error: unknown): string {
   if (error instanceof ApiRequestError) {
-    return `${error.message} Die Swipe-Runde bleibt trotzdem nutzbar.`;
+    return `${error.message} Du kannst trotzdem weiter durch die Titel swipen.`;
   }
 
-  return 'Match-Hinweise konnten nicht geladen werden. Die Swipe-Runde bleibt trotzdem nutzbar.';
-}
-
-function toRejectErrorMessage(error: unknown): string {
-  if (error instanceof ApiRequestError) {
-    return error.message;
-  }
-
-  return 'Der Kandidat konnte nicht auf Kein Interesse gesetzt werden.';
+  return 'Die Match-Hinweise konnten nicht geladen werden. Du kannst trotzdem weiter durch die Titel swipen.';
 }
 </script>
 
 <template>
-  <section class="swipe-view page-stack">
-    <header class="page-header">
-      <div>
-        <p class="eyebrow">
-          Swipe-Modus
+  <section class="swipe-view">
+    <header class="swipe-view__header">
+      <div class="swipe-view__header-copy">
+        <p class="swipe-view__eyebrow">
+          Swipe Recommendations
         </p>
-        <h1 class="page-title">
-          Lokale Entscheidungen fuer bestehende Kandidaten
+        <h1 class="swipe-view__title">
+          Deine naechste Empfehlung
         </h1>
-        <p class="page-copy">
-          Gehe WANT_TO_CONSUME Kandidaten nacheinander durch. Liken und Ueberspringen
-          bleiben lokal in dieser Runde, waehrend Ablehnen den Status auf
-          Kein Interesse setzt.
+        <p class="swipe-view__copy">
+          Schnell liken, nach links abwinken oder Details nur bei Bedarf aufklappen.
+          MoodMatch bleibt bei derselben Datenbasis, fuehlt sich hier aber deutlich mehr nach
+          einer mobilen Discovery-Ansicht an.
         </p>
       </div>
 
-      <div class="page-actions">
+      <div class="swipe-view__actions">
         <RouterLink
           :to="{ name: 'candidates' }"
-          class="button button--secondary"
+          class="button swipe-view__action-button"
         >
-          Zur Kandidatenliste
+          Kandidaten
+        </RouterLink>
+        <RouterLink
+          :to="{ name: 'external-search' }"
+          class="button swipe-view__action-button swipe-view__action-button--ghost"
+        >
+          Importieren
         </RouterLink>
       </div>
     </header>
@@ -314,20 +299,20 @@ function toRejectErrorMessage(error: unknown): string {
 
     <AppMessage
       v-if="loading"
-      title="Swipe-Runde wird geladen"
-      description="Kandidaten und vorhandene Match-Hinweise werden vorbereitet."
+      title="Empfehlungen werden vorbereitet"
+      description="Kandidaten, Match-Hinweise und die Swipe-Reihenfolge werden geladen."
       tone="info"
     />
 
     <AppMessage
       v-else-if="fatalErrorMessage"
-      title="Swipe-Runde konnte nicht geladen werden"
+      title="Swipe-Empfehlungen konnten nicht geladen werden"
       :description="fatalErrorMessage"
       tone="error"
     >
       <div class="swipe-view__message-actions">
         <button
-          class="button button--secondary"
+          class="button swipe-view__message-button"
           type="button"
           @click="loadQueue"
         >
@@ -339,7 +324,7 @@ function toRejectErrorMessage(error: unknown): string {
     <template v-else>
       <AppMessage
         v-if="matchWarningMessage"
-        title="Match-Hinweise derzeit nicht verfuegbar"
+        title="Match-Hinweise fehlen gerade"
         :description="matchWarningMessage"
         tone="warning"
       />
@@ -352,19 +337,77 @@ function toRejectErrorMessage(error: unknown): string {
       />
 
       <AppMessage
-        v-if="!hasQueue"
-        title="Noch keine Medienvorschlaege vorhanden"
-        description="Lege zuerst Kandidaten mit WANT_TO_CONSUME Status an, damit du sie hier lokal durchgehen kannst."
+        v-if="showProfileWarmupBanner"
+        title="Dein Profil lernt noch"
+        :description="profileStatusMessage"
+        tone="warning"
       >
         <div class="swipe-view__message-actions">
           <RouterLink
-            :to="{ name: 'media-create' }"
-            class="button button--primary"
+            :to="{ name: 'media-list' }"
+            class="button swipe-view__message-button"
           >
-            Ersten Kandidaten anlegen
+            Mehr Medien bewerten
+          </RouterLink>
+          <RouterLink
+            :to="{ name: 'external-search' }"
+            class="button swipe-view__message-button swipe-view__message-button--ghost"
+          >
+            Titel importieren
           </RouterLink>
         </div>
       </AppMessage>
+
+      <template v-if="showProfileWarmupEmptyState">
+        <AppMessage
+          title="Profil noch nicht bereit"
+          :description="profileStatusMessage"
+          tone="warning"
+        >
+          <div class="swipe-view__message-actions">
+            <RouterLink
+              :to="{ name: 'media-list' }"
+              class="button swipe-view__message-button"
+            >
+              Medien bewerten
+            </RouterLink>
+            <RouterLink
+              :to="{ name: 'external-search' }"
+              class="button swipe-view__message-button swipe-view__message-button--ghost"
+            >
+              Importieren
+            </RouterLink>
+          </div>
+        </AppMessage>
+      </template>
+
+      <template v-else-if="showNoRecommendationsState">
+        <AppMessage
+          title="Noch keine Empfehlungen"
+          description="Fuelle deine WANT_TO_CONSUME Liste, importiere weitere Titel oder pruefe bestehende Kandidaten, damit hier neue Karten auftauchen."
+        >
+          <div class="swipe-view__message-actions">
+            <RouterLink
+              :to="{ name: 'media-create' }"
+              class="button swipe-view__message-button"
+            >
+              Titel anlegen
+            </RouterLink>
+            <RouterLink
+              :to="{ name: 'external-search' }"
+              class="button swipe-view__message-button swipe-view__message-button--ghost"
+            >
+              Extern importieren
+            </RouterLink>
+            <RouterLink
+              :to="{ name: 'candidates' }"
+              class="button swipe-view__message-button swipe-view__message-button--ghost"
+            >
+              Kandidaten pruefen
+            </RouterLink>
+          </div>
+        </AppMessage>
+      </template>
 
       <template v-else>
         <SwipeProgress
@@ -375,63 +418,172 @@ function toRejectErrorMessage(error: unknown): string {
 
         <AppMessage
           v-if="showDoneState"
-          title="Runde abgeschlossen"
-          :description="`Du hast ${stats.liked} Kandidaten lokal geliket, ${stats.rejected} abgelehnt und ${stats.skipped} uebersprungen. Lokale Likes werden nicht gespeichert.`"
+          title="All caught up"
+          :description="`Du hast ${stats.liked} Titel geliket und ${stats.skipped} nach links aussortiert. Diese Entscheidungen bleiben in dieser Runde lokal.`"
           tone="info"
         >
           <div class="swipe-view__message-actions">
             <button
-              class="button button--primary"
+              class="button swipe-view__message-button"
               type="button"
               @click="loadQueue"
             >
               Runde neu laden
             </button>
             <RouterLink
-              :to="{ name: 'candidates' }"
-              class="button button--secondary"
+              :to="{ name: 'external-search' }"
+              class="button swipe-view__message-button swipe-view__message-button--ghost"
             >
-              Kandidaten pruefen
+              Neue Titel holen
             </RouterLink>
           </div>
         </AppMessage>
 
-        <template v-else-if="currentItem">
-          <section class="swipe-view__deck">
+        <section
+          v-else-if="currentItem"
+          class="swipe-view__deck"
+        >
+          <div class="swipe-view__card-column">
             <SwipeCandidateCard
               ref="activeCardRef"
               :item="currentItem"
+              :next-item="nextItem"
               :match-insights-available="matchInsightsAvailable"
+              :profile-ready="profileReady"
+              :scores-suppressed="scoresSuppressed"
+              :details-expanded="detailsExpanded"
               :interaction-locked="interactionLocked"
               @decision-request="handleGestureDecision"
+              @toggle-details="handleDetailsToggle"
+              @details-load-error="handleDetailsLoadError"
             />
 
             <SwipeDecisionControls
               :pending="interactionLocked"
-              :reject-persists="true"
+              :details-expanded="detailsExpanded"
               @like="handleLike"
-              @reject="handleReject"
               @skip="handleSkip"
-              @details="openDetails"
+              @details="handleDetailsToggle"
             />
-          </section>
-        </template>
+          </div>
+        </section>
       </template>
     </template>
+
+    <p class="swipe-view__footnote">
+      Likes und linke Swipes bleiben in dieser Runde lokal. Fuer dauerhafte Aenderungen kannst du die
+      Detailansicht oder die Kandidatenliste nutzen.
+    </p>
   </section>
 </template>
 
 <style scoped>
-.swipe-view__deck {
+.swipe-view {
+  position: relative;
   display: grid;
+  gap: 1.25rem;
+  padding: clamp(1rem, 2vw, 1.6rem);
+  border-radius: 2rem;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top center, rgba(124, 92, 252, 0.26), transparent 34%),
+    radial-gradient(circle at bottom center, rgba(236, 72, 153, 0.18), transparent 36%),
+    linear-gradient(180deg, #0f1630 0%, #0a1024 100%);
+  color: #f8f7ff;
+  box-shadow: 0 28px 60px rgba(8, 15, 32, 0.28);
+}
+
+.swipe-view::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 28%);
+  pointer-events: none;
+}
+
+.swipe-view__header,
+.swipe-view__deck,
+.swipe-view__footnote,
+.swipe-view__sr-only {
+  position: relative;
+  z-index: 1;
+}
+
+.swipe-view__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 1rem;
 }
 
+.swipe-view__header-copy {
+  display: grid;
+  gap: 0.45rem;
+  max-width: 38rem;
+}
+
+.swipe-view__eyebrow,
+.swipe-view__title,
+.swipe-view__copy,
+.swipe-view__footnote {
+  margin: 0;
+}
+
+.swipe-view__eyebrow {
+  color: #ffb4b8;
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.swipe-view__title {
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 0.98;
+}
+
+.swipe-view__copy,
+.swipe-view__footnote {
+  color: rgba(236, 239, 255, 0.78);
+}
+
+.swipe-view__actions,
 .swipe-view__message-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin-top: 1rem;
+}
+
+.swipe-view__action-button,
+.swipe-view__message-button {
+  min-height: 2.9rem;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  backdrop-filter: blur(14px);
+}
+
+.swipe-view__action-button--ghost,
+.swipe-view__message-button--ghost {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.swipe-view__deck {
+  display: grid;
+  place-items: center;
+}
+
+.swipe-view__card-column {
+  width: min(100%, 30rem);
+  display: grid;
+  gap: 1rem;
+}
+
+.swipe-view__footnote {
+  font-size: 0.92rem;
 }
 
 .swipe-view__sr-only {
@@ -444,5 +596,68 @@ function toRejectErrorMessage(error: unknown): string {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+.swipe-view :deep(.app-message) {
+  position: relative;
+  z-index: 1;
+  padding: 1.1rem 1.15rem;
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(11, 17, 36, 0.72);
+  box-shadow: none;
+  backdrop-filter: blur(18px);
+}
+
+.swipe-view :deep(.app-message__title) {
+  color: #fff;
+}
+
+.swipe-view :deep(.app-message__description) {
+  color: rgba(236, 239, 255, 0.78);
+}
+
+.swipe-view :deep(.app-message--warning) {
+  background: rgba(68, 42, 9, 0.74);
+}
+
+.swipe-view :deep(.app-message--error) {
+  background: rgba(74, 20, 33, 0.78);
+}
+
+.swipe-view :deep(.app-message--info) {
+  background: rgba(17, 31, 67, 0.76);
+}
+
+@media (max-width: 720px) {
+  .swipe-view {
+    padding: 0.95rem;
+    border-radius: 1.7rem;
+  }
+
+  .swipe-view__actions {
+    width: 100%;
+  }
+
+  .swipe-view__action-button {
+    flex: 1 1 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .swipe-view__header {
+    gap: 0.85rem;
+  }
+
+  .swipe-view__title {
+    font-size: 1.85rem;
+  }
+
+  .swipe-view__message-actions {
+    display: grid;
+  }
+
+  .swipe-view__message-button {
+    width: 100%;
+  }
 }
 </style>

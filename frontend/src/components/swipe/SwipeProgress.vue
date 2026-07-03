@@ -27,15 +27,15 @@ const progressPercent = computed(() => {
     <div class="swipe-progress__header">
       <div>
         <p class="eyebrow">
-          Lokale Runde
+          Swipe-Runde
         </p>
         <h2 class="section-title">
-          {{ remainingCount > 0 ? `Karte ${currentPosition} von ${totalCount}` : `Alle ${totalCount} Karten bearbeitet` }}
+          {{ remainingCount > 0 ? `Karte ${currentPosition} von ${totalCount}` : `Alle ${totalCount} Titel einsortiert` }}
         </h2>
       </div>
 
       <div class="swipe-progress__pill">
-        {{ progressPercent }} % durchlaufen
+        {{ progressPercent }} % geschafft
       </div>
     </div>
 
@@ -59,10 +59,6 @@ const progressPercent = computed(() => {
         <dd>{{ stats.liked }}</dd>
       </div>
       <div>
-        <dt>Abgelehnt</dt>
-        <dd>{{ stats.rejected }}</dd>
-      </div>
-      <div>
         <dt>Uebersprungen</dt>
         <dd>{{ stats.skipped }}</dd>
       </div>
@@ -74,7 +70,10 @@ const progressPercent = computed(() => {
 .swipe-progress {
   display: grid;
   gap: 1rem;
-  padding: 1.25rem;
+  padding: 1.25rem 1.25rem 1.1rem;
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(10, 16, 36, 0.76);
+  backdrop-filter: blur(18px);
 }
 
 .swipe-progress__header {
@@ -85,15 +84,23 @@ const progressPercent = computed(() => {
   gap: 1rem;
 }
 
+.swipe-progress .eyebrow {
+  color: #ffb4b8;
+}
+
+.swipe-progress .section-title {
+  color: #fff;
+}
+
 .swipe-progress__pill {
   display: inline-flex;
   align-items: center;
   min-height: 2rem;
   padding: 0.35rem 0.8rem;
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--color-accent-soft) 70%, var(--color-surface));
-  color: var(--color-accent-dark);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
   font-size: 0.9rem;
   font-weight: 600;
 }
@@ -102,7 +109,7 @@ const progressPercent = computed(() => {
   height: 0.7rem;
   overflow: hidden;
   border-radius: var(--radius-full);
-  background: var(--color-surface-muted);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .swipe-progress__bar-fill {
@@ -120,19 +127,19 @@ const progressPercent = computed(() => {
 .swipe-progress__stats {
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 0;
 }
 
 .swipe-progress__stats div {
   padding: 0.85rem 0.95rem;
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-md);
-  background: var(--color-surface-secondary);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .swipe-progress__stats dt {
-  color: var(--color-text-muted);
+  color: rgba(236, 239, 255, 0.62);
   font-size: 0.82rem;
 }
 
@@ -140,15 +147,10 @@ const progressPercent = computed(() => {
   margin: 0.35rem 0 0;
   font-size: 1.2rem;
   font-weight: 700;
+  color: #fff;
 }
 
 @media (max-width: 820px) {
-  .swipe-progress__stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 520px) {
   .swipe-progress__stats {
     grid-template-columns: 1fr;
   }
