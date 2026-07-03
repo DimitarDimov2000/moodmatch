@@ -6,6 +6,7 @@ import { ApiRequestError } from '@/api/client';
 import { createMedia, replaceMediaTags } from '@/api/media';
 import { listTags } from '@/api/tags';
 import AppMessage from '@/components/common/AppMessage.vue';
+import { i18n } from '@/i18n';
 import MediaForm, { type MediaFormSubmitPayload } from '@/components/media/MediaForm.vue';
 import type { TagResponse } from '@/types/api';
 
@@ -17,6 +18,7 @@ const pageError = ref('');
 const apiErrors = ref<Record<string, string>>({});
 
 const hasTags = computed(() => availableTags.value.length > 0);
+const { t } = i18n.global;
 
 onMounted(async () => {
   try {
@@ -50,7 +52,7 @@ async function handleSubmit(payload: MediaFormSubmitPayload) {
           .map((detail) => [detail.field as string, detail.message]),
       );
     } else {
-      pageError.value = 'Das Medium konnte nicht angelegt werden.';
+      pageError.value = t('mediaCreate.createError');
     }
   } finally {
     submitting.value = false;
@@ -62,7 +64,7 @@ function toUserMessage(error: unknown): string {
     return error.message;
   }
 
-  return 'Die Tag-Daten konnten nicht geladen werden.';
+  return t('mediaCreate.tagsError');
 }
 </script>
 
@@ -71,28 +73,27 @@ function toUserMessage(error: unknown): string {
     <header class="page-header">
       <div>
         <p class="eyebrow">
-          Neues Medium
+          {{ t("mediaCreate.eyebrow") }}
         </p>
         <h1 class="page-title">
-          Medium manuell erfassen
+          {{ t("mediaCreate.title") }}
         </h1>
         <p class="page-copy">
-          Diese Ansicht bleibt bewusst lokal und nutzt nur die vorhandene Backend API.
-          Externe Suche oder Import folgen spaeter.
+          {{ t("mediaCreate.intro") }}
         </p>
       </div>
     </header>
 
     <AppMessage
       v-if="loading"
-      title="Formular wird vorbereitet"
-      description="Verfuegbare Tags werden geladen."
+      :title="t('mediaCreate.loadingTitle')"
+      :description="t('mediaCreate.loadingDescription')"
       tone="info"
     />
 
     <AppMessage
       v-else-if="pageError && !hasTags"
-      title="Formular konnte nicht vorbereitet werden"
+      :title="t('mediaCreate.unavailableTitle')"
       :description="pageError"
       tone="error"
     />
@@ -100,7 +101,7 @@ function toUserMessage(error: unknown): string {
     <template v-else>
       <AppMessage
         v-if="pageError"
-        title="Speichern fehlgeschlagen"
+        :title="t('mediaCreate.saveFailed')"
         :description="pageError"
         tone="error"
       />
@@ -115,4 +116,3 @@ function toUserMessage(error: unknown): string {
     </template>
   </section>
 </template>
-

@@ -6,11 +6,13 @@ import { ApiRequestError } from "@/api/client";
 import { listCandidates } from "@/api/candidates";
 import AppMessage from "@/components/common/AppMessage.vue";
 import CandidateSummaryCard from "@/components/matching/CandidateSummaryCard.vue";
+import { i18n } from "@/i18n";
 import type { CandidateMediaResponse } from "@/types/api";
 
 const candidates = ref<CandidateMediaResponse[]>([]);
 const loading = ref(true);
 const errorMessage = ref("");
+const { t } = i18n.global;
 
 const completeCount = computed(
   () => candidates.value.filter((item) => item.isCompleteForMatching).length,
@@ -42,7 +44,7 @@ function toUserMessage(error: unknown): string {
     return error.message;
   }
 
-  return "Die Kandidaten konnten nicht geladen werden.";
+  return t("candidates.errorTitle");
 }
 </script>
 
@@ -51,15 +53,13 @@ function toUserMessage(error: unknown): string {
     <header class="page-header">
       <div>
         <p class="eyebrow">
-          Kandidaten
+          {{ t("candidates.eyebrow") }}
         </p>
         <h1 class="page-title">
-          Kandidaten fuer dein naechstes Match
+          {{ t("candidates.title") }}
         </h1>
         <p class="page-copy">
-          Diese Liste zeigt moegliche Empfehlungen vor der eigentlichen
-          Entscheidung. Du siehst sofort, welche Kandidaten schon vergleichbar
-          sind und wo noch erwartete Signale fehlen.
+          {{ t("candidates.intro") }}
         </p>
       </div>
 
@@ -68,7 +68,7 @@ function toUserMessage(error: unknown): string {
           :to="{ name: 'media-create' }"
           class="button button--primary"
         >
-          Kandidat anlegen
+          {{ t("common.actions.createCandidate") }}
         </RouterLink>
       </div>
     </header>
@@ -79,37 +79,37 @@ function toUserMessage(error: unknown): string {
     >
       <article class="page-card overview-stat-card">
         <p class="eyebrow">
-          Insgesamt
+          {{ t("candidates.total") }}
         </p>
         <p class="overview-stat-card__value">
           {{ candidates.length }}
         </p>
         <p class="overview-stat-card__copy">
-          Moechte ich konsumieren
+          {{ t("candidates.wantToConsume") }}
         </p>
       </article>
 
       <article class="page-card overview-stat-card overview-stat-card--success">
         <p class="eyebrow">
-          Matching bereit
+          {{ t("candidates.matchingReady") }}
         </p>
         <p class="overview-stat-card__value">
           {{ completeCount }}
         </p>
         <p class="overview-stat-card__copy">
-          Kandidaten mit erwarteten Tags
+          {{ t("candidates.withExpectedTags") }}
         </p>
       </article>
 
       <article class="page-card overview-stat-card overview-stat-card--warning">
         <p class="eyebrow">
-          Braucht Pflege
+          {{ t("candidates.needsCare") }}
         </p>
         <p class="overview-stat-card__value">
           {{ incompleteCount }}
         </p>
         <p class="overview-stat-card__copy">
-          Ohne ausreichende Matching-Daten
+          {{ t("candidates.missingMatchingData") }}
         </p>
       </article>
     </section>
@@ -117,15 +117,15 @@ function toUserMessage(error: unknown): string {
     <AppMessage
       v-if="loading"
       class="candidates-view__state-card"
-      title="Kandidaten werden geladen"
-      description="Wir holen die aktuelle Kandidatenliste."
+      :title="t('candidates.loadingTitle')"
+      :description="t('candidates.loadingDescription')"
       tone="info"
     />
 
     <AppMessage
       v-else-if="errorMessage"
       class="candidates-view__state-card"
-      title="Kandidaten konnten nicht geladen werden"
+      :title="t('candidates.errorTitle')"
       :description="errorMessage"
       tone="error"
     >
@@ -135,7 +135,7 @@ function toUserMessage(error: unknown): string {
           type="button"
           @click="loadCandidates"
         >
-          Erneut versuchen
+          {{ t("common.actions.retry") }}
         </button>
       </div>
     </AppMessage>
@@ -143,15 +143,15 @@ function toUserMessage(error: unknown): string {
     <AppMessage
       v-else-if="candidates.length === 0"
       class="candidates-view__state-card"
-      title="Noch keine Kandidaten fuer spaetere Empfehlungen"
-      description="Lege Medien mit dem Status 'Moechte ich konsumieren' an, damit hier die Vorschlaege erscheinen, die MoodMatch als naechste Vergleichsliste vorbereitet."
+      :title="t('candidates.emptyTitle')"
+      :description="t('candidates.emptyDescription')"
     >
       <div class="state-actions">
         <RouterLink
           :to="{ name: 'media-create' }"
           class="button button--primary"
         >
-          Ersten Kandidaten anlegen
+          {{ t("candidates.emptyAction") }}
         </RouterLink>
       </div>
     </AppMessage>
@@ -163,15 +163,13 @@ function toUserMessage(error: unknown): string {
       <div class="section-header">
         <div class="section-header__copy">
           <p class="eyebrow">
-            Vergleichsliste
+            {{ t("candidates.compareList") }}
           </p>
           <h2 class="section-title">
-            Kandidaten vor der Entscheidung
+            {{ t("candidates.beforeDecision") }}
           </h2>
           <p class="body-muted">
-            Die Karten bleiben bewusst kompakt und vergleichbar. Vollstaendige
-            Kandidaten sind bereit fuer spaetere Matches, unvollstaendige zeigen
-            knapp, was noch fehlt.
+            {{ t("candidates.sectionCopy") }}
           </p>
         </div>
       </div>

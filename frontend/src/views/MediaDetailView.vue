@@ -22,6 +22,7 @@ import {
   sourceTypeLabels,
 } from '@/components/media/media-options';
 import TagCategoryList from '@/components/tags/TagCategoryList.vue';
+import { i18n } from '@/i18n';
 import type {
   MediaResponse,
   TagResponse,
@@ -29,6 +30,7 @@ import type {
   UpdateMediaFavouriteRequest,
 } from '@/types/api';
 
+const { t } = i18n.global;
 const route = useRoute();
 const router = useRouter();
 const media = ref<MediaResponse | null>(null);
@@ -43,6 +45,21 @@ const apiErrors = ref<Record<string, string>>({});
 
 const mediaId = computed(() => String(route.params.id));
 const busy = computed(() => saving.value || deleting.value);
+const activeLocale = computed(() => i18n.global.locale.value);
+const trackLocaleDependency = () => activeLocale.value;
+const externalReferencesDescription = computed(() => {
+  trackLocaleDependency();
+
+  if (!media.value) {
+    return '';
+  }
+
+  return media.value.externalReferences.length
+    ? t('mediaDetail.externalReferencesCount', {
+      count: media.value.externalReferences.length,
+    })
+    : t('mediaDetail.externalReferencesEmpty');
+});
 
 onMounted(async () => {
   await loadPage();
@@ -94,7 +111,7 @@ async function handleSubmit(payload: MediaFormSubmitPayload) {
           .map((detail) => [detail.field as string, detail.message]),
       );
     } else {
-      errorMessage.value = 'Das Medium konnte nicht aktualisiert werden.';
+      errorMessage.value = t('mediaDetail.saveError');
     }
   } finally {
     saving.value = false;
@@ -175,7 +192,7 @@ function toUserMessage(error: unknown): string {
     return error.message;
   }
 
-  return 'Die Daten konnten nicht verarbeitet werden.';
+  return t('mediaDetail.processError');
 }
 
 function toDeleteUserMessage(error: unknown): string {
@@ -183,7 +200,7 @@ function toDeleteUserMessage(error: unknown): string {
     return error.message;
   }
 
-  return 'Das Medium konnte nicht geloescht werden.';
+  return t('mediaDetail.deleteError');
 }
 </script>
 
@@ -192,13 +209,13 @@ function toDeleteUserMessage(error: unknown): string {
     <header class="page-header">
       <div>
         <p class="eyebrow">
-          Medien Detail
+          {{ t('mediaDetail.eyebrow') }}
         </p>
         <h1 class="page-title">
-          {{ media?.title ?? 'Medium laden' }}
+          {{ media?.title ?? t('mediaDetail.loadingTitleFallback') }}
         </h1>
         <p class="page-copy">
-          Vollansicht fuer Bearbeitung, Tag-Pflege und API-gestuetzte Statusaenderungen.
+          {{ t('mediaDetail.intro') }}
         </p>
       </div>
 
@@ -207,27 +224,27 @@ function toDeleteUserMessage(error: unknown): string {
           :to="{ name: 'media-list' }"
           class="button button--secondary"
         >
-          Zur Liste
+          {{ t('common.actions.backToList') }}
         </RouterLink>
         <RouterLink
           :to="{ name: 'media-create' }"
           class="button button--ghost"
         >
-          Neues Medium
+          {{ t('mediaDetail.newMedia') }}
         </RouterLink>
       </div>
     </header>
 
     <AppMessage
       v-if="loading"
-      title="Medium wird geladen"
-      description="Details, Tags und Bearbeitungszustand werden vorbereitet."
+      :title="t('mediaDetail.loadingTitle')"
+      :description="t('mediaDetail.loadingDescription')"
       tone="info"
     />
 
     <AppMessage
       v-else-if="errorMessage && !media"
-      title="Detailansicht nicht verfuegbar"
+      :title="t('mediaDetail.unavailableTitle')"
       :description="errorMessage"
       tone="error"
     >
@@ -237,7 +254,7 @@ function toDeleteUserMessage(error: unknown): string {
           type="button"
           @click="loadPage"
         >
-          Erneut versuchen
+          {{ t('common.actions.retry') }}
         </button>
       </div>
     </AppMessage>
@@ -245,7 +262,7 @@ function toDeleteUserMessage(error: unknown): string {
     <template v-else-if="media">
       <AppMessage
         v-if="errorMessage"
-        title="Letzte Aktion fehlgeschlagen"
+        :title="t('mediaDetail.lastActionFailed')"
         :description="errorMessage"
         tone="error"
       />
@@ -260,7 +277,7 @@ function toDeleteUserMessage(error: unknown): string {
                 v-if="media.isFavourite"
                 class="media-detail__pill media-detail__pill--favourite"
               >
-                Favorit
+                {{ t('mediaDetail.favourite') }}
               </span>
             </div>
 
@@ -273,16 +290,16 @@ function toDeleteUserMessage(error: unknown): string {
 
             <dl class="media-detail__facts">
               <div>
-                <dt>Bewertung</dt>
-                <dd>{{ media.rating ?? 'Keine' }}</dd>
+                <dt>{{ t('mediaDetail.rating') }}</dt>
+                <dd>{{ media.rating ?? t('common.states.noRating') }}</dd>
               </div>
               <div>
-                <dt>Quelle</dt>
+                <dt>{{ t('mediaDetail.source') }}</dt>
                 <dd>{{ sourceTypeLabels[media.sourceType] }}</dd>
               </div>
               <div>
-                <dt>Metadaten</dt>
-                <dd>{{ media.metadataOrigin ? metadataOriginLabels[media.metadataOrigin] : 'Keine Angabe' }}</dd>
+                <dt>{{ t('mediaDetail.metadata') }}</dt>
+                <dd>{{ media.metadataOrigin ? metadataOriginLabels[media.metadataOrigin] : t('common.states.notAvailable') }}</dd>
               </div>
             </dl>
           </div>
@@ -290,7 +307,7 @@ function toDeleteUserMessage(error: unknown): string {
           <img
             v-if="media.coverUrl"
             :src="media.coverUrl"
-            :alt="`Cover von ${media.title}`"
+            :alt="t('mediaArtwork.coverAlt', { title: media.title })"
             class="media-detail__cover"
           >
           <div
@@ -317,26 +334,26 @@ function toDeleteUserMessage(error: unknown): string {
             :available-tags="availableTags"
             :submitting="busy"
             :api-errors="apiErrors"
-            submit-label="Aenderungen speichern"
+            :submit-label="t('mediaDetail.saveChanges')"
             @submit="handleSubmit"
           />
 
           <section class="page-card media-detail__danger-zone">
             <div class="media-detail__danger-copy">
               <p class="eyebrow media-detail__danger-eyebrow">
-                Danger Zone
+                {{ t('mediaDetail.dangerEyebrow') }}
               </p>
               <h2 class="section-title">
-                Medium dauerhaft loeschen
+                {{ t('mediaDetail.deleteTitle') }}
               </h2>
               <p class="body-muted">
-                Diese Aktion ist bewusst von normalen Bearbeitungen getrennt und entfernt das Medium aus deiner lokalen Sammlung.
+                {{ t('mediaDetail.deleteDescription') }}
               </p>
             </div>
 
             <AppMessage
               v-if="deleteErrorMessage"
-              title="Loeschen fehlgeschlagen"
+              :title="t('mediaDetail.deleteFailedTitle')"
               :description="deleteErrorMessage"
               tone="error"
             />
@@ -346,10 +363,10 @@ function toDeleteUserMessage(error: unknown): string {
               class="media-detail__danger-confirm"
             >
               <p class="media-detail__danger-question">
-                Wirklich <strong>{{ media.title }}</strong> loeschen?
+                {{ t('mediaDetail.deleteQuestion', { title: media.title }) }}
               </p>
               <p class="body-muted">
-                Nach erfolgreichem Loeschen wechselst du zur Medienliste zurueck.
+                {{ t('mediaDetail.deleteRedirectNote') }}
               </p>
 
               <div class="page-actions">
@@ -359,7 +376,7 @@ function toDeleteUserMessage(error: unknown): string {
                   :disabled="deleting"
                   @click="cancelDeleteConfirmation"
                 >
-                  Abbrechen
+                  {{ t('common.actions.cancel') }}
                 </button>
                 <button
                   class="button button--danger"
@@ -367,7 +384,7 @@ function toDeleteUserMessage(error: unknown): string {
                   :disabled="deleting"
                   @click="confirmDelete"
                 >
-                  {{ deleting ? 'Wird geloescht...' : 'Loeschen bestaetigen' }}
+                  {{ deleting ? t('mediaDetail.deleting') : t('mediaDetail.confirmDelete') }}
                 </button>
               </div>
             </div>
@@ -382,7 +399,7 @@ function toDeleteUserMessage(error: unknown): string {
                 :disabled="busy"
                 @click="openDeleteConfirmation"
               >
-                Medium loeschen
+                {{ t('mediaDetail.deleteMedia') }}
               </button>
             </div>
           </section>
@@ -391,13 +408,13 @@ function toDeleteUserMessage(error: unknown): string {
         <div class="media-detail__side">
           <TagCategoryList
             :tags="media.tags"
-            title="Aktive Tags"
+            :title="t('mediaDetail.activeTags')"
             compact
           />
 
           <AppMessage
-            title="Externe Referenzen"
-            :description="media.externalReferences.length ? `${media.externalReferences.length} Quelle(n) verknuepft.` : 'Noch keine externen Referenzen vorhanden.'"
+            :title="t('mediaDetail.externalReferences')"
+            :description="externalReferencesDescription"
             tone="neutral"
           />
         </div>

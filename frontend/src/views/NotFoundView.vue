@@ -1,13 +1,19 @@
+<script setup lang="ts">
+import { i18n } from '@/i18n';
+
+const { t } = i18n.global;
+</script>
+
 <template>
   <section class="not-found page-card">
     <p class="eyebrow">
-      Navigation
+      {{ t('notFound.eyebrow') }}
     </p>
     <h1 class="section-title">
-      Seite nicht gefunden
+      {{ t('notFound.title') }}
     </h1>
     <p class="body-muted">
-      Diese Route existiert in der aktuellen MoodMatch-Anwendung nicht.
+      {{ t('notFound.copy') }}
     </p>
   </section>
 </template>

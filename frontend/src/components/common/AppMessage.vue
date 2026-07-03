@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { i18n } from "@/i18n";
 
 const props = withDefaults(
   defineProps<{
@@ -11,17 +12,18 @@ const props = withDefaults(
     tone: "neutral",
   },
 );
+const { t } = i18n.global;
 
 const toneLabel = computed(() => {
   switch (props.tone) {
     case "error":
-      return "Problem";
+      return t("common.tone.error");
     case "warning":
-      return "Hinweis";
+      return t("common.tone.warning");
     case "info":
-      return "Status";
+      return t("common.tone.status");
     default:
-      return "Info";
+      return t("common.tone.info");
   }
 });
 </script>

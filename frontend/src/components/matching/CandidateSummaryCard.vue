@@ -2,11 +2,12 @@
 import { computed } from "vue";
 
 import TagChip from "@/components/tags/TagChip.vue";
+import { i18n } from "@/i18n";
 import type { CandidateMediaResponse } from "@/types/api";
 import {
-  commitmentLevelLabels,
-  consumptionStatusLabels,
-  mediaTypeLabels,
+  getMatchingCommitmentLevelLabel,
+  getMatchingConsumptionStatusLabel,
+  getMatchingMediaTypeLabel,
 } from "./matching-format";
 
 const props = withDefaults(
@@ -19,13 +20,16 @@ const props = withDefaults(
     helperText?: string;
   }>(),
   {
-    title: "Kandidat",
+    title: undefined,
     showExpectedNote: true,
     compact: false,
     maxVisibleTags: 4,
     helperText: undefined,
   },
 );
+const { t } = i18n.global;
+const activeLocale = computed(() => i18n.global.locale.value);
+const trackLocaleDependency = () => activeLocale.value;
 
 const statusToneClass = computed(() =>
   props.candidate.isCompleteForMatching
@@ -33,19 +37,20 @@ const statusToneClass = computed(() =>
     : "candidate-summary-card__status--warning",
 );
 
-const statusLabel = computed(() =>
-  props.candidate.isCompleteForMatching
-    ? "Matching bereit"
-    : "Tags fehlen fuer Matching",
-);
+const statusLabel = computed(() => {
+  trackLocaleDependency();
+  return props.candidate.isCompleteForMatching
+    ? t("candidateCard.ready")
+    : t("candidateCard.missing");
+});
 
-const helperCopy = computed(
-  () =>
-    props.helperText ??
+const helperCopy = computed(() => {
+  trackLocaleDependency();
+  return props.helperText ??
     (props.candidate.isCompleteForMatching
-      ? "Dieser Kandidat hat genug erwartete Tags fuer einen sinnvollen Vergleich."
-      : "Ergaenze erwartete Tags, damit MoodMatch diese Option sauber vergleichen kann."),
-);
+      ? t("candidateCard.helperReady")
+      : t("candidateCard.helperMissing"));
+});
 const visibleTags = computed(() =>
   props.candidate.media.tags.slice(0, props.maxVisibleTags),
 );
@@ -53,10 +58,12 @@ const hiddenTagCount = computed(() =>
   Math.max(props.candidate.media.tags.length - visibleTags.value.length, 0),
 );
 const metaLine = computed(() => {
+  trackLocaleDependency();
+
   const parts = [
-    mediaTypeLabels[props.candidate.media.mediaType],
-    consumptionStatusLabels[props.candidate.media.consumptionStatus],
-    commitmentLevelLabels[props.candidate.media.commitmentLevel],
+    getMatchingMediaTypeLabel(props.candidate.media.mediaType),
+    getMatchingConsumptionStatusLabel(props.candidate.media.consumptionStatus),
+    getMatchingCommitmentLevelLabel(props.candidate.media.commitmentLevel),
   ];
 
   if (props.candidate.media.releaseYear) {
@@ -76,7 +83,7 @@ const metaLine = computed(() => {
       <img
         v-if="candidate.media.coverUrl"
         :src="candidate.media.coverUrl"
-        :alt="`Cover von ${candidate.media.title}`"
+        :alt="t('candidateCard.coverAlt', { title: candidate.media.title })"
         class="candidate-summary-card__cover"
       >
       <div
@@ -90,7 +97,7 @@ const metaLine = computed(() => {
         <div class="candidate-summary-card__header">
           <div>
             <p class="eyebrow">
-              {{ title }}
+              {{ title ?? t('candidateCard.defaultTitle') }}
             </p>
             <h3 class="candidate-summary-card__title">
               {{ candidate.media.title }}
@@ -114,13 +121,13 @@ const metaLine = computed(() => {
 
         <div class="candidate-summary-card__facts">
           <span class="candidate-summary-card__fact">
-            {{ candidate.media.tags.length }} erwartete Tags
+            {{ t('candidateCard.expectedTagCount', { count: candidate.media.tags.length }) }}
           </span>
           <span class="candidate-summary-card__fact">
             {{
               candidate.isCompleteForMatching
-                ? "Vergleich bereit"
-                : "Noch unvollstaendig"
+                ? t("candidateCard.compareReady")
+                : t("candidateCard.notComplete")
             }}
           </span>
         </div>
@@ -131,15 +138,14 @@ const metaLine = computed(() => {
       v-if="showExpectedNote"
       class="candidate-summary-card__note"
     >
-      Kandidaten-Tags sind erwartete Merkmale und basieren auf deiner
-      Einschaetzung.
+      {{ t("candidateCard.expectedNote") }}
     </p>
 
     <p
       v-if="candidate.media.tags.length === 0"
       class="candidate-summary-card__empty"
     >
-      Fuer diesen Kandidaten wurden noch keine erwarteten Tags hinterlegt.
+      {{ t("candidateCard.empty") }}
     </p>
 
     <div
@@ -155,7 +161,7 @@ const metaLine = computed(() => {
         v-if="hiddenTagCount > 0"
         class="badge"
       >
-        +{{ hiddenTagCount }} weitere
+        {{ t('matching.moreTags', { count: hiddenTagCount }) }}
       </span>
     </div>
   </article>

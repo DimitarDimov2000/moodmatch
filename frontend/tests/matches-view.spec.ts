@@ -55,8 +55,8 @@ describe('MatchesView', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain('Dein Profil braucht noch mehr Signale');
-    expect(wrapper.text()).toContain('Profil noch nicht bereit fuer Matches');
-    expect(wrapper.text()).toContain('Mindestens drei bewertete konsumierte Medien werden benoetigt.');
+    expect(wrapper.text()).toContain('Profil noch nicht bereit für Matches');
+    expect(wrapper.text()).toContain('Aktuell 1 von 3 relevanten Medien. Mehr bestätigte Tags machen deine Empfehlungen aussagekräftiger.');
     expect(wrapper.text()).toContain('Profil verbessern');
     expect(wrapper.find(`[data-to='{"name":"profile"}']`).exists()).toBe(true);
   });

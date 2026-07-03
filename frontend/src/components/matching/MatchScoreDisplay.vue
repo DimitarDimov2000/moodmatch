@@ -5,6 +5,7 @@ import {
   formatPercentage,
   getScoreTone,
 } from "@/components/matching/matching-format";
+import { i18n } from "@/i18n";
 
 const props = withDefaults(
   defineProps<{
@@ -14,20 +15,26 @@ const props = withDefaults(
   }>(),
   {
     suppressed: false,
-    insufficientLabel:
-      "Prozentwerte erscheinen erst bei genug vergleichbaren Daten.",
+    insufficientLabel: undefined,
   },
 );
+const { t } = i18n.global;
+const activeLocale = computed(() => i18n.global.locale.value);
+const trackLocaleDependency = () => activeLocale.value;
 
-const scoreLabel = computed(() => formatPercentage(props.score));
+const scoreLabel = computed(() => {
+  trackLocaleDependency();
+  return formatPercentage(props.score);
+});
 const toneClass = computed(
   () => `match-score-display--${getScoreTone(props.score)}`,
 );
-const detailLabel = computed(() =>
-  props.score === null || props.suppressed
-    ? props.insufficientLabel
-    : "Relativer Match-Score",
-);
+const detailLabel = computed(() => {
+  trackLocaleDependency();
+  return props.score === null || props.suppressed
+    ? props.insufficientLabel ?? t("matching.insufficient")
+    : t("matching.relativeScore");
+});
 </script>
 
 <template>
@@ -36,10 +43,10 @@ const detailLabel = computed(() =>
     :class="toneClass"
   >
     <p class="match-score-display__eyebrow">
-      Match-Score
+      {{ t("matching.scoreEyebrow") }}
     </p>
     <p class="match-score-display__value">
-      {{ scoreLabel ?? "Keine Prozentangabe" }}
+      {{ scoreLabel ?? t("common.states.noPercentage") }}
     </p>
     <p class="match-score-display__detail">
       {{ detailLabel }}

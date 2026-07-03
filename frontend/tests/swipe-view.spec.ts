@@ -338,7 +338,7 @@ describe('SwipeView', () => {
     const wrapper = await mountView();
 
     expect(wrapper.text()).toContain('Profil noch nicht bereit');
-    expect(wrapper.text()).toContain('Noch mehr starke Ratings helfen.');
+    expect(wrapper.text()).toContain('Aktuell 2 von 3 relevanten Medien. Mehr bestätigte Tags machen deine Empfehlungen aussagekräftiger.');
     expect(wrapper.text()).toContain('Medien bewerten');
   });
 
@@ -355,6 +355,6 @@ describe('SwipeView', () => {
     expect(wrapper.text()).toContain('Match-Hinweise fehlen gerade');
     expect(wrapper.text()).toContain('Matches sind gerade nicht verfuegbar.');
     expect(wrapper.text()).toContain('Dune');
-    expect(wrapper.text()).toContain('Spaeter');
+    expect(wrapper.text()).toContain('Später');
   });
 });

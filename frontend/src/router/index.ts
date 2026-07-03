@@ -1,7 +1,9 @@
 import type { Pinia } from 'pinia';
+import { watch } from 'vue';
 import type { RouterHistory } from 'vue-router';
 import { createRouter, createWebHistory } from 'vue-router';
 
+import { i18n } from '@/i18n';
 import { useAuthStore } from '@/stores/auth';
 import CandidatesView from '@/views/CandidatesView.vue';
 import DashboardView from '@/views/DashboardView.vue';
@@ -18,7 +20,7 @@ import SwipeView from '@/views/SwipeView.vue';
 declare module 'vue-router' {
   interface RouteMeta {
     requiresAuth?: boolean;
-    title?: string;
+    titleKey?: string;
   }
 }
 
@@ -36,7 +38,7 @@ export function createAppRouter({ history = createWebHistory(), pinia }: CreateA
         name: 'dashboard',
         component: DashboardView,
         meta: {
-          title: 'Dashboard',
+          titleKey: 'routes.dashboard.title',
           requiresAuth: true,
         },
       },
@@ -45,7 +47,7 @@ export function createAppRouter({ history = createWebHistory(), pinia }: CreateA
         name: 'login',
         component: LoginView,
         meta: {
-          title: 'Login',
+          titleKey: 'routes.login.title',
         },
       },
       {
@@ -53,7 +55,7 @@ export function createAppRouter({ history = createWebHistory(), pinia }: CreateA
         name: 'profile',
         component: ProfileView,
         meta: {
-          title: 'Profil',
+          titleKey: 'routes.profile.title',
           requiresAuth: true,
         },
       },
@@ -62,7 +64,7 @@ export function createAppRouter({ history = createWebHistory(), pinia }: CreateA
         name: 'external-search',
         component: ExternalSearchView,
         meta: {
-          title: 'Externe Suche',
+          titleKey: 'routes.search.title',
           requiresAuth: true,
         },
       },
@@ -71,7 +73,7 @@ export function createAppRouter({ history = createWebHistory(), pinia }: CreateA
         name: 'media-list',
         component: MediaLibraryView,
         meta: {
-          title: 'Mediathek',
+          titleKey: 'routes.media.title',
           requiresAuth: true,
         },
       },
@@ -80,7 +82,7 @@ export function createAppRouter({ history = createWebHistory(), pinia }: CreateA
         name: 'media-create',
         component: MediaCreateView,
         meta: {
-          title: 'Neues Medium',
+          titleKey: 'routes.mediaCreate.title',
           requiresAuth: true,
         },
       },
@@ -89,7 +91,7 @@ export function createAppRouter({ history = createWebHistory(), pinia }: CreateA
         name: 'media-detail',
         component: MediaDetailView,
         meta: {
-          title: 'Medien-Details',
+          titleKey: 'routes.mediaDetail.title',
           requiresAuth: true,
         },
       },
@@ -98,7 +100,7 @@ export function createAppRouter({ history = createWebHistory(), pinia }: CreateA
         name: 'candidates',
         component: CandidatesView,
         meta: {
-          title: 'Kandidaten',
+          titleKey: 'routes.candidates.title',
           requiresAuth: true,
         },
       },
@@ -107,7 +109,7 @@ export function createAppRouter({ history = createWebHistory(), pinia }: CreateA
         name: 'matches',
         component: MatchesView,
         meta: {
-          title: 'Matches',
+          titleKey: 'routes.matches.title',
           requiresAuth: true,
         },
       },
@@ -116,7 +118,7 @@ export function createAppRouter({ history = createWebHistory(), pinia }: CreateA
         name: 'swipe',
         component: SwipeView,
         meta: {
-          title: 'Swipe-Modus',
+          titleKey: 'routes.swipe.title',
           requiresAuth: true,
         },
       },
@@ -125,7 +127,7 @@ export function createAppRouter({ history = createWebHistory(), pinia }: CreateA
         name: 'not-found',
         component: NotFoundView,
         meta: {
-          title: 'Nicht gefunden',
+          titleKey: 'routes.notFound.title',
         },
       },
     ],
@@ -151,10 +153,18 @@ export function createAppRouter({ history = createWebHistory(), pinia }: CreateA
     return true;
   });
 
-  router.afterEach((to) => {
-    const suffix = typeof to.meta.title === 'string' ? ` | ${to.meta.title}` : '';
-    document.title = `MoodMatch${suffix}`;
+  const updateDocumentTitle = () => {
+    const route = router.currentRoute.value;
+    const appTitle = i18n.global.t('app.metadata.title');
+    const suffix = route.meta.titleKey ? ` | ${i18n.global.t(route.meta.titleKey)}` : '';
+    document.title = `${appTitle}${suffix}`;
+  };
+
+  router.afterEach(() => {
+    updateDocumentTitle();
   });
+
+  watch(() => i18n.global.locale.value, updateDocumentTitle);
 
   return router;
 }

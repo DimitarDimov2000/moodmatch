@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { i18n } from '@/i18n';
+
 const props = defineProps<{
   pending?: boolean;
   detailsExpanded?: boolean;
@@ -9,25 +11,27 @@ const emit = defineEmits<{
   skip: [];
   details: [];
 }>();
+
+const { t } = i18n.global;
 </script>
 
 <template>
   <section class="swipe-decision-controls page-card">
     <div class="swipe-decision-controls__copy">
       <p class="eyebrow">
-        Schnell entscheiden
+        {{ t('swipeCards.quickDecide') }}
       </p>
     </div>
 
     <div
       class="swipe-decision-controls__buttons"
       role="group"
-      aria-label="Swipe-Aktionen"
+      :aria-label="t('swipeCards.actions')"
     >
       <button
         class="button swipe-decision-controls__button swipe-decision-controls__button--skip"
         type="button"
-        aria-label="Empfehlung vorerst ablehnen"
+        :aria-label="t('swipeCards.rejectLabel')"
         :disabled="props.pending"
         @click="emit('skip')"
       >
@@ -35,15 +39,15 @@ const emit = defineEmits<{
           class="swipe-decision-controls__icon"
           aria-hidden="true"
         >×</span>
-        <span class="swipe-decision-controls__label">Nicht jetzt</span>
-        <span class="swipe-decision-controls__hint">Links</span>
+        <span class="swipe-decision-controls__label">{{ t('common.actions.notNow') }}</span>
+        <span class="swipe-decision-controls__hint">{{ t('swipeCards.left') }}</span>
       </button>
 
       <button
         class="button swipe-decision-controls__button swipe-decision-controls__button--details"
         type="button"
         :aria-expanded="props.detailsExpanded ? 'true' : 'false'"
-        aria-label="Empfehlungsdetails ein- oder ausklappen"
+        :aria-label="t('swipeCards.detailsLabel')"
         :disabled="props.pending"
         @click="emit('details')"
       >
@@ -52,7 +56,7 @@ const emit = defineEmits<{
           aria-hidden="true"
         >⌄</span>
         <span class="swipe-decision-controls__label">
-          {{ props.detailsExpanded ? 'Weniger' : 'Details' }}
+          {{ props.detailsExpanded ? t('common.actions.less') : t('common.actions.details') }}
         </span>
         <span class="swipe-decision-controls__hint">Enter</span>
       </button>
@@ -60,7 +64,7 @@ const emit = defineEmits<{
       <button
         class="button swipe-decision-controls__button swipe-decision-controls__button--like"
         type="button"
-        aria-label="Empfehlung liken"
+        :aria-label="t('swipeCards.likeLabel')"
         :disabled="props.pending"
         @click="emit('like')"
       >
@@ -68,8 +72,8 @@ const emit = defineEmits<{
           class="swipe-decision-controls__icon"
           aria-hidden="true"
         >→</span>
-        <span class="swipe-decision-controls__label">Like</span>
-        <span class="swipe-decision-controls__hint">Rechts</span>
+        <span class="swipe-decision-controls__label">{{ t('common.actions.like') }}</span>
+        <span class="swipe-decision-controls__hint">{{ t('swipeCards.right') }}</span>
       </button>
     </div>
   </section>

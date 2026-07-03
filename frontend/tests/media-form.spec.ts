@@ -82,7 +82,7 @@ describe('MediaForm', () => {
     const wrapper = mountMediaForm();
 
     expect(wrapper.text()).toContain(
-      'Du kannst das Medium trotzdem jetzt speichern und Tags spaeter hinzufuegen',
+      'Noch keine Tags verfügbar. Du kannst das Medium trotzdem jetzt speichern und Tags später hinzufügen.',
     );
   });
 });

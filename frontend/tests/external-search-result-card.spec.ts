@@ -47,7 +47,7 @@ describe('ExternalSearchResultCard', () => {
 
     expect(wrapper.text()).toContain('Pride and Prejudice');
     expect(wrapper.text()).toContain('LibriVox');
-    expect(wrapper.text()).toContain('Hoerbuch');
+    expect(wrapper.text()).toContain('Hörbuch');
     expect(wrapper.text()).toContain('Bereits vorhanden');
     expect(wrapper.text()).toContain('Autor:in & Stimme');
     expect(wrapper.text()).toContain('Author: Jane Austen');
@@ -188,7 +188,7 @@ describe('ExternalSearchResultCard', () => {
       },
     });
 
-    expect(wrapper.text()).toContain('Noch keine passenden Tag-Vorschlaege vorhanden.');
+    expect(wrapper.text()).toContain('Noch keine passenden Tag-Vorschläge vorhanden.');
   });
 
   it('renders RAWG game metadata clearly', () => {

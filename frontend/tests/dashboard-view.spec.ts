@@ -217,8 +217,8 @@ describe("DashboardView", () => {
     expect(wrapper.text()).toContain("Lokale Mediensammlung");
     expect(wrapper.text()).toContain("2");
     expect(wrapper.text()).toContain("3/3");
-    expect(wrapper.text()).toContain("Vorschlaege fuer spaeter");
-    expect(wrapper.text()).toContain("Erklaerbare Vergleiche");
-    expect(wrapper.text()).toContain("Dune fuehrt aktuell deine Matches an.");
+    expect(wrapper.text()).toContain("Vorschläge für später");
+    expect(wrapper.text()).toContain("Erklärbare Vergleiche");
+    expect(wrapper.text()).toContain("Dune führt aktuell deine Matches an.");
   });
 });

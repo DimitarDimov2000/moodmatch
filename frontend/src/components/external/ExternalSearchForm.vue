@@ -3,12 +3,13 @@ import { computed } from 'vue';
 
 import FormField from '@/components/common/FormField.vue';
 import {
+  getYouTubeSearchSortOptions,
   sourceHintForMediaType,
   sourceOptionsForMediaType,
-  youTubeSearchSortOptions,
   type ExternalSourceSelection,
 } from '@/components/external/external-options';
-import { mediaTypeOptions } from '@/components/media/media-options';
+import { getMediaTypeOptions } from '@/components/media/media-options';
+import { i18n } from '@/i18n';
 import type { ExternalSearchSort, MediaType } from '@/types/api';
 
 const props = defineProps<{
@@ -30,6 +31,9 @@ const emit = defineEmits<{
 const sourceOptions = computed(() => sourceOptionsForMediaType(props.mediaType));
 const sourceHint = computed(() => sourceHintForMediaType(props.mediaType));
 const showSort = computed(() => props.mediaType === 'VIDEO' && props.source === 'YOUTUBE');
+const mediaTypeOptions = computed(() => getMediaTypeOptions());
+const youTubeSearchSortOptions = computed(() => getYouTubeSearchSortOptions());
+const { t } = i18n.global;
 </script>
 
 <template>
@@ -42,8 +46,8 @@ const showSort = computed(() => props.mediaType === 'VIDEO' && props.source === 
       :class="{ 'external-search-form__grid--with-sort': showSort }"
     >
       <FormField
-        label="Suchbegriff"
-        hint="Suche nach Titeln, Reihen, Autor:innen, Creator-Namen oder bekannten Schlagwoertern."
+        :label="t('externalSearch.query')"
+        :hint="t('externalSearch.queryHint')"
         required
       >
         <input
@@ -52,14 +56,14 @@ const showSort = computed(() => props.mediaType === 'VIDEO' && props.source === 
           type="text"
           name="query"
           maxlength="200"
-          placeholder="z. B. Arrival, Dark, Dune oder AI tutorial"
+          :placeholder="t('externalSearch.queryPlaceholder')"
           @input="emit('update:query', ($event.target as HTMLInputElement).value)"
         >
       </FormField>
 
       <FormField
-        label="Medientyp"
-        hint="Der Medientyp legt fest, welche Quellen in dieser Suche verfuegbar sind."
+        :label="t('externalSearch.mediaType')"
+        :hint="t('externalSearch.mediaTypeHint')"
         required
       >
         <select
@@ -79,7 +83,7 @@ const showSort = computed(() => props.mediaType === 'VIDEO' && props.source === 
       </FormField>
 
       <FormField
-        label="Quelle"
+        :label="t('externalSearch.source')"
         :hint="sourceHint"
         required
       >
@@ -102,8 +106,8 @@ const showSort = computed(() => props.mediaType === 'VIDEO' && props.source === 
 
       <FormField
         v-if="showSort"
-        label="YouTube-Sortierung"
-        hint="Gilt nur fuer die explizite YouTube-Suche."
+        :label="t('externalSearch.sort')"
+        :hint="t('externalSearch.sortHint')"
         required
       >
         <select
@@ -129,7 +133,7 @@ const showSort = computed(() => props.mediaType === 'VIDEO' && props.source === 
         type="submit"
         :disabled="submitting || !query.trim()"
       >
-        {{ submitting ? 'Suche laeuft...' : 'Jetzt suchen' }}
+        {{ submitting ? t('common.actions.loadingSearch') : t('common.actions.search') }}
       </button>
     </div>
   </form>

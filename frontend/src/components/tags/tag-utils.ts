@@ -1,12 +1,9 @@
 import type { TagCategory, TagResponse } from '@/types/api';
+import { i18n } from '@/i18n';
 
-export const tagCategoryLabels: Record<TagCategory, string> = {
-  GENRE: 'Genre',
-  THEME: 'Thema',
-  SETTING: 'Setting',
-  TONE: 'Ton',
-  EXPERIENCE: 'Erlebnis',
-};
+export function getTagCategoryLabel(category: TagCategory): string {
+  return i18n.global.t(`labels.tagCategory.${category}`);
+}
 
 export function groupTagsByCategory(tags: TagResponse[]): Array<{
   category: TagCategory;
@@ -18,11 +15,10 @@ export function groupTagsByCategory(tags: TagResponse[]): Array<{
   return order
     .map((category) => ({
       category,
-      label: tagCategoryLabels[category],
+      label: getTagCategoryLabel(category),
       tags: tags
         .filter((tag) => tag.category === category)
         .sort((left, right) => left.name.localeCompare(right.name)),
     }))
     .filter((group) => group.tags.length > 0);
 }
-

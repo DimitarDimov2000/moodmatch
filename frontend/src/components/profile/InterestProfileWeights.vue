@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import TagChip from "@/components/tags/TagChip.vue";
+import { i18n } from "@/i18n";
 import type { InterestProfileTagWeightResponse } from "@/types/api";
 import { formatDecimal } from "@/components/matching/matching-format";
 
@@ -7,6 +8,7 @@ defineProps<{
   title?: string;
   tags: InterestProfileTagWeightResponse[];
 }>();
+const { t } = i18n.global;
 </script>
 
 <template>
@@ -14,14 +16,13 @@ defineProps<{
     <div class="interest-profile-weights__header">
       <div class="interest-profile-weights__copy">
         <p class="eyebrow">
-          Profil-Gewichte
+          {{ t("profileWeights.eyebrow") }}
         </p>
         <h2 class="section-title">
-          {{ title ?? "Interessenprofil nach Tags" }}
+          {{ title ?? t("profileWeights.defaultTitle") }}
         </h2>
         <p class="body-muted">
-          Hohe Werte zeigen, welche Themen und Stimmungen in deinen positiv
-          bewerteten Medien am staerksten wiederkehren.
+          {{ t("profileWeights.intro") }}
         </p>
       </div>
     </div>
@@ -30,7 +31,7 @@ defineProps<{
       v-if="tags.length === 0"
       class="body-muted"
     >
-      Noch keine Tag-Gewichte verfuegbar.
+      {{ t("profileWeights.empty") }}
     </p>
 
     <ul

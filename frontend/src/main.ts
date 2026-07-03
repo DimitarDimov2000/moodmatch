@@ -3,6 +3,7 @@ import { createApp } from 'vue';
 
 import { configureApiClientAuth } from './api/client';
 import App from './App.vue';
+import { i18n, initializeI18n } from './i18n';
 import { createAppRouter } from './router';
 import { initializeTheme } from './composables/useTheme';
 import { useAuthStore } from './stores/auth';
@@ -11,6 +12,7 @@ import './assets/styles/base.css';
 
 async function bootstrap() {
   initializeTheme();
+  initializeI18n();
 
   const app = createApp(App);
   const pinia = createPinia();
@@ -40,6 +42,7 @@ async function bootstrap() {
   await authStore.initialize();
 
   app.use(pinia);
+  app.use(i18n);
   app.use(router);
   await router.isReady();
   app.mount('#app');

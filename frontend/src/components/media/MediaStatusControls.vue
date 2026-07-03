@@ -2,9 +2,10 @@
 import { computed, reactive, watch } from 'vue';
 
 import FormField from '@/components/common/FormField.vue';
+import { i18n } from '@/i18n';
 import {
   canBeFavourite,
-  consumptionStatusOptions,
+  getConsumptionStatusOptions,
 } from '@/components/media/media-options';
 import type {
   MediaResponse,
@@ -21,6 +22,7 @@ const emit = defineEmits<{
   updateStatus: [request: UpdateMediaConsumptionStatusRequest];
   updateFavourite: [request: UpdateMediaFavouriteRequest];
 }>();
+const { t } = i18n.global;
 
 const statusForm = reactive({
   consumptionStatus: props.media.consumptionStatus,
@@ -53,16 +55,16 @@ const statusError = computed(() => {
     const rating = Number(statusForm.rating);
 
     if (!statusForm.rating) {
-      return 'Beim Status konsumiert ist eine Bewertung erforderlich.';
+      return t('mediaStatus.validationConsumedRating');
     }
 
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-      return 'Bewertung muss eine ganze Zahl von 1 bis 5 sein.';
+      return t('mediaStatus.validationRatingRange');
     }
   }
 
   if (leavingConsumed.value && !statusForm.confirmDestructiveChange) {
-    return 'Bitte bestaetigen, dass Bewertung und Favorit beim Statuswechsel entfernt werden duerfen.';
+    return t('mediaStatus.validationConfirmDestructive');
   }
 
   return '';
@@ -93,10 +95,10 @@ function toggleFavourite() {
     <div class="status-controls__header">
       <div>
         <p class="eyebrow">
-          Schnellaktionen
+          {{ t('mediaStatus.eyebrow') }}
         </p>
         <h2 class="section-title">
-          Status und Favorit
+          {{ t('mediaStatus.title') }}
         </h2>
       </div>
       <button
@@ -106,18 +108,18 @@ function toggleFavourite() {
         :disabled="pending || !canBeFavourite(media.consumptionStatus, media.rating)"
         @click="toggleFavourite"
       >
-        {{ media.isFavourite ? 'Favorit entfernen' : 'Als Favorit markieren' }}
+        {{ media.isFavourite ? t('mediaStatus.removeFavourite') : t('mediaStatus.setFavourite') }}
       </button>
     </div>
 
     <div class="status-controls__grid">
-      <FormField label="Status">
+      <FormField :label="t('mediaForm.status')">
         <select
           v-model="statusForm.consumptionStatus"
           class="status-controls__input"
         >
           <option
-            v-for="option in consumptionStatusOptions"
+            v-for="option in getConsumptionStatusOptions()"
             :key="option.value"
             :value="option.value"
           >
@@ -126,7 +128,7 @@ function toggleFavourite() {
         </select>
       </FormField>
 
-      <FormField label="Bewertung">
+      <FormField :label="t('mediaForm.rating')">
         <input
           v-model="statusForm.rating"
           class="status-controls__input"
@@ -147,7 +149,7 @@ function toggleFavourite() {
         v-model="statusForm.confirmDestructiveChange"
         type="checkbox"
       >
-      <span>Ich bestaetige, dass Bewertung und Favorit entfernt werden duerfen.</span>
+      <span>{{ t('mediaStatus.confirmLeavingConsumed') }}</span>
     </label>
 
     <label
@@ -159,7 +161,7 @@ function toggleFavourite() {
         type="checkbox"
         :disabled="!favouriteAllowed"
       >
-      <span>Favorit im selben Schritt setzen</span>
+      <span>{{ t('mediaStatus.setFavouriteSameStep') }}</span>
     </label>
 
     <p
@@ -173,7 +175,7 @@ function toggleFavourite() {
       v-if="!canBeFavourite(media.consumptionStatus, media.rating)"
       class="status-controls__hint"
     >
-      Die Favoriten-Schnellaktion ist nur fuer konsumierte Medien mit Bewertung 4 oder 5 verfuegbar.
+      {{ t('mediaStatus.favouriteQuickHint') }}
     </p>
 
     <button
@@ -182,7 +184,7 @@ function toggleFavourite() {
       :disabled="pending || Boolean(statusError)"
       @click="submitStatus"
     >
-      Status aktualisieren
+      {{ t('common.actions.saveStatus') }}
     </button>
   </section>
 </template>
@@ -242,4 +244,3 @@ function toggleFavourite() {
   }
 }
 </style>
-

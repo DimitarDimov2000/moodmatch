@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 
 import MediaArtwork from '@/components/media/MediaArtwork.vue';
+import { i18n } from '@/i18n';
 import {
   getExternalSourceLabel,
 } from '@/components/media/media-presentation';
@@ -10,16 +11,17 @@ import TagChip from '@/components/tags/TagChip.vue';
 import type { MediaResponse } from '@/types/api';
 import {
   canBeFavourite,
-  commitmentLevelLabels,
-  consumptionStatusLabels,
-  mediaTypeLabels,
-  metadataOriginLabels,
-  sourceTypeLabels,
+  getCommitmentLevelLabel,
+  getConsumptionStatusLabel,
+  getMediaTypeLabel,
+  getMetadataOriginLabel,
+  getSourceTypeLabel,
 } from '@/components/media/media-options';
 
 const props = defineProps<{
   media: MediaResponse;
 }>();
+const { t } = i18n.global;
 
 const visibleTags = computed(() => props.media.tags.slice(0, 4));
 const hiddenTagCount = computed(() =>
@@ -28,12 +30,12 @@ const hiddenTagCount = computed(() =>
 const sourceBadgeLabel = computed(() =>
   props.media.externalSourceName
     ? getExternalSourceLabel(props.media.externalSourceName)
-    : sourceTypeLabels[props.media.sourceType],
+    : getSourceTypeLabel(props.media.sourceType),
 );
 const subtitle = computed(() =>
   [
-    consumptionStatusLabels[props.media.consumptionStatus],
-    commitmentLevelLabels[props.media.commitmentLevel],
+    getConsumptionStatusLabel(props.media.consumptionStatus),
+    getCommitmentLevelLabel(props.media.commitmentLevel),
     props.media.releaseYear ? String(props.media.releaseYear) : null,
   ].filter((value): value is string => Boolean(value)).join(' • '),
 );
@@ -41,12 +43,14 @@ const subtitle = computed(() =>
 const detailBadges = computed(() =>
   [
     props.media.metadataOrigin
-      ? metadataOriginLabels[props.media.metadataOrigin]
+      ? getMetadataOriginLabel(props.media.metadataOrigin)
       : null,
   ].filter((value): value is string => Boolean(value)),
 );
 const ratingLabel = computed(() =>
-  props.media.rating === null ? 'Keine Bewertung' : `${props.media.rating}/5`,
+  props.media.rating === null
+    ? t('common.states.noRating')
+    : t('mediaCard.ratingOutOfFive', { rating: props.media.rating }),
 );
 const favouriteEligible = computed(() =>
   canBeFavourite(props.media.consumptionStatus, props.media.rating),
@@ -55,7 +59,9 @@ const descriptionPreview = computed(
   () => props.media.description?.trim() ?? '',
 );
 const tagSummary = computed(() =>
-  props.media.tags.length === 1 ? '1 Tag' : `${props.media.tags.length} Tags`,
+  props.media.tags.length === 1
+    ? t('mediaCard.oneTag')
+    : t('mediaCard.manyTags', { count: props.media.tags.length }),
 );
 </script>
 
@@ -75,13 +81,13 @@ const tagSummary = computed(() =>
             :to="{ name: 'media-detail', params: { id: media.id } }"
             class="button button--secondary"
           >
-            Details
+            {{ t('mediaCard.details') }}
           </RouterLink>
           <span
             v-if="!favouriteEligible"
             class="media-card__note"
           >
-            Favorit erst ab konsumiert und Bewertung 4+
+            {{ t('mediaCard.favouriteRequirement') }}
           </span>
         </div>
       </div>
@@ -89,7 +95,7 @@ const tagSummary = computed(() =>
       <div class="media-card__copy">
         <div class="media-card__badge-row">
           <span class="badge">
-            {{ mediaTypeLabels[media.mediaType] }}
+            {{ getMediaTypeLabel(media.mediaType) }}
           </span>
           <span class="badge badge--accent">
             {{ sourceBadgeLabel }}
@@ -126,7 +132,7 @@ const tagSummary = computed(() =>
             v-if="media.isFavourite"
             class="badge badge--success"
           >
-            Favorit
+            {{ t('mediaCard.favourite') }}
           </span>
         </div>
 
@@ -141,7 +147,7 @@ const tagSummary = computed(() =>
             v-if="media.sourceType !== 'MANUAL'"
             class="media-card__fact media-card__fact--accent"
           >
-            Quelle: {{ sourceBadgeLabel }}
+            {{ t('mediaCard.source', { source: sourceBadgeLabel }) }}
           </span>
         </div>
 
@@ -157,7 +163,7 @@ const tagSummary = computed(() =>
           class="media-card__tag-group"
         >
           <p class="media-card__label">
-            Zugeordnete Tags
+            {{ t('mediaCard.assignedTags') }}
           </p>
           <div class="media-card__tags">
             <TagChip
@@ -169,7 +175,7 @@ const tagSummary = computed(() =>
               v-if="hiddenTagCount > 0"
               class="badge"
             >
-              +{{ hiddenTagCount }} weitere
+              {{ t('mediaCard.moreTags', { count: hiddenTagCount }) }}
             </span>
           </div>
         </div>

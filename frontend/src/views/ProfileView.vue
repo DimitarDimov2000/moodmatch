@@ -5,14 +5,19 @@ import { RouterLink } from "vue-router";
 import { ApiRequestError } from "@/api/client";
 import { getProfile } from "@/api/profile";
 import AppMessage from "@/components/common/AppMessage.vue";
+import { getProfileReadinessSummary } from "@/components/matching/matching-copy";
 import ProfileContributionCard from "@/components/profile/ProfileContributionCard.vue";
 import InterestProfileWeights from "@/components/profile/InterestProfileWeights.vue";
 import TagChip from "@/components/tags/TagChip.vue";
+import { i18n } from "@/i18n";
 import type { InterestProfileResponse } from "@/types/api";
 
 const profile = ref<InterestProfileResponse | null>(null);
 const loading = ref(true);
 const errorMessage = ref("");
+const { t } = i18n.global;
+const activeLocale = computed(() => i18n.global.locale.value);
+const trackLocaleDependency = () => activeLocale.value;
 
 const strongestTags = computed(
   () => profile.value?.weightedTags.slice(0, 6) ?? [],
@@ -20,6 +25,10 @@ const strongestTags = computed(
 const contributionCount = computed(
   () => profile.value?.contributingMedia.length ?? 0,
 );
+const readinessSummary = computed(() => {
+  trackLocaleDependency();
+  return profile.value ? getProfileReadinessSummary(profile.value) : "";
+});
 
 onMounted(async () => {
   await loadProfile();
@@ -43,7 +52,7 @@ function toUserMessage(error: unknown): string {
     return error.message;
   }
 
-  return "Das Interessenprofil konnte nicht geladen werden.";
+  return t("profile.errorTitle");
 }
 </script>
 
@@ -52,28 +61,27 @@ function toUserMessage(error: unknown): string {
     <header class="page-header">
       <div>
         <p class="eyebrow">
-          Profil
+          {{ t("profile.eyebrow") }}
         </p>
         <h1 class="page-title">
-          So versteht MoodMatch deinen Geschmack
+          {{ t("profile.title") }}
         </h1>
         <p class="page-copy">
-          Hier siehst du kompakt, welche Signale dein Profil tragen und warum
-          einzelne Empfehlungen dadurch besser zu dir passen.
+          {{ t("profile.intro") }}
         </p>
       </div>
     </header>
 
     <AppMessage
       v-if="loading"
-      title="Profil wird geladen"
-      description="Gewichtete Tags und Profilbeitraege werden vorbereitet."
+      :title="t('profile.loadingTitle')"
+      :description="t('profile.loadingDescription')"
       tone="info"
     />
 
     <AppMessage
       v-else-if="errorMessage"
-      title="Profil konnte nicht geladen werden"
+      :title="t('profile.errorTitle')"
       :description="errorMessage"
       tone="error"
     >
@@ -83,7 +91,7 @@ function toUserMessage(error: unknown): string {
           type="button"
           @click="loadProfile"
         >
-          Erneut versuchen
+          {{ t("common.actions.retry") }}
         </button>
       </div>
     </AppMessage>
@@ -92,46 +100,46 @@ function toUserMessage(error: unknown): string {
       <section class="overview-stats">
         <article class="page-card overview-stat-card">
           <p class="eyebrow">
-            Bereit fuer Matching
+            {{ t("profile.readiness") }}
           </p>
           <p class="overview-stat-card__value">
-            {{ profile.isReadyForMatching ? "Ja" : "Noch nicht" }}
+            {{ profile.isReadyForMatching ? t("profile.yes") : t("profile.notYet") }}
           </p>
           <p class="overview-stat-card__copy">
-            {{ profile.explanationMessage }}
+            {{ readinessSummary }}
           </p>
         </article>
 
         <article class="page-card overview-stat-card">
           <p class="eyebrow">
-            Relevante Medien
+            {{ t("profile.relevantMedia") }}
           </p>
           <p class="overview-stat-card__value">
             {{ profile.profileRelevantMediaCount }} /
             {{ profile.requiredProfileRelevantMediaCount }}
           </p>
           <p class="overview-stat-card__copy">
-            Mindestens {{ profile.requiredProfileRelevantMediaCount }} benoetigt
+            {{ t("profile.requiredAtLeast", { count: profile.requiredProfileRelevantMediaCount }) }}
           </p>
         </article>
 
         <article class="page-card overview-stat-card">
           <p class="eyebrow">
-            Starke Signale
+            {{ t("profile.strongSignals") }}
           </p>
           <p class="overview-stat-card__value">
             {{ strongestTags.length }}
           </p>
           <p class="overview-stat-card__copy">
-            Sichtbare Schwerpunkt-Tags
+            {{ t("profile.strongestSignalsCopy") }}
           </p>
         </article>
       </section>
 
       <AppMessage
         v-if="!profile.isReadyForMatching"
-        title="Noch zu wenig Profildaten"
-        :description="profile.explanationMessage"
+        :title="t('profile.notEnoughTitle')"
+        :description="readinessSummary"
         tone="warning"
       >
         <div class="state-actions">
@@ -139,7 +147,7 @@ function toUserMessage(error: unknown): string {
             :to="{ name: 'media-list' }"
             class="button button--secondary"
           >
-            Mediathek oeffnen
+            {{ t("common.actions.openMediaLibrary") }}
           </RouterLink>
         </div>
       </AppMessage>
@@ -148,13 +156,13 @@ function toUserMessage(error: unknown): string {
         <div class="section-header">
           <div class="section-header__copy">
             <p class="eyebrow">
-              Zusammenfassung
+              {{ t("profile.summary") }}
             </p>
             <h2 class="section-title">
-              Deine staerksten Geschmackssignale
+              {{ t("profile.strongestSignals") }}
             </h2>
             <p class="body-muted">
-              {{ profile.explanationMessage }}
+              {{ readinessSummary }}
             </p>
           </div>
         </div>
@@ -162,7 +170,7 @@ function toUserMessage(error: unknown): string {
         <div class="profile-view__summary-grid">
           <div class="profile-view__spotlight">
             <p class="profile-view__spotlight-label">
-              Deine staerksten Geschmackssignale
+              {{ t("profile.strongestSignals") }}
             </p>
             <div
               v-if="strongestTags.length > 0"
@@ -178,29 +186,26 @@ function toUserMessage(error: unknown): string {
               v-else
               class="body-muted"
             >
-              Sobald mehr konsumierte Medien mit bestaetigten Tags vorliegen,
-              werden hier deine staerksten Signale sichtbar.
+              {{ t("profile.noSignalsYet") }}
             </p>
           </div>
 
           <div class="profile-view__summary-notes">
             <div class="profile-view__summary-note">
               <p class="profile-view__spotlight-label">
-                Was deine Empfehlungen praegt
+                {{ t("profile.whatShapesRecommendations") }}
               </p>
               <p class="body-muted">
-                Positive Bewertungen, Favoriten und bestaetigte Tags staerken
-                die Signale, die spaeter in Matches sichtbar werden.
+                {{ t("profile.recommendationFactors") }}
               </p>
             </div>
 
             <div class="profile-view__summary-note">
               <p class="profile-view__spotlight-label">
-                Woher dieses Signal kommt
+                {{ t("profile.signalSource") }}
               </p>
               <p class="body-muted">
-                {{ contributionCount }} Medien tragen aktuell zu deinem Profil
-                bei.
+                {{ t("profile.contributingMedia", { count: contributionCount }) }}
               </p>
             </div>
           </div>
@@ -211,24 +216,23 @@ function toUserMessage(error: unknown): string {
         <InterestProfileWeights
           class="profile-view__weights"
           :tags="profile.weightedTags"
-          title="Deine staerksten Geschmackssignale"
+          :title="t('profile.strongestSignals')"
         />
 
         <section class="profile-view__media">
           <div class="profile-view__section-header">
             <h2 class="section-title">
-              Was deine Empfehlungen praegt
+              {{ t("profile.whatShapesRecommendations") }}
             </h2>
             <p class="body-muted">
-              Woher dieses Signal kommt: konsumierte Medien mit Bewertung,
-              Favoritenstatus und bestaetigten Tags.
+              {{ t("profile.signalSourceDetails") }}
             </p>
           </div>
 
           <AppMessage
             v-if="profile.contributingMedia.length === 0"
-            title="Noch keine Profilquellen"
-            description="Sobald konsumierte Medien mit positiver Bewertung und bestaetigten Tags vorhanden sind, erscheinen sie hier kompakt erklaert."
+            :title="t('profile.noSourcesTitle')"
+            :description="t('profile.noSourcesDescription')"
           />
 
           <div

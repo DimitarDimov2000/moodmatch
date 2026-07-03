@@ -100,10 +100,10 @@ describe('auth UI foundation', () => {
     expect(wrapper.find('[data-testid="brand-link"]').exists()).toBe(false);
     expect(wrapper.text()).toContain('MoodMatch');
     expect(wrapper.text()).toContain('Media Discovery App');
-    expect(wrapper.text()).toContain('Log in to continue');
-    expect(wrapper.text()).toContain('Your media and matches are private to your account.');
-    expect(wrapper.text()).toContain('Login');
-    expect(wrapper.text()).toContain('Create account');
+    expect(wrapper.text()).toContain('Melde dich an, um weiterzumachen');
+    expect(wrapper.text()).toContain('Deine Medien und Matches sind privat an dein Konto gebunden.');
+    expect(wrapper.text()).toContain('Anmelden');
+    expect(wrapper.text()).toContain('Konto erstellen');
     expect(wrapper.text()).not.toContain('Continue with Google');
     expect(wrapper.find('[data-testid="google-signin-container"]').exists()).toBe(false);
     expect(loginTab.attributes('aria-selected')).toBe('true');
@@ -112,7 +112,7 @@ describe('auth UI foundation', () => {
 
     await registerTab.trigger('click');
 
-    expect(wrapper.text()).toContain('Create your MoodMatch account');
+    expect(wrapper.text()).toContain('Erstelle dein MoodMatch-Konto');
     expect(registerTab.attributes('aria-selected')).toBe('true');
     expect(registerTab.classes()).toContain('login-view__tab--active');
     expect(wrapper.find('input[autocomplete="new-password"]').exists()).toBe(true);
@@ -123,7 +123,7 @@ describe('auth UI foundation', () => {
 
     expect(router.currentRoute.value.name).toBe('login');
     expect(router.currentRoute.value.query.reason).toBe('login-required');
-    expect(wrapper.text()).toContain('Log in to continue');
+    expect(wrapper.text()).toContain('Melde dich an, um weiterzumachen');
     expect(wrapper.find('[data-testid="brand-link"]').exists()).toBe(false);
   });
 
@@ -167,7 +167,7 @@ describe('auth UI foundation', () => {
 
     await wrapper
       .findAll('button')
-      .find((candidate) => candidate.text() === 'Create account')
+      .find((candidate) => candidate.text() === 'Konto erstellen')
       ?.trigger('click');
 
     const inputs = wrapper.findAll('input');

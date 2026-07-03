@@ -21,9 +21,9 @@ describe('ThemePreferenceSwitch', () => {
     const wrapper = mount(ThemePreferenceSwitch);
     const button = wrapper.get('[data-testid="theme-switch"]');
 
-    expect(button.text()).toContain('Dark');
-    expect(button.attributes('aria-label')).toBe('Theme: Dark. Click to switch to Light.');
-    expect(button.attributes('title')).toBe('Theme: Dark. Click to switch to Light.');
+    expect(button.text()).toContain('Dunkel');
+    expect(button.attributes('aria-label')).toBe('Design: Dunkel. Klickt zu Hell.');
+    expect(button.attributes('title')).toBe('Design: Dunkel. Klickt zu Hell.');
   });
 
   it('cycles dark to light to system and back to dark', async () => {
@@ -34,10 +34,10 @@ describe('ThemePreferenceSwitch', () => {
 
     await button.trigger('click');
 
-    expect(button.text()).toContain('Light');
+    expect(button.text()).toContain('Hell');
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');
-    expect(button.attributes('aria-label')).toBe('Theme: Light. Click to switch to System.');
+    expect(button.attributes('aria-label')).toBe('Design: Hell. Klickt zu System.');
 
     await button.trigger('click');
 
@@ -45,15 +45,15 @@ describe('ThemePreferenceSwitch', () => {
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('system');
     expect(button.attributes('aria-label')).toBe(
-      'Theme: System. Following Light. Click to switch to Dark.',
+      'Design: System. Folgt Hell. Klickt zu Dunkel.',
     );
 
     await button.trigger('click');
 
-    expect(button.text()).toContain('Dark');
+    expect(button.text()).toContain('Dunkel');
     expect(document.documentElement.dataset.theme).toBe('dark');
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
-    expect(button.attributes('aria-label')).toBe('Theme: Dark. Click to switch to Light.');
+    expect(button.attributes('aria-label')).toBe('Design: Dunkel. Klickt zu Hell.');
   });
 
   it('hydrates from the existing localStorage-backed theme preference', () => {
@@ -63,8 +63,8 @@ describe('ThemePreferenceSwitch', () => {
     const wrapper = mount(ThemePreferenceSwitch);
     const button = wrapper.get('[data-testid="theme-switch"]');
 
-    expect(button.text()).toContain('Light');
+    expect(button.text()).toContain('Hell');
     expect(document.documentElement.dataset.theme).toBe('light');
-    expect(button.attributes('aria-label')).toBe('Theme: Light. Click to switch to System.');
+    expect(button.attributes('aria-label')).toBe('Design: Hell. Klickt zu System.');
   });
 });

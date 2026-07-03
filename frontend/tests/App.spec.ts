@@ -128,14 +128,14 @@ describe('App', () => {
     const themeSwitch = wrapper.get('[data-testid="theme-switch"]');
 
     expect(wrapper.find('[data-testid="brand-link"]').exists()).toBe(false);
-    expect(themeSwitch.text()).toContain('Dark');
-    expect(themeSwitch.attributes('aria-label')).toBe('Theme: Dark. Click to switch to Light.');
+    expect(themeSwitch.text()).toContain('Dunkel');
+    expect(themeSwitch.attributes('aria-label')).toBe('Design: Dunkel. Klickt zu Hell.');
     expect(document.documentElement.dataset.theme).toBe('dark');
 
     await themeSwitch.trigger('click');
 
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');
-    expect(themeSwitch.text()).toContain('Light');
+    expect(themeSwitch.text()).toContain('Hell');
   });
 });

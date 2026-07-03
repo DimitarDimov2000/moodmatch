@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
+import { i18n } from "@/i18n";
 import TagChip from "@/components/tags/TagChip.vue";
 import type { MatchResultResponse } from "@/types/api";
 import { formatDecimal } from "./matching-format";
+import {
+  getGeneratedCandidateTagNote,
+  getGeneratedMatchExplanation,
+} from "./matching-copy";
 
 const props = defineProps<{
   result: MatchResultResponse;
 }>();
+const { t } = i18n.global;
+const activeLocale = computed(() => i18n.global.locale.value);
+const trackLocaleDependency = () => activeLocale.value;
 
 const rawScoreLabel = computed(() => formatDecimal(props.result.rawScore));
 const adjustedScoreLabel = computed(() =>
@@ -45,6 +53,14 @@ const stateToneClass = computed(() => {
 
   return "match-explanation__state--success";
 });
+const explanationCopy = computed(() => {
+  trackLocaleDependency();
+  return getGeneratedMatchExplanation(props.result);
+});
+const candidateTagNote = computed(() => {
+  trackLocaleDependency();
+  return getGeneratedCandidateTagNote();
+});
 </script>
 
 <template>
@@ -52,10 +68,10 @@ const stateToneClass = computed(() => {
     <div class="match-explanation__top">
       <div class="match-explanation__copy">
         <h3 class="section-title">
-          Warum das passt
+          {{ t("matching.explanationTitle") }}
         </h3>
         <p class="body-muted">
-          {{ result.explanationMessage }}
+          {{ explanationCopy }}
         </p>
       </div>
 
@@ -66,19 +82,19 @@ const stateToneClass = computed(() => {
         {{
           result.candidate.isCompleteForMatching
             ? result.relativeScore === null
-              ? "Vergleich noch vorsichtig"
-              : "Vergleich gut einordenbar"
-            : "Noch unvollstaendig fuer Matching"
+              ? t("matching.cautious")
+              : t("matching.understandable")
+            : t("matching.incomplete")
         }}
       </div>
     </div>
 
     <div class="match-explanation__facts">
       <span class="match-explanation__fact">
-        {{ result.matchingTagCount }} gemeinsame Tags
+        {{ t("matching.commonTags", { count: result.matchingTagCount }) }}
       </span>
       <span class="match-explanation__fact">
-        {{ result.candidateTagCount }} erwartete Tags
+        {{ t("matching.expectedTags", { count: result.candidateTagCount }) }}
       </span>
     </div>
 
@@ -87,7 +103,7 @@ const stateToneClass = computed(() => {
       class="match-explanation__section"
     >
       <p class="match-explanation__label">
-        Ueberschneidende Tags
+        {{ t("matching.overlappingTags") }}
       </p>
       <div class="match-explanation__chips">
         <TagChip
@@ -99,7 +115,7 @@ const stateToneClass = computed(() => {
           v-if="hiddenMatchingTagCount > 0"
           class="badge"
         >
-          +{{ hiddenMatchingTagCount }} weitere
+          {{ t('matching.moreTags', { count: hiddenMatchingTagCount }) }}
         </span>
       </div>
     </div>
@@ -109,7 +125,7 @@ const stateToneClass = computed(() => {
       class="match-explanation__section"
     >
       <p class="match-explanation__label">
-        Erwartete Tags ohne Profiltreffer
+        {{ t("matching.extraTags") }}
       </p>
       <div class="match-explanation__chips">
         <TagChip
@@ -121,45 +137,44 @@ const stateToneClass = computed(() => {
           v-if="hiddenExtraTagCount > 0"
           class="badge"
         >
-          +{{ hiddenExtraTagCount }} weitere
+          {{ t('matching.moreTags', { count: hiddenExtraTagCount }) }}
         </span>
       </div>
     </div>
 
     <details class="match-explanation__details">
       <summary class="match-explanation__summary">
-        Score-Hintergrund ansehen
+        {{ t("matching.scoreBackground") }}
       </summary>
       <div class="match-explanation__notes">
         <p class="match-explanation__note">
-          {{ result.candidateTagsNote }}
+          {{ candidateTagNote }}
         </p>
         <p
           v-if="result.relativeScore === null"
           class="match-explanation__note"
         >
-          Keine Prozentangabe bedeutet hier nicht 0 %, sondern bewusst fehlende
-          Vergleichbarkeit.
+          {{ t("matching.noPercentNotZero") }}
         </p>
       </div>
       <dl class="match-explanation__metrics">
         <div>
-          <dt>Profiltreffer</dt>
+          <dt>{{ t("matching.profileHits") }}</dt>
           <dd>
-            {{ result.matchingTagCount }} / {{ result.candidateTagCount }} Tags
+            {{ result.matchingTagCount }} / {{ result.candidateTagCount }} {{ t('tags.title') }}
           </dd>
         </div>
         <div>
-          <dt>Rohwert</dt>
-          <dd>{{ rawScoreLabel ?? "Nicht verfuegbar" }}</dd>
+          <dt>{{ t("matching.rawScore") }}</dt>
+          <dd>{{ rawScoreLabel ?? t("common.states.notAvailable") }}</dd>
         </div>
         <div>
-          <dt>Vergleichssicherheit</dt>
-          <dd>{{ precisionFactorLabel ?? "Nicht verfuegbar" }}</dd>
+          <dt>{{ t("matching.confidence") }}</dt>
+          <dd>{{ precisionFactorLabel ?? t("common.states.notAvailable") }}</dd>
         </div>
         <div>
-          <dt>Berechneter Endwert</dt>
-          <dd>{{ adjustedScoreLabel ?? "Nicht verfuegbar" }}</dd>
+          <dt>{{ t("matching.finalScore") }}</dt>
+          <dd>{{ adjustedScoreLabel ?? t("common.states.notAvailable") }}</dd>
         </div>
       </dl>
     </details>

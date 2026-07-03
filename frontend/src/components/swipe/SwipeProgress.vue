@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
+import { i18n } from '@/i18n';
 import type { SwipeQueueStats } from '@/types/swipe';
 
 const props = defineProps<{
@@ -13,6 +14,7 @@ const handledCount = computed(() => props.totalCount - props.remainingCount);
 const currentPosition = computed(() =>
   props.remainingCount > 0 ? handledCount.value + 1 : props.totalCount,
 );
+const { t } = i18n.global;
 const progressPercent = computed(() => {
   if (props.totalCount === 0) {
     return 0;
@@ -27,15 +29,19 @@ const progressPercent = computed(() => {
     <div class="swipe-progress__header">
       <div>
         <p class="eyebrow">
-          Swipe-Runde
+          {{ t('swipeCards.progressTitle') }}
         </p>
         <h2 class="section-title">
-          {{ remainingCount > 0 ? `Karte ${currentPosition} von ${totalCount}` : `Alle ${totalCount} Titel einsortiert` }}
+          {{
+            remainingCount > 0
+              ? t('swipeCards.progressCurrent', { current: currentPosition, total: totalCount })
+              : t('swipeCards.progressDone', { total: totalCount })
+          }}
         </h2>
       </div>
 
       <div class="swipe-progress__pill">
-        {{ progressPercent }} % geschafft
+        {{ t('swipeCards.progressDoneShort', { percent: progressPercent }) }}
       </div>
     </div>
 
@@ -51,15 +57,15 @@ const progressPercent = computed(() => {
 
     <dl class="swipe-progress__stats">
       <div>
-        <dt>Verbleibend</dt>
+        <dt>{{ t('swipeCards.remaining') }}</dt>
         <dd>{{ remainingCount }}</dd>
       </div>
       <div>
-        <dt>Geliket</dt>
+        <dt>{{ t('swipeCards.liked') }}</dt>
         <dd>{{ stats.liked }}</dd>
       </div>
       <div>
-        <dt>Uebersprungen</dt>
+        <dt>{{ t('swipeCards.skipped') }}</dt>
         <dd>{{ stats.skipped }}</dd>
       </div>
     </dl>

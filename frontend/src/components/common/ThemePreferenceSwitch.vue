@@ -6,13 +6,12 @@ import {
   useTheme,
   type ThemePreference,
 } from '@/composables/useTheme';
+import { i18n } from '@/i18n';
 
 const themeOrder: ThemePreference[] = ['dark', 'light', 'system'];
-const themeLabels: Record<ThemePreference, string> = {
-  dark: 'Dark',
-  light: 'Light',
-  system: 'System',
-};
+const { t } = i18n.global;
+const activeLocale = computed(() => i18n.global.locale.value);
+const trackLocaleDependency = () => activeLocale.value;
 
 const { preference, resolvedTheme, setThemePreference } = useTheme();
 
@@ -23,15 +22,29 @@ const nextPreference = computed<ThemePreference>(() => {
   return themeOrder[(currentIndex + 1) % themeOrder.length];
 });
 
-const currentLabel = computed(() => themeLabels[preference.value]);
-const nextLabel = computed(() => themeLabels[nextPreference.value]);
-const resolvedSystemLabel = computed(() =>
-  resolvedTheme.value === 'dark' ? themeLabels.dark : themeLabels.light,
-);
+const currentLabel = computed(() => {
+  trackLocaleDependency();
+  return t(`preferences.theme.${preference.value}`);
+});
+const nextLabel = computed(() => {
+  trackLocaleDependency();
+  return t(`preferences.theme.${nextPreference.value}`);
+});
+const resolvedSystemLabel = computed(() => {
+  trackLocaleDependency();
+  return resolvedTheme.value === 'dark' ? t('preferences.theme.dark') : t('preferences.theme.light');
+});
 const actionLabel = computed(() =>
   preference.value === 'system'
-    ? `Theme: ${currentLabel.value}. Following ${resolvedSystemLabel.value}. Click to switch to ${nextLabel.value}.`
-    : `Theme: ${currentLabel.value}. Click to switch to ${nextLabel.value}.`,
+    ? t('preferences.theme.actionSystem', {
+      current: currentLabel.value,
+      resolved: resolvedSystemLabel.value,
+      next: nextLabel.value,
+    })
+    : t('preferences.theme.action', {
+      current: currentLabel.value,
+      next: nextLabel.value,
+    }),
 );
 
 function cycleThemePreference() {

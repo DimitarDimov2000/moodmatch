@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 
 import { ApiRequestError } from '@/api/client';
+import { i18n } from '@/i18n';
 import { getMediaById } from '@/api/media';
 import { sourceTypeLabels } from '@/components/media/media-options';
 import { getExternalSourceLabel } from '@/components/media/media-presentation';
@@ -54,6 +55,9 @@ const emit = defineEmits<{
   toggleDetails: [];
   detailsLoadError: [message: string];
 }>();
+const { t } = i18n.global;
+const activeLocale = computed(() => i18n.global.locale.value);
+const trackLocaleDependency = () => activeLocale.value;
 
 const prefersReducedMotion = ref(false);
 const dragging = ref(false);
@@ -71,14 +75,17 @@ const detailsErrorMessage = ref('');
 let detailsRequestVersion = 0;
 
 const insight = computed<SwipeInsightSummary>(() =>
-  summarizeSwipeInsight(props.item, {
-    matchInsightsAvailable: props.matchInsightsAvailable,
-    profileReady: props.profileReady ?? null,
-    scoresSuppressed: props.scoresSuppressed ?? false,
-  }),
-);
+  {
+    trackLocaleDependency();
+    return summarizeSwipeInsight(props.item, {
+      matchInsightsAvailable: props.matchInsightsAvailable,
+      profileReady: props.profileReady ?? null,
+      scoresSuppressed: props.scoresSuppressed ?? false,
+    });
+  });
 const detailsId = computed(() => `swipe-details-${props.item.candidate.media.id}`);
 const metaLine = computed(() => {
+  trackLocaleDependency();
   const parts = [mediaTypeLabels[props.item.candidate.media.mediaType]];
 
   if (props.item.candidate.media.releaseYear) {
@@ -101,26 +108,29 @@ const technicalDetailsAvailable = computed(
       props.item.match?.relativeScore !== null
     ),
 );
-const technicalScoreRows = computed(() => [
-  {
-    label: 'Matching-Tags',
-    value: props.item.match
-      ? `${props.item.match.matchingTagCount} / ${props.item.match.candidateTagCount}`
-      : 'Nicht verfuegbar',
-  },
-  {
-    label: 'Adjusted Score',
-    value: formatDecimal(props.item.match?.adjustedScore ?? null) ?? 'Nicht verfuegbar',
-  },
-  {
-    label: 'Raw Score',
-    value: formatDecimal(props.item.match?.rawScore ?? null) ?? 'Nicht verfuegbar',
-  },
-  {
-    label: 'Precision',
-    value: formatDecimal(props.item.match?.precisionFactor ?? null) ?? 'Nicht verfuegbar',
-  },
-]);
+const technicalScoreRows = computed(() => {
+  trackLocaleDependency();
+  return [
+    {
+      label: t('swipeCards.technicalMatchingTags'),
+      value: props.item.match
+        ? `${props.item.match.matchingTagCount} / ${props.item.match.candidateTagCount}`
+        : t('swipeCards.unavailable'),
+    },
+    {
+      label: t('swipeCards.technicalAdjustedScore'),
+      value: formatDecimal(props.item.match?.adjustedScore ?? null) ?? t('swipeCards.unavailable'),
+    },
+    {
+      label: t('swipeCards.technicalRawScore'),
+      value: formatDecimal(props.item.match?.rawScore ?? null) ?? t('swipeCards.unavailable'),
+    },
+    {
+      label: t('swipeCards.technicalPrecision'),
+      value: formatDecimal(props.item.match?.precisionFactor ?? null) ?? t('swipeCards.unavailable'),
+    },
+  ];
+});
 const descriptionPreview = computed(() => trimText(detailsMedia.value?.description ?? null, DESCRIPTION_PREVIEW_LIMIT));
 const sourceLabel = computed(() => {
   const media = detailsMedia.value;
@@ -369,7 +379,7 @@ function toDetailsErrorMessage(error: unknown): string {
     return error.message;
   }
 
-  return 'Die Zusatzdetails konnten gerade nicht geladen werden.';
+  return t('swipeCards.detailsError');
 }
 
 function getGradientSeed(value: string): string {
@@ -439,7 +449,7 @@ defineExpose({
           v-if="nextItem.candidate.media.coverUrl"
           class="swipe-candidate-card__peek-cover-image"
           :src="nextItem.candidate.media.coverUrl"
-          :alt="`Cover von ${nextItem.candidate.media.title}`"
+          :alt="t('swipeCards.coverAlt', { title: nextItem.candidate.media.title })"
         >
         <div
           v-else
@@ -455,13 +465,13 @@ defineExpose({
               {{ mediaTypeLabels[nextItem.candidate.media.mediaType] }}
             </span>
             <span class="swipe-candidate-card__peek-next-pill">
-              Als naechstes
+              {{ t('swipeCards.next') }}
             </span>
           </div>
 
           <div class="swipe-candidate-card__peek-hero">
             <p class="swipe-candidate-card__peek-eyebrow">
-              Empfehlung fuer dich
+              {{ t('swipeCards.recommendation') }}
             </p>
             <h3 class="swipe-candidate-card__peek-title">
               {{ nextItem.candidate.media.title }}
@@ -486,13 +496,13 @@ defineExpose({
         class="swipe-candidate-card__intent swipe-candidate-card__intent--skip"
         :class="{ 'swipe-candidate-card__intent--active': gestureIntent === 'skip' }"
       >
-        Nope
+        {{ t('swipeCards.intentSkip') }}
       </span>
       <span
         class="swipe-candidate-card__intent swipe-candidate-card__intent--like"
         :class="{ 'swipe-candidate-card__intent--active': gestureIntent === 'like' }"
       >
-        Like
+        {{ t('swipeCards.intentLike') }}
       </span>
     </div>
 
@@ -519,7 +529,7 @@ defineExpose({
             v-if="item.candidate.media.coverUrl"
             class="swipe-candidate-card__cover-image"
             :src="item.candidate.media.coverUrl"
-            :alt="`Cover von ${item.candidate.media.title}`"
+            :alt="t('swipeCards.coverAlt', { title: item.candidate.media.title })"
           >
           <div
             v-else
@@ -546,7 +556,7 @@ defineExpose({
 
             <div class="swipe-candidate-card__hero-copy">
               <p class="swipe-candidate-card__eyebrow">
-                Empfehlung fuer dich
+                {{ t('swipeCards.recommendation') }}
               </p>
               <h2 class="swipe-candidate-card__title">
                 {{ item.candidate.media.title }}
@@ -568,7 +578,7 @@ defineExpose({
 
           <div
             class="swipe-candidate-card__reason-chips"
-            aria-label="Empfehlungsgruende"
+            :aria-label="t('swipeCards.reasonList')"
           >
             <span
               v-for="chip in reasonChips"
@@ -581,7 +591,7 @@ defineExpose({
 
           <div class="swipe-candidate-card__affordance">
             <p class="swipe-candidate-card__affordance-copy">
-              Links fuer Nicht jetzt, rechts fuer Like.
+              {{ t('swipeCards.affordance') }}
             </p>
 
             <button
@@ -591,7 +601,7 @@ defineExpose({
               :aria-expanded="detailsExpanded ? 'true' : 'false'"
               @click="toggleDetails"
             >
-              {{ detailsExpanded ? 'Weniger Details' : 'Warum das passen koennte' }}
+              {{ detailsExpanded ? t('swipeCards.detailsLess') : t('swipeCards.detailsMore') }}
             </button>
           </div>
         </div>
@@ -605,10 +615,10 @@ defineExpose({
         <div class="swipe-candidate-card__details-header">
           <div>
             <p class="swipe-candidate-card__details-eyebrow">
-              Details
+              {{ t('swipeCards.detailsEyebrow') }}
             </p>
             <h3 class="swipe-candidate-card__details-title">
-              Warum das passen koennte
+              {{ t('swipeCards.detailsTitle') }}
             </h3>
           </div>
 
@@ -621,33 +631,37 @@ defineExpose({
               },
             }"
           >
-            Volle Details
+            {{ t('swipeCards.openFullDetails') }}
           </RouterLink>
         </div>
 
         <div class="swipe-candidate-card__details-grid">
           <section class="swipe-candidate-card__details-block">
             <p class="swipe-candidate-card__details-label">
-              Warum dieser Titel auftaucht
+              {{ t('swipeCards.whyShown') }}
             </p>
             <p class="swipe-candidate-card__details-copy">
               {{ insight.detailsIntro }}
             </p>
             <p class="swipe-candidate-card__details-note">
-              {{ props.matchInsightsAvailable ? 'Die Match-Logik bleibt unveraendert, wir erklaeren sie hier nur einfacher.' : 'Die Match-Hinweise werden nachgeladen, du kannst den Titel aber schon einsortieren.' }}
+              {{
+                props.matchInsightsAvailable
+                  ? t('swipeCards.logicReady')
+                  : t('swipeCards.logicLoading')
+              }}
             </p>
           </section>
 
           <section class="swipe-candidate-card__details-block">
             <p class="swipe-candidate-card__details-label">
-              Passende Tags und Gruende
+              {{ t('swipeCards.tagsReasons') }}
             </p>
 
             <p
               v-if="!matchingTags.length && !extraCandidateTags.length"
               class="swipe-candidate-card__details-note"
             >
-              Noch keine ausfuehrlichen Tag-Ueberschneidungen verfuegbar.
+              {{ t('swipeCards.noDetailedTags') }}
             </p>
 
             <div
@@ -655,7 +669,7 @@ defineExpose({
               class="swipe-candidate-card__tag-group"
             >
               <p class="swipe-candidate-card__tag-group-title">
-                Direkte Treffer
+                {{ t('swipeCards.directHits') }}
               </p>
               <div class="swipe-candidate-card__tag-list">
                 <TagChip
@@ -671,7 +685,7 @@ defineExpose({
               class="swipe-candidate-card__tag-group"
             >
               <p class="swipe-candidate-card__tag-group-title">
-                Weitere erwartete Vibes
+                {{ t('swipeCards.extraVibes') }}
               </p>
               <div class="swipe-candidate-card__tag-list">
                 <TagChip
@@ -685,14 +699,14 @@ defineExpose({
 
           <section class="swipe-candidate-card__details-block">
             <p class="swipe-candidate-card__details-label">
-              Kurzbeschreibung
+              {{ t('swipeCards.description') }}
             </p>
 
             <p
               v-if="detailsLoading"
               class="swipe-candidate-card__details-note"
             >
-              Wir laden gerade mehr Kontext zu diesem Titel.
+              {{ t('swipeCards.loadingContext') }}
             </p>
             <p
               v-else-if="detailsErrorMessage"
@@ -710,14 +724,14 @@ defineExpose({
               v-else
               class="swipe-candidate-card__details-note"
             >
-              Fuer diesen Titel liegt noch keine Kurzbeschreibung vor.
+              {{ t('swipeCards.noDescription') }}
             </p>
 
             <p
               v-if="sourceLabel"
               class="swipe-candidate-card__details-source"
             >
-              Quelle:
+              {{ t('swipeCards.source') }}
               <a
                 v-if="sourceUrl"
                 :href="sourceUrl"
@@ -735,7 +749,7 @@ defineExpose({
           v-if="technicalDetailsAvailable"
           class="swipe-candidate-card__technical"
         >
-          <summary>Technische Score-Details</summary>
+          <summary>{{ t('swipeCards.technicalTitle') }}</summary>
 
           <dl class="swipe-candidate-card__technical-grid">
             <div

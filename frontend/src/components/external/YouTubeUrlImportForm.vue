@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import FormField from '@/components/common/FormField.vue';
+import { i18n } from '@/i18n';
 
 defineProps<{
   value: string;
@@ -10,6 +11,8 @@ const emit = defineEmits<{
   'update:value': [value: string];
   resolve: [];
 }>();
+
+const { t } = i18n.global;
 </script>
 
 <template>
@@ -19,8 +22,8 @@ const emit = defineEmits<{
   >
     <div class="youtube-url-import-form__grid">
       <FormField
-        label="YouTube-URL oder Video-ID"
-        hint="Unterstuetzt watch-URLs, youtu.be-Links, Shorts-URLs und rohe Video-IDs."
+        :label="t('externalSearch.youTubeFieldLabel')"
+        :hint="t('externalSearch.youTubeFieldHint')"
         required
       >
         <input
@@ -29,7 +32,7 @@ const emit = defineEmits<{
           type="text"
           name="youtubeUrl"
           maxlength="4000"
-          placeholder="z. B. https://www.youtube.com/watch?v=... oder abc123XYZ_0"
+          :placeholder="t('externalSearch.youTubeFieldPlaceholder')"
           @input="emit('update:value', ($event.target as HTMLInputElement).value)"
         >
       </FormField>
@@ -41,7 +44,7 @@ const emit = defineEmits<{
         type="submit"
         :disabled="submitting || !value.trim()"
       >
-        {{ submitting ? 'YouTube-Vorschau wird geladen...' : 'Vorschau laden' }}
+        {{ submitting ? t('common.actions.loadingPreview') : t('common.actions.preview') }}
       </button>
     </div>
   </form>

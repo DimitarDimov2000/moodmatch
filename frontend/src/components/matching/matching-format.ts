@@ -1,38 +1,42 @@
 import type { CommitmentLevel, ConsumptionStatus, MediaType } from '@/types/api';
+import { getIntlLocale, i18n } from '@/i18n';
 
-const numberFormatter = new Intl.NumberFormat('de-DE', {
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
+function createNumberFormatter(maximumFractionDigits: number): Intl.NumberFormat {
+  return new Intl.NumberFormat(getIntlLocale(), {
+    minimumFractionDigits: 0,
+    maximumFractionDigits,
+  });
+}
 
-const percentFormatter = new Intl.NumberFormat('de-DE', {
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 1,
-});
+export function getMatchingMediaTypeLabel(value: MediaType): string {
+  return i18n.global.t(`labels.mediaType.${value}`);
+}
 
-export const mediaTypeLabels: Record<MediaType, string> = {
-  FILM: 'Film',
-  SERIES: 'Serie',
-  BOOK: 'Buch',
-  GAME: 'Spiel',
-  AUDIOBOOK: 'Hoerbuch',
-  PODCAST: 'Podcast',
-  VIDEO: 'Video',
-};
+export function getMatchingConsumptionStatusLabel(value: ConsumptionStatus): string {
+  return i18n.global.t(`labels.consumptionStatus.${value}`);
+}
 
-export const consumptionStatusLabels: Record<ConsumptionStatus, string> = {
-  CONSUMED: 'Konsumiert',
-  WANT_TO_CONSUME: 'Kandidat',
-  NOT_INTERESTED: 'Kein Interesse',
-  ABANDONED: 'Abgebrochen',
-};
+export function getMatchingCommitmentLevelLabel(value: CommitmentLevel): string {
+  return i18n.global.t(`labels.commitmentLevel.${value}`);
+}
 
-export const commitmentLevelLabels: Record<CommitmentLevel, string> = {
-  SHORT: 'Kurz',
-  MEDIUM: 'Mittel',
-  LONG: 'Lang',
-  UNKNOWN: 'Unbekannt',
-};
+function createDynamicLabelLookup<T extends string>(
+  resolveLabel: (value: T) => string,
+): Record<T, string> {
+  return new Proxy({} as Record<T, string>, {
+    get: (_, property) => {
+      if (typeof property !== 'string' || property.startsWith('__v_')) {
+        return undefined;
+      }
+
+      return resolveLabel(property as T);
+    },
+  });
+}
+
+export const mediaTypeLabels = createDynamicLabelLookup(getMatchingMediaTypeLabel);
+export const consumptionStatusLabels = createDynamicLabelLookup(getMatchingConsumptionStatusLabel);
+export const commitmentLevelLabels = createDynamicLabelLookup(getMatchingCommitmentLevelLabel);
 
 export function formatDecimal(value: string | null): string | null {
   if (value === null) {
@@ -45,7 +49,7 @@ export function formatDecimal(value: string | null): string | null {
     return value;
   }
 
-  return numberFormatter.format(parsed);
+  return createNumberFormatter(2).format(parsed);
 }
 
 export function formatPercentage(value: string | null): string | null {
@@ -56,10 +60,10 @@ export function formatPercentage(value: string | null): string | null {
   const parsed = Number(value);
 
   if (Number.isNaN(parsed)) {
-    return `${value} %`;
+    return `${value}${i18n.global.t('formatting.percentSuffix')}`;
   }
 
-  return `${percentFormatter.format(parsed)} %`;
+  return `${createNumberFormatter(1).format(parsed)}${i18n.global.t('formatting.percentSuffix')}`;
 }
 
 export function getScoreTone(score: string | null): 'muted' | 'warning' | 'accent' | 'success' {

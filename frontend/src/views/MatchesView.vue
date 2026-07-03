@@ -6,14 +6,22 @@ import { ApiRequestError } from "@/api/client";
 import { getMatches } from "@/api/matches";
 import AppMessage from "@/components/common/AppMessage.vue";
 import CandidateSummaryCard from "@/components/matching/CandidateSummaryCard.vue";
+import {
+  getGeneratedMatchExplanation,
+  getProfileReadinessSummary,
+} from "@/components/matching/matching-copy";
 import MatchExplanation from "@/components/matching/MatchExplanation.vue";
 import MatchScoreDisplay from "@/components/matching/MatchScoreDisplay.vue";
 import InterestProfileWeights from "@/components/profile/InterestProfileWeights.vue";
+import { i18n } from "@/i18n";
 import type { MatchResultResponse, MatchingResponse } from "@/types/api";
 
 const matching = ref<MatchingResponse | null>(null);
 const loading = ref(true);
 const errorMessage = ref("");
+const { t } = i18n.global;
+const activeLocale = computed(() => i18n.global.locale.value);
+const trackLocaleDependency = () => activeLocale.value;
 
 const meaningfulScoreCount = computed(
   () =>
@@ -40,31 +48,40 @@ const bestMatch = computed<MatchResultResponse | null>(
 const profileReady = computed(
   () => matching.value?.interestProfile.isReadyForMatching ?? false,
 );
+const profileReadinessSummary = computed(() => {
+  trackLocaleDependency();
+  return matching.value ? getProfileReadinessSummary(matching.value.interestProfile) : "";
+});
+const bestMatchSummary = computed(() => {
+  trackLocaleDependency();
+  return bestMatch.value ? getGeneratedMatchExplanation(bestMatch.value) : "";
+});
 const emptyState = computed(() => {
+  trackLocaleDependency();
+
   if (!matching.value) {
     return {
-      title: "Keine Match-Ergebnisse vorhanden",
-      description: "Die Match-Daten sind gerade nicht verfuegbar.",
+      title: t("matches.emptyUnavailableTitle"),
+      description: t("matches.emptyUnavailableDescription"),
       to: { name: "candidates" as const },
-      label: "Kandidaten ansehen",
+      label: t("common.actions.openCandidates"),
     };
   }
 
   if (!profileReady.value) {
     return {
-      title: "Profil noch nicht bereit fuer Matches",
-      description: matching.value.interestProfile.explanationMessage,
+      title: t("matches.emptyProfileTitle"),
+      description: profileReadinessSummary.value,
       to: { name: "profile" as const },
-      label: "Profil verbessern",
+      label: t("matches.improveProfile"),
     };
   }
 
   return {
-    title: "Noch keine Match-Ergebnisse vorhanden",
-    description:
-      "Lege Kandidaten mit dem Status 'Moechte ich konsumieren' an, damit MoodMatch sie mit deinem Profil vergleichen kann.",
+    title: t("matches.emptyUnavailableTitle"),
+    description: t("matches.emptyCandidatesDescription"),
     to: { name: "candidates" as const },
-    label: "Kandidaten ansehen",
+    label: t("common.actions.openCandidates"),
   };
 });
 
@@ -90,7 +107,7 @@ function toUserMessage(error: unknown): string {
     return error.message;
   }
 
-  return "Die Matches konnten nicht geladen werden.";
+  return t("matches.errorTitle");
 }
 </script>
 
@@ -99,15 +116,13 @@ function toUserMessage(error: unknown): string {
     <header class="page-header">
       <div>
         <p class="eyebrow">
-          Matches
+          {{ t("matches.eyebrow") }}
         </p>
         <h1 class="page-title">
-          Warum diese Titel zu dir passen
+          {{ t("matches.title") }}
         </h1>
         <p class="page-copy">
-          Diese Seite zeigt die bereits passenden Empfehlungen mit Begruendung.
-          Prozentwerte erscheinen bewusst nur dann, wenn genug Vergleichsbasis
-          vorhanden ist.
+          {{ t("matches.intro") }}
         </p>
       </div>
     </header>
@@ -118,37 +133,37 @@ function toUserMessage(error: unknown): string {
     >
       <article class="page-card overview-stat-card">
         <p class="eyebrow">
-          Kandidaten
+          {{ t("matches.candidates") }}
         </p>
         <p class="overview-stat-card__value">
           {{ matching?.matches.length ?? 0 }}
         </p>
         <p class="overview-stat-card__copy">
-          Aktuell ausgewertete Vorschlaege
+          {{ t("matches.evaluatedSuggestions") }}
         </p>
       </article>
 
       <article class="page-card overview-stat-card overview-stat-card--success">
         <p class="eyebrow">
-          Aussagekraeftige Scores
+          {{ t("matches.meaningfulScores") }}
         </p>
         <p class="overview-stat-card__value">
           {{ meaningfulScoreCount }}
         </p>
         <p class="overview-stat-card__copy">
-          Nur mit relativer Prozentangabe
+          {{ t("matches.relativeOnly") }}
         </p>
       </article>
 
       <article class="page-card overview-stat-card overview-stat-card--warning">
         <p class="eyebrow">
-          Noch nicht vergleichbar
+          {{ t("matches.notComparable") }}
         </p>
         <p class="overview-stat-card__value">
           {{ noScoreCount }}
         </p>
         <p class="overview-stat-card__copy">
-          Davon {{ incompleteCount }} mit unvollstaendiger Datenbasis
+          {{ t("matches.incompleteOfCount", { count: incompleteCount }) }}
         </p>
       </article>
     </section>
@@ -156,15 +171,15 @@ function toUserMessage(error: unknown): string {
     <AppMessage
       v-if="loading"
       class="matches-view__state-card"
-      title="Matches werden geladen"
-      description="Profil, Score-Hinweise und Kandidatenerklaerungen werden vorbereitet."
+      :title="t('matches.loadingTitle')"
+      :description="t('matches.loadingDescription')"
       tone="info"
     />
 
     <AppMessage
       v-else-if="errorMessage"
       class="matches-view__state-card"
-      title="Matches konnten nicht geladen werden"
+      :title="t('matches.errorTitle')"
       :description="errorMessage"
       tone="error"
     >
@@ -174,7 +189,7 @@ function toUserMessage(error: unknown): string {
           type="button"
           @click="loadMatches"
         >
-          Erneut versuchen
+          {{ t("common.actions.retry") }}
         </button>
       </div>
     </AppMessage>
@@ -182,8 +197,8 @@ function toUserMessage(error: unknown): string {
     <template v-else-if="matching">
       <AppMessage
         v-if="!profileReady"
-        title="Dein Profil braucht noch mehr Signale"
-        :description="matching.interestProfile.explanationMessage"
+        :title="t('matches.profileNeedsSignals')"
+        :description="profileReadinessSummary"
         tone="warning"
       >
         <div class="state-actions">
@@ -191,15 +206,15 @@ function toUserMessage(error: unknown): string {
             :to="{ name: 'profile' }"
             class="button button--secondary"
           >
-            Profil ansehen
+            {{ t("common.actions.openProfile") }}
           </RouterLink>
         </div>
       </AppMessage>
 
       <AppMessage
         v-if="matching.scoresSuppressed"
-        title="Scores derzeit unterdrueckt"
-        :description="matching.explanationMessage"
+        :title="t('matches.scoresSuppressed')"
+        :description="t('matches.scoresSuppressedCopy')"
         tone="warning"
       />
 
@@ -208,15 +223,13 @@ function toUserMessage(error: unknown): string {
         class="page-card matches-view__note-card"
       >
         <p class="eyebrow">
-          Einordnung
+          {{ t("matches.noteEyebrow") }}
         </p>
         <h2 class="section-title">
-          Keine Prozentangabe ist ein eigener Zustand
+          {{ t("matches.noteTitle") }}
         </h2>
         <p class="body-muted">
-          Ein Kandidat ohne Prozentzahl ist nicht automatisch schwach. Entweder
-          fehlen Tags, es gibt keine Profilueberschneidung, oder der Vergleich
-          ist noch nicht belastbar genug.
+          {{ t("matches.noteCopy") }}
         </p>
       </article>
 
@@ -224,7 +237,7 @@ function toUserMessage(error: unknown): string {
         <InterestProfileWeights
           class="matches-view__weights"
           :tags="matching.interestProfile.weightedTags"
-          title="Profilbasis fuer dieses Matching"
+          :title="t('matches.profileWeightsTitle')"
         />
 
         <article
@@ -233,16 +246,16 @@ function toUserMessage(error: unknown): string {
         >
           <div class="matches-view__highlight-copy">
             <p class="eyebrow">
-              Bester aktueller Treffer
+              {{ t("matches.highlight") }}
             </p>
             <h2 class="section-title">
               {{ bestMatch.candidate.media.title }}
             </h2>
             <p class="body-muted">
-              {{ bestMatch.explanationMessage }}
+              {{ bestMatchSummary }}
             </p>
             <p class="body-muted matches-view__highlight-note">
-              {{ matching.scoringMethodNote }}
+              {{ t("matches.scoreMethodCopy") }}
             </p>
           </div>
 
@@ -275,14 +288,13 @@ function toUserMessage(error: unknown): string {
         <div class="section-header">
           <div class="section-header__copy">
             <p class="eyebrow">
-              Match-Karten
+              {{ t("matches.cardsEyebrow") }}
             </p>
             <h2 class="section-title">
-              Bestaetigte Empfehlungen
+              {{ t("matches.cardsTitle") }}
             </h2>
             <p class="body-muted">
-              Jede Karte verbindet Score, Gruende und Kandidatenbasis in einer
-              kompakteren Ansicht.
+              {{ t("matches.cardsCopy") }}
             </p>
           </div>
         </div>
@@ -295,7 +307,7 @@ function toUserMessage(error: unknown): string {
           <div class="matches-view__match-header">
             <div>
               <p class="eyebrow">
-                Match-Karte
+                {{ t("matches.cardEyebrow") }}
               </p>
               <h2 class="section-title">
                 {{ result.candidate.media.title }}
@@ -312,7 +324,7 @@ function toUserMessage(error: unknown): string {
             <CandidateSummaryCard
               class="matches-view__candidate-card"
               :candidate="result.candidate"
-              title="Ausgangskandidat"
+              :title="t('matches.baseCandidate')"
               compact
               :show-expected-note="false"
             />

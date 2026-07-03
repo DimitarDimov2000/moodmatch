@@ -2,6 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiRequestError } from '@/api/client';
+import { setAppLocale } from '@/i18n';
 import MediaDetailView from '@/views/MediaDetailView.vue';
 import type { MediaResponse } from '@/types/api';
 
@@ -110,6 +111,7 @@ async function mountView() {
 
 describe('MediaDetailView', () => {
   beforeEach(() => {
+    setAppLocale('de');
     pushSpy.mockReset();
     getMediaByIdMock.mockReset();
     replaceMediaTagsMock.mockReset();
@@ -131,13 +133,12 @@ describe('MediaDetailView', () => {
 
     await wrapper.get('button.button--danger').trigger('click');
 
-    expect(wrapper.text()).toContain('Wirklich');
-    expect(wrapper.text()).toContain('Interstellar');
+    expect(wrapper.text()).toContain('Wirklich Interstellar löschen?');
 
     await wrapper.get('button.button--danger').trigger('click');
 
     expect(deleteMediaMock).toHaveBeenCalledWith('media-1');
-    expect(wrapper.text()).toContain('Wird geloescht...');
+    expect(wrapper.text()).toContain('Wird gelöscht...');
     expect(wrapper.get('button.button--danger').attributes('disabled')).toBeDefined();
 
     deferredDelete.resolve();
@@ -160,8 +161,20 @@ describe('MediaDetailView', () => {
     await wrapper.get('button.button--danger').trigger('click');
     await flushPromises();
 
-    expect(wrapper.text()).toContain('Loeschen fehlgeschlagen');
+    expect(wrapper.text()).toContain('Löschen fehlgeschlagen');
     expect(wrapper.text()).toContain('Das Medium wird noch verwendet.');
     expect(pushSpy).not.toHaveBeenCalled();
+  });
+
+  it('switches media-detail UI copy to English while keeping the media title unchanged', async () => {
+    setAppLocale('en');
+
+    const wrapper = await mountView();
+
+    expect(wrapper.text()).toContain('Media detail');
+    expect(wrapper.text()).toContain('Back to list');
+    expect(wrapper.text()).toContain('Delete media item');
+    expect(wrapper.text()).toContain('External references');
+    expect(wrapper.text()).toContain('Interstellar');
   });
 });

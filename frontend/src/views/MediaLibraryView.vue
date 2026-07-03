@@ -8,12 +8,14 @@ import { listTags } from "@/api/tags";
 import AppMessage from "@/components/common/AppMessage.vue";
 import MediaCard from "@/components/media/MediaCard.vue";
 import TagCategoryList from "@/components/tags/TagCategoryList.vue";
+import { i18n } from "@/i18n";
 import type { MediaResponse, TagResponse } from "@/types/api";
 
 const mediaItems = ref<MediaResponse[]>([]);
 const tags = ref<TagResponse[]>([]);
 const loading = ref(true);
 const errorMessage = ref("");
+const { t } = i18n.global;
 
 const consumedCount = computed(
   () =>
@@ -51,7 +53,7 @@ function toUserMessage(error: unknown): string {
     return error.message;
   }
 
-  return "Die Daten konnten gerade nicht geladen werden.";
+  return t("mediaLibrary.errorTitle");
 }
 </script>
 
@@ -60,15 +62,13 @@ function toUserMessage(error: unknown): string {
     <header class="page-header">
       <div>
         <p class="eyebrow">
-          Media Library
+          {{ t("mediaLibrary.eyebrow") }}
         </p>
         <h1 class="page-title">
-          Deine Mediathek
+          {{ t("mediaLibrary.title") }}
         </h1>
         <p class="page-copy">
-          Deine Sammlung bleibt die Grundlage fuer Profilbildung und Matching.
-          Hier siehst du konsumierte Medien und Kandidaten in einer kompakteren
-          Uebersicht.
+          {{ t("mediaLibrary.intro") }}
         </p>
       </div>
 
@@ -77,7 +77,7 @@ function toUserMessage(error: unknown): string {
           :to="{ name: 'media-create' }"
           class="button button--primary"
         >
-          Medium anlegen
+          {{ t("common.actions.createMedia") }}
         </RouterLink>
       </div>
     </header>
@@ -88,37 +88,37 @@ function toUserMessage(error: unknown): string {
     >
       <article class="page-card overview-stat-card">
         <p class="eyebrow">
-          Sammlung
+          {{ t("mediaLibrary.collection") }}
         </p>
         <p class="overview-stat-card__value">
           {{ mediaItems.length }}
         </p>
         <p class="overview-stat-card__copy">
-          Medien insgesamt
+          {{ t("mediaLibrary.totalMedia") }}
         </p>
       </article>
 
       <article class="page-card overview-stat-card overview-stat-card--success">
         <p class="eyebrow">
-          Konsumiert
+          {{ t("mediaLibrary.consumed") }}
         </p>
         <p class="overview-stat-card__value">
           {{ consumedCount }}
         </p>
         <p class="overview-stat-card__copy">
-          Grundlage fuer Profil und Favoriten
+          {{ t("mediaLibrary.profileBasis") }}
         </p>
       </article>
 
       <article class="page-card overview-stat-card overview-stat-card--info">
         <p class="eyebrow">
-          Tag-Basis
+          {{ t("mediaLibrary.tagBasis") }}
         </p>
         <p class="overview-stat-card__value">
           {{ taggedCount }}
         </p>
         <p class="overview-stat-card__copy">
-          Medien mit bestaetigten Tags
+          {{ t("mediaLibrary.confirmedTags") }}
         </p>
       </article>
     </section>
@@ -126,15 +126,15 @@ function toUserMessage(error: unknown): string {
     <AppMessage
       v-if="loading"
       class="media-library__state-card"
-      title="Mediendaten werden geladen"
-      description="Liste und Tag-Kategorien werden vorbereitet."
+      :title="t('mediaLibrary.loadingTitle')"
+      :description="t('mediaLibrary.loadingDescription')"
       tone="info"
     />
 
     <AppMessage
       v-else-if="errorMessage"
       class="media-library__state-card"
-      title="Ansicht konnte nicht geladen werden"
+      :title="t('mediaLibrary.errorTitle')"
       :description="errorMessage"
       tone="error"
     >
@@ -144,7 +144,7 @@ function toUserMessage(error: unknown): string {
           type="button"
           @click="loadPageData"
         >
-          Erneut versuchen
+          {{ t("common.actions.retry") }}
         </button>
       </div>
     </AppMessage>
@@ -157,14 +157,13 @@ function toUserMessage(error: unknown): string {
         <div class="section-header">
           <div class="section-header__copy">
             <p class="eyebrow">
-              Sammlung
+              {{ t("mediaLibrary.collection") }}
             </p>
             <h2 class="section-title">
-              Angelegte Medien
+              {{ t("mediaLibrary.sectionTitle") }}
             </h2>
             <p class="body-muted">
-              Titel zuerst, danach Status, Herkunft und Tags fuer einen
-              schnelleren Ueberblick.
+              {{ t("mediaLibrary.sectionCopy") }}
             </p>
           </div>
         </div>
@@ -172,15 +171,15 @@ function toUserMessage(error: unknown): string {
         <AppMessage
           v-if="mediaItems.length === 0"
           class="media-library__state-card"
-          title="Noch keine Medien angelegt"
-          description="Lege zuerst konsumierte Medien oder Kandidaten an, damit MoodMatch Profil, Sammlung und spaetere Vergleiche sinnvoll aufbauen kann."
+          :title="t('mediaLibrary.emptyTitle')"
+          :description="t('mediaLibrary.emptyDescription')"
         >
           <div class="state-actions">
             <RouterLink
               :to="{ name: 'media-create' }"
               class="button button--primary"
             >
-              Erstes Medium anlegen
+              {{ t("mediaLibrary.firstMedia") }}
             </RouterLink>
           </div>
         </AppMessage>
@@ -200,7 +199,7 @@ function toUserMessage(error: unknown): string {
       <TagCategoryList
         class="media-library__tags"
         :tags="tags"
-        title="Tag-Kompass"
+        :title="t('mediaLibrary.tagCompass')"
       />
     </div>
   </section>

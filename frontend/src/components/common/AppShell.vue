@@ -4,10 +4,13 @@ import { storeToRefs } from 'pinia';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 
 import BrandMark from '@/components/brand/BrandMark.vue';
+import LanguagePreferenceSwitch from '@/components/common/LanguagePreferenceSwitch.vue';
 import ThemePreferenceSwitch from '@/components/common/ThemePreferenceSwitch.vue';
+import { i18n } from '@/i18n';
 import { useAppStore } from '@/stores/app';
 import { useAuthStore } from '@/stores/auth';
 
+const { t } = i18n.global;
 const appStore = useAppStore();
 const authStore = useAuthStore();
 const route = useRoute();
@@ -28,10 +31,10 @@ const authMenuOpen = ref(false);
 
 const authStatusLabel = computed(() => {
   if (isAuthenticated.value) {
-    return userDisplayName.value ?? 'Authenticated';
+    return userDisplayName.value ?? t('common.states.authenticated');
   }
 
-  return 'Account';
+  return t('common.states.account');
 });
 
 async function handleLogout() {
@@ -108,7 +111,7 @@ function handleWindowKeydown(event: KeyboardEvent) {
                 :to="{ name: 'login' }"
                 class="button button--secondary app-shell__auth-action"
               >
-                Anmelden
+                {{ t('common.actions.login') }}
               </RouterLink>
 
               <details
@@ -136,7 +139,7 @@ function handleWindowKeydown(event: KeyboardEvent) {
                     type="button"
                     @click="handleLogout"
                   >
-                    Abmelden
+                    {{ t('common.actions.logout') }}
                   </button>
                 </div>
               </details>
@@ -147,6 +150,7 @@ function handleWindowKeydown(event: KeyboardEvent) {
               data-testid="header-preferences"
             >
               <slot name="header-preferences" />
+              <LanguagePreferenceSwitch class="app-shell__preference-control" />
               <ThemePreferenceSwitch class="app-shell__preference-control" />
             </div>
           </div>
@@ -159,16 +163,16 @@ function handleWindowKeydown(event: KeyboardEvent) {
         >
           <nav
             class="app-shell__nav"
-            aria-label="Primary navigation"
+            :aria-label="t('shell.primaryNavigation')"
           >
             <RouterLink
               v-for="item in visibleNavigationItems"
-              :key="item.label"
+              :key="item.labelKey"
               :to="item.to"
               class="app-shell__nav-link"
-              :title="item.label"
+              :title="t(item.labelKey)"
             >
-              {{ item.label }}
+              {{ t(item.labelKey) }}
             </RouterLink>
           </nav>
         </div>

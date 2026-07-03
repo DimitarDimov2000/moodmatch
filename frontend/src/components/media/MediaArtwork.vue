@@ -5,6 +5,7 @@ import {
   getMediaArtworkFallback,
   type MediaArtworkVariant,
 } from '@/components/media/media-presentation';
+import { i18n } from '@/i18n';
 import type { MediaType } from '@/types/api';
 
 const props = withDefaults(
@@ -18,14 +19,24 @@ const props = withDefaults(
   {
     coverUrl: null,
     variant: 'poster',
-    altPrefix: 'Cover von',
+    altPrefix: '',
   },
 );
 
 const imageReady = ref(false);
 const imageFailed = ref(false);
 
-const fallback = computed(() => getMediaArtworkFallback(props.mediaType, props.title, props.variant));
+const { t } = i18n.global;
+const activeLocale = computed(() => i18n.global.locale.value);
+const trackLocaleDependency = () => activeLocale.value;
+const fallback = computed(() => {
+  trackLocaleDependency();
+  return getMediaArtworkFallback(props.mediaType, props.title, props.variant);
+});
+const altText = computed(() => {
+  trackLocaleDependency();
+  return props.altPrefix ? `${props.altPrefix} ${props.title}` : t('mediaArtwork.coverAlt', { title: props.title });
+});
 const showImage = computed(() => Boolean(props.coverUrl) && !imageFailed.value);
 const showLoadingShell = computed(() => Boolean(props.coverUrl) && !imageReady.value && !imageFailed.value);
 
@@ -67,7 +78,7 @@ function handleError() {
     <img
       v-if="showImage"
       :src="coverUrl ?? undefined"
-      :alt="`${altPrefix} ${title}`"
+      :alt="altText"
       class="media-artwork__image"
       :class="{ 'media-artwork__image--ready': imageReady }"
       loading="lazy"
@@ -85,7 +96,7 @@ function handleError() {
     <div
       v-if="!showImage"
       class="media-artwork__fallback-copy"
-      :aria-label="`${fallback.label} Platzhalter`"
+      :aria-label="t('mediaArtwork.placeholder', { label: fallback.label })"
     >
       <span class="media-artwork__label">{{ fallback.label }}</span>
       <span class="media-artwork__initials">{{ fallback.initials }}</span>

@@ -6,6 +6,8 @@ import { useRoute, useRouter } from "vue-router";
 import BrandMark from "@/components/brand/BrandMark.vue";
 import AppMessage from "@/components/common/AppMessage.vue";
 import FormField from "@/components/common/FormField.vue";
+import { i18n } from "@/i18n";
+import LanguagePreferenceSwitch from "@/components/common/LanguagePreferenceSwitch.vue";
 import ThemePreferenceSwitch from "@/components/common/ThemePreferenceSwitch.vue";
 import { useAuthStore } from "@/stores/auth";
 
@@ -13,6 +15,7 @@ type AuthPanel = "login" | "register";
 
 const route = useRoute();
 const router = useRouter();
+const { t } = i18n.global;
 const authStore = useAuthStore();
 const { isAuthenticated, isLoading, providerError, userDisplayName } =
   storeToRefs(authStore);
@@ -36,16 +39,16 @@ const redirectTarget = computed(() => {
 
 const pageTitle = computed(() => {
   if (route.query.reason === "session-expired") {
-    return "Log in to continue";
+    return t("login.titleLogin");
   }
 
   if (isAuthenticated.value) {
-    return "You are signed in";
+    return t("login.titleSignedIn");
   }
 
   return activePanel.value === "register"
-    ? "Create your MoodMatch account"
-    : "Log in to continue";
+    ? t("login.titleRegister")
+    : t("login.titleLogin");
 });
 
 async function handleLogin() {
@@ -75,6 +78,7 @@ async function handleRegister() {
     <header class="page-header login-view__header">
       <div class="login-view__toolbar">
         <ThemePreferenceSwitch class="login-view__theme-switch" />
+        <LanguagePreferenceSwitch class="login-view__theme-switch" />
       </div>
 
       <div class="login-view__intro">
@@ -88,33 +92,33 @@ async function handleRegister() {
           />
           <div class="login-view__brand-copy">
             <span class="login-view__brand-name">MoodMatch</span>
-            <span class="login-view__brand-subtitle">Media Discovery App</span>
+            <span class="login-view__brand-subtitle">{{ t("login.brandSubtitle") }}</span>
           </div>
         </div>
 
         <p class="eyebrow">
-          Login
+          {{ t("login.eyebrow") }}
         </p>
         <h1 class="page-title">
           {{ pageTitle }}
         </h1>
         <p class="page-copy">
-          Your media and matches are private to your account.
+          {{ t("login.intro") }}
         </p>
       </div>
     </header>
 
     <AppMessage
       v-if="providerError"
-      title="Authentication failed"
+      :title="t('login.authFailed')"
       :description="providerError"
       tone="warning"
     />
 
     <AppMessage
       v-if="isAuthenticated"
-      title="Session active"
-      :description="`Signed in as ${userDisplayName ?? 'your account'}.`"
+      :title="t('login.sessionActive')"
+      :description="t('login.signedInAs', { name: userDisplayName ?? t('common.states.account') })"
       tone="info"
     />
 
@@ -123,7 +127,7 @@ async function handleRegister() {
         <div
           class="login-view__tabs"
           role="tablist"
-          aria-label="Authentication mode"
+          :aria-label="t('login.authMode')"
         >
           <button
             data-testid="auth-tab-login"
@@ -134,7 +138,7 @@ async function handleRegister() {
             :aria-selected="activePanel === 'login'"
             @click="activePanel = 'login'"
           >
-            Login
+            {{ t("login.tabLogin") }}
           </button>
           <button
             data-testid="auth-tab-register"
@@ -145,13 +149,12 @@ async function handleRegister() {
             :aria-selected="activePanel === 'register'"
             @click="activePanel = 'register'"
           >
-            Create account
+            {{ t("login.tabRegister") }}
           </button>
         </div>
 
         <p class="login-view__panel-copy">
-          Use your existing account or create a private space for your library,
-          profile, and matches.
+          {{ t("login.panelCopy") }}
         </p>
       </div>
 
@@ -161,7 +164,7 @@ async function handleRegister() {
         @submit.prevent="handleLogin"
       >
         <FormField
-          label="Email"
+          :label="t('login.email')"
           required
         >
           <input
@@ -174,7 +177,7 @@ async function handleRegister() {
         </FormField>
 
         <FormField
-          label="Password"
+          :label="t('login.password')"
           required
         >
           <input
@@ -192,7 +195,7 @@ async function handleRegister() {
           type="submit"
           :disabled="isLoading"
         >
-          {{ isLoading ? "Logging in..." : "Log in" }}
+          {{ isLoading ? t("login.loginLoading") : t("common.actions.login") }}
         </button>
       </form>
 
@@ -201,7 +204,7 @@ async function handleRegister() {
         class="login-view__form"
         @submit.prevent="handleRegister"
       >
-        <FormField label="Display name">
+        <FormField :label="t('login.displayName')">
           <input
             v-model="registerForm.displayName"
             class="login-view__input"
@@ -211,7 +214,7 @@ async function handleRegister() {
         </FormField>
 
         <FormField
-          label="Email"
+          :label="t('login.email')"
           required
         >
           <input
@@ -224,8 +227,8 @@ async function handleRegister() {
         </FormField>
 
         <FormField
-          label="Password"
-          hint="Use at least 8 characters."
+          :label="t('login.password')"
+          :hint="t('login.passwordHint')"
           required
         >
           <input
@@ -243,7 +246,7 @@ async function handleRegister() {
           type="submit"
           :disabled="isLoading"
         >
-          {{ isLoading ? "Creating account..." : "Create account" }}
+          {{ isLoading ? t("login.registerLoading") : t("common.actions.createAccount") }}
         </button>
       </form>
     </section>

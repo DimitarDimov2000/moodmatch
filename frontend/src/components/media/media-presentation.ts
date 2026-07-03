@@ -1,4 +1,5 @@
-import { mediaTypeLabels } from '@/components/media/media-options';
+import { getMediaTypeLabel } from '@/components/media/media-options';
+import { i18n } from '@/i18n';
 import type { ExternalSourceName, MediaType } from '@/types/api';
 
 export type DisplayableExternalSource = ExternalSourceName | 'AUTOMATIC';
@@ -16,30 +17,14 @@ export interface MediaArtworkFallback {
   accent: string;
 }
 
-export const externalSourceDisplayLabels: Record<DisplayableExternalSource, string> = {
-  AUTOMATIC: 'Automatisch',
-  DEMO: 'Demo',
-  TMDB: 'TMDB',
-  OPEN_LIBRARY: 'Open Library',
-  RAWG: 'RAWG',
-  LIBRIVOX: 'LibriVox',
-  PODCAST_INDEX: 'Podcast Index',
-  ANILIST: 'AniList',
-  YOUTUBE: 'YouTube',
-  WIKIDATA: 'Wikidata',
-  IGDB: 'IGDB',
-  GOOGLE_BOOKS: 'Google Books',
-  TVMAZE: 'TVMaze',
-};
-
 const fallbackConfigByMediaType: Record<MediaType, MediaArtworkFallbackConfig> = {
-  FILM: { hint: 'Poster fehlt', accent: 'film' },
-  SERIES: { hint: 'Cover fehlt', accent: 'series' },
-  BOOK: { hint: 'Cover fehlt', accent: 'book' },
-  AUDIOBOOK: { hint: 'Cover fehlt', accent: 'audiobook' },
-  GAME: { hint: 'Artwork fehlt', accent: 'game' },
-  PODCAST: { hint: 'Cover fehlt', accent: 'podcast' },
-  VIDEO: { hint: 'Thumbnail fehlt', accent: 'video' },
+  FILM: { hint: 'mediaArtwork.posterMissing', accent: 'film' },
+  SERIES: { hint: 'mediaArtwork.posterMissing', accent: 'series' },
+  BOOK: { hint: 'mediaArtwork.posterMissing', accent: 'book' },
+  AUDIOBOOK: { hint: 'mediaArtwork.posterMissing', accent: 'audiobook' },
+  GAME: { hint: 'mediaArtwork.artworkMissing', accent: 'game' },
+  PODCAST: { hint: 'mediaArtwork.posterMissing', accent: 'podcast' },
+  VIDEO: { hint: 'mediaArtwork.thumbnailMissing', accent: 'video' },
 };
 
 export function getExternalSourceLabel(
@@ -49,7 +34,7 @@ export function getExternalSourceLabel(
     return '';
   }
 
-  return externalSourceDisplayLabels[source];
+  return i18n.global.t(`labels.provider.${source}`);
 }
 
 export function getMediaArtworkFallback(
@@ -62,8 +47,11 @@ export function getMediaArtworkFallback(
 
   return {
     initials,
-    label: mediaTypeLabels[mediaType],
-    hint: variant === 'landscape' && mediaType === 'VIDEO' ? 'Vorschau folgt' : config.hint,
+    label: getMediaTypeLabel(mediaType),
+    hint:
+      variant === 'landscape' && mediaType === 'VIDEO'
+        ? i18n.global.t('mediaArtwork.previewComing')
+        : i18n.global.t(config.hint),
     accent: config.accent,
   };
 }

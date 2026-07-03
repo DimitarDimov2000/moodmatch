@@ -2,13 +2,14 @@
 import { computed, reactive, watch } from 'vue';
 
 import FormField from '@/components/common/FormField.vue';
+import { i18n } from '@/i18n';
 import {
   canBeFavourite,
-  commitmentLevelOptions,
-  consumptionStatusLabels,
-  consumptionStatusOptions,
-  mediaTypeOptions,
-  sourceTypeOptions,
+  getCommitmentLevelOptions,
+  getConsumptionStatusLabel,
+  getConsumptionStatusOptions,
+  getMediaTypeOptions,
+  getSourceTypeOptions,
 } from '@/components/media/media-options';
 import TagChip from '@/components/tags/TagChip.vue';
 import type {
@@ -52,6 +53,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   submit: [payload: MediaFormSubmitPayload];
 }>();
+const { t } = i18n.global;
 
 const model = reactive<MediaFormModel>(createModel(props.initialMedia ?? null));
 
@@ -85,29 +87,29 @@ const localErrors = computed<Record<string, string>>(() => {
   const errors: Record<string, string> = {};
 
   if (!model.title.trim()) {
-    errors.title = 'Titel ist erforderlich.';
+    errors.title = t('mediaForm.validation.titleRequired');
   }
 
   if (model.consumptionStatus === 'CONSUMED' && model.rating === null) {
-    errors.rating = 'Bei konsumierten Medien ist eine Bewertung erforderlich.';
+    errors.rating = t('mediaForm.validation.ratingRequired');
   }
 
   if (
     model.rating !== null &&
     (!Number.isInteger(model.rating) || model.rating < 1 || model.rating > 5)
   ) {
-    errors.rating = 'Bewertung muss eine ganze Zahl von 1 bis 5 sein.';
+    errors.rating = t('mediaForm.validation.ratingRange');
   }
 
   if (
     model.releaseYear !== null &&
     (!Number.isInteger(model.releaseYear) || model.releaseYear < 1800 || model.releaseYear > 3000)
   ) {
-    errors.releaseYear = 'Bitte ein plausibles Erscheinungsjahr eingeben.';
+    errors.releaseYear = t('mediaForm.validation.releaseYearInvalid');
   }
 
   if (model.isFavourite && !canBeFavourite(model.consumptionStatus, model.rating)) {
-    errors.isFavourite = 'Favorit ist nur fuer konsumierte Medien mit Bewertung 4 oder 5 moeglich.';
+    errors.isFavourite = t('mediaForm.validation.favouriteInvalid');
   }
 
   return errors;
@@ -210,7 +212,7 @@ function handleReleaseYearInput(event: Event) {
   >
     <div class="media-form__grid">
       <FormField
-        label="Titel"
+        :label="t('mediaForm.title')"
         required
         :error="mergedErrors.title"
       >
@@ -219,12 +221,12 @@ function handleReleaseYearInput(event: Event) {
           name="title"
           class="media-form__input"
           type="text"
-          placeholder="z. B. Arrival"
+          :placeholder="t('mediaForm.titlePlaceholder')"
         >
       </FormField>
 
       <FormField
-        label="Originaltitel"
+        :label="t('mediaForm.originalTitle')"
         :error="mergedErrors.originalTitle"
       >
         <input
@@ -232,12 +234,12 @@ function handleReleaseYearInput(event: Event) {
           name="originalTitle"
           class="media-form__input"
           type="text"
-          placeholder="Optional"
+          :placeholder="t('mediaForm.optional')"
         >
       </FormField>
 
       <FormField
-        label="Medientyp"
+        :label="t('mediaForm.mediaType')"
         required
         :error="mergedErrors.mediaType"
       >
@@ -247,7 +249,7 @@ function handleReleaseYearInput(event: Event) {
           class="media-form__input"
         >
           <option
-            v-for="option in mediaTypeOptions"
+            v-for="option in getMediaTypeOptions()"
             :key="option.value"
             :value="option.value"
           >
@@ -257,9 +259,9 @@ function handleReleaseYearInput(event: Event) {
       </FormField>
 
       <FormField
-        label="Status"
+        :label="t('mediaForm.status')"
         required
-        :hint="mode === 'edit' ? 'Fuer reine Statuswechsel steht unten auch eine Schnellaktion bereit.' : undefined"
+        :hint="mode === 'edit' ? t('mediaForm.statusEditHint') : undefined"
         :error="mergedErrors.consumptionStatus"
       >
         <select
@@ -268,7 +270,7 @@ function handleReleaseYearInput(event: Event) {
           class="media-form__input"
         >
           <option
-            v-for="option in consumptionStatusOptions"
+            v-for="option in getConsumptionStatusOptions()"
             :key="option.value"
             :value="option.value"
           >
@@ -278,8 +280,8 @@ function handleReleaseYearInput(event: Event) {
       </FormField>
 
       <FormField
-        label="Bewertung"
-        hint="Nur fuer konsumierte Medien, 1 bis 5."
+        :label="t('mediaForm.rating')"
+        :hint="t('mediaForm.ratingHint')"
         :error="mergedErrors.rating"
       >
         <input
@@ -291,14 +293,14 @@ function handleReleaseYearInput(event: Event) {
           max="5"
           step="1"
           :disabled="!showRating"
-          placeholder="1-5"
+          :placeholder="t('mediaForm.ratingPlaceholder')"
           @input="handleRatingInput"
         >
       </FormField>
 
       <FormField
-        label="Favorit"
-        hint="Nur bei konsumiert und Bewertung 4 oder 5."
+        :label="t('mediaForm.favourite')"
+        :hint="t('mediaForm.favouriteHint')"
         :error="mergedErrors.isFavourite"
       >
         <label class="media-form__checkbox">
@@ -309,16 +311,16 @@ function handleReleaseYearInput(event: Event) {
             :disabled="!favouriteEnabled"
           >
           <span>
-            Als Favorit markieren
+            {{ t('mediaForm.favouriteMark') }}
             <small>
-              {{ consumptionStatusLabels[model.consumptionStatus] }}
+              {{ getConsumptionStatusLabel(model.consumptionStatus) }}
             </small>
           </span>
         </label>
       </FormField>
 
       <FormField
-        label="Quelle"
+        :label="t('mediaForm.source')"
         required
         :error="mergedErrors.sourceType"
       >
@@ -328,7 +330,7 @@ function handleReleaseYearInput(event: Event) {
           class="media-form__input"
         >
           <option
-            v-for="option in sourceTypeOptions"
+            v-for="option in getSourceTypeOptions()"
             :key="option.value"
             :value="option.value"
           >
@@ -338,7 +340,7 @@ function handleReleaseYearInput(event: Event) {
       </FormField>
 
       <FormField
-        label="Quelle Notiz"
+        :label="t('mediaForm.sourceNote')"
         :error="mergedErrors.sourceNote"
       >
         <input
@@ -346,12 +348,12 @@ function handleReleaseYearInput(event: Event) {
           name="sourceNote"
           class="media-form__input"
           type="text"
-          placeholder="Optional"
+          :placeholder="t('mediaForm.sourceNotePlaceholder')"
         >
       </FormField>
 
       <FormField
-        label="Umfang"
+        :label="t('mediaForm.commitment')"
         required
         :error="mergedErrors.commitmentLevel"
       >
@@ -361,7 +363,7 @@ function handleReleaseYearInput(event: Event) {
           class="media-form__input"
         >
           <option
-            v-for="option in commitmentLevelOptions"
+            v-for="option in getCommitmentLevelOptions()"
             :key="option.value"
             :value="option.value"
           >
@@ -371,7 +373,7 @@ function handleReleaseYearInput(event: Event) {
       </FormField>
 
       <FormField
-        label="Erscheinungsjahr"
+        :label="t('mediaForm.releaseYear')"
         :error="mergedErrors.releaseYear"
       >
         <input
@@ -382,13 +384,13 @@ function handleReleaseYearInput(event: Event) {
           min="1800"
           max="3000"
           step="1"
-          placeholder="Optional"
+          :placeholder="t('mediaForm.optional')"
           @input="handleReleaseYearInput"
         >
       </FormField>
 
       <FormField
-        label="Cover URL"
+        :label="t('mediaForm.coverUrl')"
         :error="mergedErrors.coverUrl"
       >
         <input
@@ -396,13 +398,13 @@ function handleReleaseYearInput(event: Event) {
           name="coverUrl"
           class="media-form__input"
           type="url"
-          placeholder="https://..."
+          :placeholder="t('mediaForm.coverUrlPlaceholder')"
         >
       </FormField>
     </div>
 
     <FormField
-      label="Beschreibung"
+      :label="t('mediaForm.description')"
       :error="mergedErrors.description"
     >
       <textarea
@@ -410,17 +412,17 @@ function handleReleaseYearInput(event: Event) {
         name="description"
         class="media-form__input media-form__input--textarea"
         rows="5"
-        placeholder="Kurz beschreiben, worum es geht oder warum das Medium fuer dich relevant ist."
+        :placeholder="t('mediaForm.descriptionPlaceholder')"
       />
     </FormField>
 
     <section class="media-form__tag-section">
       <div class="media-form__tag-header">
         <h2 class="section-title">
-          Tags
+          {{ t('mediaForm.tags') }}
         </h2>
         <p class="body-muted">
-          Hilfreiche Zuordnung fuer spaetere Profil- und Matchinglogik. Die Regeln selbst bleiben im Backend.
+          {{ t('mediaForm.tagsHint') }}
         </p>
       </div>
 
@@ -445,20 +447,20 @@ function handleReleaseYearInput(event: Event) {
         v-else
         class="body-muted"
       >
-        Noch keine Tags verfuegbar. Du kannst das Medium trotzdem jetzt speichern und Tags spaeter hinzufuegen, sobald welche angelegt oder importiert wurden.
+        {{ t('mediaForm.emptyTags') }}
       </p>
     </section>
 
     <div class="media-form__footer">
       <p class="body-muted">
-        Pflichtfelder sind markiert. Zusatzhinweise unterstuetzen nur die Eingabe, die verbindlichen Regeln prueft das Backend.
+        {{ t('mediaForm.footerNote') }}
       </p>
       <button
         class="button button--primary"
         type="submit"
         :disabled="submitting || !canSubmit"
       >
-        {{ submitLabel ?? (mode === 'create' ? 'Medium anlegen' : 'Aenderungen speichern') }}
+        {{ submitLabel ?? (mode === 'create' ? t('mediaForm.submitCreate') : t('mediaForm.submitEdit')) }}
       </button>
     </div>
   </form>

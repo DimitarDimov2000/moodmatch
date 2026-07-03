@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
+import { i18n } from '@/i18n';
 import TagChip from '@/components/tags/TagChip.vue';
 import { groupTagsByCategory } from '@/components/tags/tag-utils';
 import type { TagResponse } from '@/types/api';
@@ -11,6 +12,7 @@ const props = defineProps<{
   compact?: boolean;
 }>();
 
+const { t } = i18n.global;
 const groupedTags = computed(() => groupTagsByCategory(props.tags));
 </script>
 
@@ -18,10 +20,10 @@ const groupedTags = computed(() => groupTagsByCategory(props.tags));
   <section class="tag-category-list page-card">
     <div class="tag-category-list__header">
       <h2 class="section-title">
-        {{ title ?? 'Tags' }}
+        {{ title ?? t('tags.title') }}
       </h2>
       <p class="body-muted">
-        {{ tags.length }} Tags, gruppiert nach Kategorie.
+        {{ t('tags.countByCategory', { count: tags.length }) }}
       </p>
     </div>
 
@@ -52,7 +54,7 @@ const groupedTags = computed(() => groupTagsByCategory(props.tags));
       v-else
       class="body-muted"
     >
-      Noch keine Tags verfuegbar.
+      {{ t('tags.none') }}
     </p>
   </section>
 </template>

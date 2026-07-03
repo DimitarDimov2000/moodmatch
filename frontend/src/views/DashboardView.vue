@@ -9,10 +9,12 @@ import { getMatches } from "@/api/matches";
 import { getProfile } from "@/api/profile";
 import AppMessage from "@/components/common/AppMessage.vue";
 import DashboardSummaryCard from "@/components/dashboard/DashboardSummaryCard.vue";
+import { getGeneratedMatchExplanation } from "@/components/matching/matching-copy";
 import {
   consumptionStatusLabels,
   mediaTypeLabels,
 } from "@/components/matching/matching-format";
+import { i18n } from "@/i18n";
 import type {
   CandidateSelectionResponse,
   InterestProfileResponse,
@@ -20,6 +22,7 @@ import type {
   MatchingResponse,
   MediaResponse,
 } from "@/types/api";
+const { t } = i18n.global;
 
 const media = ref<MediaResponse[] | null>(null);
 const profile = ref<InterestProfileResponse | null>(null);
@@ -27,6 +30,8 @@ const candidateSelection = ref<CandidateSelectionResponse | null>(null);
 const matching = ref<MatchingResponse | null>(null);
 const loading = ref(true);
 const loadWarnings = ref<string[]>([]);
+const activeLocale = computed(() => i18n.global.locale.value);
+const trackLocaleDependency = () => activeLocale.value;
 
 const consumedCount = computed(
   () =>
@@ -63,105 +68,119 @@ const recentMediaItems = computed(() =>
 );
 
 const heroTitle = computed(() => {
+  trackLocaleDependency();
+  const match = bestMatch.value;
+
   if (mediaCount.value === 0 && candidateCount.value === 0) {
-    return "Willkommen in deinem MoodMatch-Ueberblick.";
+    return t("dashboard.heroEmpty");
   }
 
   if (profile.value && !profile.value.isReadyForMatching) {
-    return "Dein Profil ist fast bereit fuer aussagekraeftige Matches.";
+    return t("dashboard.heroWarmup");
   }
 
   if (matching.value?.scoresSuppressed) {
-    return "Deine Kandidatenliste steht, die Vergleichsbasis waechst noch.";
+    return t("dashboard.heroSuppressed");
   }
 
-  if (bestMatch.value?.relativeScore !== null) {
-    return `${bestMatch.value?.candidate.media.title} fuehrt aktuell deine Matches an.`;
+  if (match?.relativeScore != null) {
+    return t("dashboard.heroLeading", {
+      title: match.candidate.media.title,
+    });
   }
 
-  return "Dein Home-Bereich zeigt Sammlung, Profil und Empfehlungen auf einen Blick.";
+  return t("dashboard.heroDefault");
 });
 
 const heroCopy = computed(() => {
+  trackLocaleDependency();
+  const match = bestMatch.value;
+
   if (mediaCount.value === 0 && candidateCount.value === 0) {
-    return "Sobald du erste Medien oder Wunschkandidaten anlegst, fuehrt dich dieser Bereich direkt zu Profilaufbau, Sammlung und Match-Vergleich.";
+    return t("dashboard.copyEmpty");
   }
 
   if (profile.value && !profile.value.isReadyForMatching) {
-    return `${profile.value.explanationMessage} Konzentriere dich jetzt auf konsumierte Medien mit Bewertung und bestaetigten Tags.`;
+    return t("dashboard.copyWarmup");
   }
 
   if (matching.value?.scoresSuppressed) {
-    return `${matching.value.explanationMessage} Ohne genug Vergleichsdaten bleibt MoodMatch bewusst vorsichtig.`;
+    return t("dashboard.copySuppressed", {
+      message: "",
+    }).trim();
   }
 
-  if (bestMatch.value?.relativeScore !== null) {
-    return "Die Prozentzahl ist bewusst relativ und erscheint nur dann, wenn mehrere Kandidaten sinnvoll miteinander verglichen werden koennen.";
+  if (match?.relativeScore != null) {
+    return t("dashboard.copyLeading");
   }
 
-  return "Nutze diesen Bereich, um schnell zu sehen, wo dein Profil steht und welcher naechste Schritt gerade am meisten bringt.";
+  return t("dashboard.copyDefault");
 });
 
 const nextAction = computed(() => {
+  trackLocaleDependency();
+
   if (mediaCount.value === 0) {
     return {
-      title: "Erstes Medium anlegen",
-      copy: "Lege ein konsumiertes Medium oder einen Wunschkandidaten an, damit Sammlung, Profil und spaetere Matches sichtbar werden.",
+      title: t("dashboard.nextCreateTitle"),
+      copy: t("dashboard.nextCreateCopy"),
       to: { name: "media-create" as const },
-      label: "Medium anlegen",
+      label: t("common.actions.createMedia"),
     };
   }
 
   if (profile.value && !profile.value.isReadyForMatching) {
     return {
-      title: "Profil weiter fuellen",
-      copy: "Bewerte weitere konsumierte Medien und bestaetige Tags, damit aus einzelnen Eindruecken ein belastbares Geschmacksprofil wird.",
+      title: t("dashboard.nextProfileTitle"),
+      copy: t("dashboard.nextProfileCopy"),
       to: { name: "profile" as const },
-      label: "Profil ansehen",
+      label: t("common.actions.openProfile"),
     };
   }
 
   if (candidateCount.value === 0) {
     return {
-      title: "Kandidaten sammeln",
-      copy: "Sobald du Wunschkandidaten hinterlegst, kann MoodMatch sie mit deinem Profil vergleichen und spaeter priorisieren.",
+      title: t("dashboard.nextCandidatesTitle"),
+      copy: t("dashboard.nextCandidatesCopy"),
       to: { name: "media-create" as const },
-      label: "Kandidat anlegen",
+      label: t("common.actions.createCandidate"),
     };
   }
 
   return {
-    title: "Matches vergleichen",
-    copy: "Dein Profil ist bereit. Vergleiche jetzt die staerksten Vorschlaege und sieh dir an, warum einzelne Titel gut zu dir passen.",
+    title: t("dashboard.nextMatchesTitle"),
+    copy: t("dashboard.nextMatchesCopy"),
     to: { name: "matches" as const },
-    label: "Zu den Matches",
+    label: t("common.actions.openMatches"),
   };
 });
 
 const focusCard = computed(() => {
+  trackLocaleDependency();
+
   if (bestMatch.value) {
     return {
       title: bestMatch.value.candidate.media.title,
-      copy: bestMatch.value.explanationMessage,
+      copy: getGeneratedMatchExplanation(bestMatch.value),
       to: { name: "matches" as const },
-      label: "Match lesen",
+      label: t("common.actions.readMatch"),
     };
   }
 
   if (candidateCount.value > 0) {
     return {
-      title: "Kandidaten warten auf Vergleich",
-      copy: "Deine Liste ist vorhanden. Sobald Profil und Tag-Basis stark genug sind, werden hier klare Favoriten sichtbar.",
+      title: t("dashboard.focusWaitingTitle"),
+      copy: t("dashboard.focusWaitingCopy"),
       to: { name: "candidates" as const },
-      label: "Kandidaten ansehen",
+      label: t("common.actions.openCandidates"),
     };
   }
 
   return {
-    title: "Noch kein Match-Favorit",
-    copy: "Mit mehr Profilsignalen und Kandidaten zeigt dir dieser Bereich spaeter den aktuell vielversprechendsten Vorschlag.",
+    title: t("dashboard.focusEmptyTitle"),
+    copy: t("dashboard.focusEmptyCopy"),
     to: { name: "candidates" as const },
-    label: "Zur Kandidatenliste",
+    label: t("common.actions.openCandidates"),
   };
 });
 
@@ -187,7 +206,7 @@ async function loadDashboard() {
   } else {
     media.value = null;
     loadWarnings.value.push(
-      `Medien: ${toUserMessage(mediaResult.reason, "Die Medien konnten nicht geladen werden.")}`,
+      `${t("navigation.media")}: ${toUserMessage(mediaResult.reason, t("dashboard.loadMediaError"))}`,
     );
   }
 
@@ -196,7 +215,7 @@ async function loadDashboard() {
   } else {
     profile.value = null;
     loadWarnings.value.push(
-      `Profil: ${toUserMessage(profileResult.reason, "Das Profil konnte nicht geladen werden.")}`,
+      `${t("navigation.profile")}: ${toUserMessage(profileResult.reason, t("dashboard.loadProfileError"))}`,
     );
   }
 
@@ -205,7 +224,7 @@ async function loadDashboard() {
   } else {
     candidateSelection.value = null;
     loadWarnings.value.push(
-      `Kandidaten: ${toUserMessage(candidatesResult.reason, "Die Kandidaten konnten nicht geladen werden.")}`,
+      `${t("navigation.candidates")}: ${toUserMessage(candidatesResult.reason, t("dashboard.loadCandidatesError"))}`,
     );
   }
 
@@ -214,7 +233,7 @@ async function loadDashboard() {
   } else {
     matching.value = null;
     loadWarnings.value.push(
-      `Matches: ${toUserMessage(matchesResult.reason, "Die Matches konnten nicht geladen werden.")}`,
+      `${t("navigation.matches")}: ${toUserMessage(matchesResult.reason, t("dashboard.loadMatchesError"))}`,
     );
   }
 
@@ -228,6 +247,56 @@ function toUserMessage(error: unknown, fallback: string): string {
 
   return fallback;
 }
+
+const mediaSummaryDescription = computed(() => {
+  trackLocaleDependency();
+
+  if (!media.value) {
+    return t("dashboard.summaryMediaFallback");
+  }
+
+  return t("dashboard.summaryMediaDescription", {
+    consumed: consumedCount.value,
+    other: media.value.length - consumedCount.value,
+  });
+});
+
+const profileSummaryDescription = computed(() => {
+  trackLocaleDependency();
+
+  if (!profile.value) {
+    return t("dashboard.summaryProfileFallback");
+  }
+
+  return profile.value.isReadyForMatching
+    ? t("dashboard.summaryProfileReadyDescription", { count: profileTagCount.value })
+    : t("dashboard.summaryProfileBuildingDescription", { count: profileTagCount.value });
+});
+
+const candidatesSummaryDescription = computed(() => {
+  trackLocaleDependency();
+
+  if (!candidateSelection.value) {
+    return t("dashboard.summaryCandidatesFallback");
+  }
+
+  return t("dashboard.summaryCandidatesDescription", {
+    ready: candidateReadyCount.value,
+    missing: candidateSelection.value.candidates.length - candidateReadyCount.value,
+  });
+});
+
+const matchesSummaryDescription = computed(() => {
+  trackLocaleDependency();
+
+  if (!matching.value) {
+    return t("dashboard.summaryMatchesFallback");
+  }
+
+  return matching.value.scoresSuppressed
+    ? t("dashboard.summaryMatchesWaitingDescription", { count: meaningfulMatchCount.value })
+    : t("dashboard.summaryMatchesReadyDescription", { count: meaningfulMatchCount.value });
+});
 </script>
 
 <template>
@@ -235,7 +304,7 @@ function toUserMessage(error: unknown, fallback: string): string {
     <header class="dashboard__hero page-card">
       <div class="dashboard__hero-copy">
         <p class="eyebrow">
-          Dashboard
+          {{ t("dashboard.eyebrow") }}
         </p>
         <h1 class="page-title">
           {{ heroTitle }}
@@ -245,7 +314,7 @@ function toUserMessage(error: unknown, fallback: string): string {
         </p>
 
         <div class="dashboard__hero-badges">
-          <span class="badge"> {{ mediaCount }} Medien </span>
+          <span class="badge"> {{ t("dashboard.statsMedia", { count: mediaCount }) }} </span>
           <span
             class="badge"
             :class="
@@ -253,14 +322,14 @@ function toUserMessage(error: unknown, fallback: string): string {
             "
           >
             {{
-              profile?.isReadyForMatching ? "Profil bereit" : "Profil im Aufbau"
+              profile?.isReadyForMatching ? t("dashboard.statsProfileReady") : t("dashboard.statsProfileBuilding")
             }}
           </span>
           <span
             class="badge"
             :class="meaningfulMatchCount > 0 ? 'badge--accent' : ''"
           >
-            {{ meaningfulMatchCount }} aussagekraeftige Matches
+            {{ t("dashboard.statsMeaningfulMatches", { count: meaningfulMatchCount }) }}
           </span>
         </div>
       </div>
@@ -268,7 +337,7 @@ function toUserMessage(error: unknown, fallback: string): string {
       <aside class="dashboard__hero-side">
         <article class="dashboard__hero-panel">
           <p class="eyebrow">
-            Naechster Schritt
+            {{ t("dashboard.nextStep") }}
           </p>
           <h2 class="section-title">
             {{ nextAction.title }}
@@ -298,19 +367,19 @@ function toUserMessage(error: unknown, fallback: string): string {
             :to="{ name: 'media-list' }"
             class="button button--secondary"
           >
-            Mediathek
+            {{ t("common.actions.openMediaLibrary") }}
           </RouterLink>
           <RouterLink
             :to="{ name: 'profile' }"
             class="button button--secondary"
           >
-            Profil
+            {{ t("navigation.profile") }}
           </RouterLink>
           <RouterLink
             :to="{ name: 'swipe' }"
             class="button button--secondary"
           >
-            Swipe
+            {{ t("navigation.swipe") }}
           </RouterLink>
         </div>
       </aside>
@@ -318,15 +387,15 @@ function toUserMessage(error: unknown, fallback: string): string {
 
     <AppMessage
       v-if="loading"
-      title="Dashboard wird geladen"
-      description="Medien, Profil, Kandidaten und Matches werden parallel aus den bestehenden API-Aufrufen vorbereitet."
+      :title="t('dashboard.loadingTitle')"
+      :description="t('dashboard.loadingDescription')"
       tone="info"
     />
 
     <template v-else>
       <AppMessage
         v-if="loadWarnings.length > 0"
-        title="Nicht alle Bereiche konnten geladen werden"
+        :title="t('dashboard.partialLoadTitle')"
         :description="loadWarnings.join('\n')"
         tone="warning"
       >
@@ -336,7 +405,7 @@ function toUserMessage(error: unknown, fallback: string): string {
             type="button"
             @click="loadDashboard"
           >
-            Erneut versuchen
+            {{ t("common.actions.retry") }}
           </button>
         </div>
       </AppMessage>
@@ -345,76 +414,59 @@ function toUserMessage(error: unknown, fallback: string): string {
         <div class="section-header">
           <div class="section-header__copy">
             <p class="eyebrow">
-              Uebersicht
+              {{ t("dashboard.overviewEyebrow") }}
             </p>
             <h2 class="section-title">
-              Wo dein MoodMatch gerade steht
+              {{ t("dashboard.overviewTitle") }}
             </h2>
             <p class="body-muted">
-              Vier kompakte Karten zeigen Status, Profilreife und
-              Empfehlungslage.
+              {{ t("dashboard.overviewCopy") }}
             </p>
           </div>
         </div>
 
         <div class="dashboard__grid">
           <DashboardSummaryCard
-            eyebrow="Medien"
+            :eyebrow="t('navigation.media')"
             :value="String(media?.length ?? '–')"
-            title="Lokale Mediensammlung"
-            :description="
-              media
-                ? `${consumedCount} konsumiert, ${media.length - consumedCount} weitere Eintraege in deiner Sammlung.`
-                : 'Medien konnten in dieser Uebersicht nicht geladen werden.'
-            "
+            :title="t('dashboard.summaryMediaTitle')"
+            :description="mediaSummaryDescription"
             :link-to="{ name: 'media-list' }"
-            link-label="Zur Sammlung"
+            :link-label="t('common.actions.openMediaLibrary')"
             tone="info"
           />
 
           <DashboardSummaryCard
-            eyebrow="Profil"
+            :eyebrow="t('navigation.profile')"
             :value="
               profile
                 ? `${profile.profileRelevantMediaCount}/${profile.requiredProfileRelevantMediaCount}`
                 : '–'
             "
-            title="Matching-Basis"
-            :description="
-              profile
-                ? `${profile.isReadyForMatching ? 'Bereit fuer Vergleiche.' : 'Noch nicht bereit.'} ${profileTagCount} sichtbare Schwerpunkt-Tags.`
-                : 'Das Interessenprofil konnte in dieser Uebersicht nicht geladen werden.'
-            "
+            :title="t('dashboard.summaryProfileTitle')"
+            :description="profileSummaryDescription"
             :link-to="{ name: 'profile' }"
-            link-label="Profil ansehen"
+            :link-label="t('common.actions.openProfile')"
             :tone="profile?.isReadyForMatching ? 'success' : 'warning'"
           />
 
           <DashboardSummaryCard
-            eyebrow="Kandidaten"
+            :eyebrow="t('navigation.candidates')"
             :value="String(candidateSelection?.candidates.length ?? '–')"
-            title="Vorschlaege fuer spaeter"
-            :description="
-              candidateSelection
-                ? `${candidateReadyCount} vergleichsbereit, ${candidateSelection.candidates.length - candidateReadyCount} brauchen noch mehr erwartete Tags.`
-                : 'Die Kandidaten konnten in dieser Uebersicht nicht geladen werden.'
-            "
+            :title="t('dashboard.summaryCandidatesTitle')"
+            :description="candidatesSummaryDescription"
             :link-to="{ name: 'candidates' }"
-            link-label="Kandidaten pruefen"
+            :link-label="t('common.actions.openCandidates')"
             tone="default"
           />
 
           <DashboardSummaryCard
-            eyebrow="Matches"
+            :eyebrow="t('navigation.matches')"
             :value="String(matching?.matches.length ?? '–')"
-            title="Erklaerbare Vergleiche"
-            :description="
-              matching
-                ? `${meaningfulMatchCount} mit Prozentangabe. ${matching.scoresSuppressed ? 'Scores warten noch auf mehr Vergleichsdaten.' : 'Begruendungen und Prozentwerte sind bereit.'}`
-                : 'Die Match-Ergebnisse konnten in dieser Uebersicht nicht geladen werden.'
-            "
+            :title="t('dashboard.summaryMatchesTitle')"
+            :description="matchesSummaryDescription"
             :link-to="{ name: 'matches' }"
-            link-label="Matches lesen"
+            :link-label="t('common.actions.readMatch')"
             :tone="matching?.scoresSuppressed ? 'warning' : 'success'"
           />
         </div>
@@ -423,7 +475,7 @@ function toUserMessage(error: unknown, fallback: string): string {
       <section class="dashboard__detail-grid">
         <article class="page-card dashboard__detail-card">
           <p class="eyebrow">
-            Aktueller Fokus
+            {{ t("dashboard.focusEyebrow") }}
           </p>
           <h2 class="section-title">
             {{ focusCard.title }}
@@ -442,20 +494,20 @@ function toUserMessage(error: unknown, fallback: string): string {
         <article class="page-card dashboard__detail-card">
           <div class="dashboard__detail-heading">
             <p class="eyebrow">
-              Zuletzt wichtig
+              {{ t("dashboard.recentEyebrow") }}
             </p>
             <h2 class="section-title">
               {{
                 recentMediaItems.length > 0
-                  ? "Neu in deiner Sammlung"
-                  : "Sammlung aufbauen"
+                  ? t("dashboard.recentTitle")
+                  : t("dashboard.recentEmptyTitle")
               }}
             </h2>
             <p class="body-muted">
               {{
                 recentMediaItems.length > 0
-                  ? "Die juengsten Eintraege bleiben schnell erreichbar, ohne die Mediathek zu ueberladen."
-                  : "Sobald du erste Medien anlegst, erscheint hier ein kompakter Rueckblick auf deine Sammlung."
+                  ? t("dashboard.recentCopy")
+                  : t("dashboard.recentEmptyCopy")
               }}
             </p>
           </div>
@@ -480,7 +532,7 @@ function toUserMessage(error: unknown, fallback: string): string {
                     · {{ item.releaseYear }}</span>
                 </p>
               </div>
-              <span class="badge"> {{ item.tags.length }} Tags </span>
+              <span class="badge"> {{ t("dashboard.recentTagCount", { count: item.tags.length }) }} </span>
             </li>
           </ul>
 
@@ -488,7 +540,7 @@ function toUserMessage(error: unknown, fallback: string): string {
             :to="{ name: 'media-list' }"
             class="button button--secondary"
           >
-            Zur Mediathek
+            {{ t("common.actions.openMediaLibrary") }}
           </RouterLink>
         </article>
       </section>

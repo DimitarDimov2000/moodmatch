@@ -11,7 +11,7 @@ describe("MatchScoreDisplay", () => {
     });
 
     expect(wrapper.text()).toContain("87,5 %");
-    expect(wrapper.text()).toContain("Relativer Match-Score");
+    expect(wrapper.text()).toContain("Relativer Prozentwert");
   });
 
   it("renders a clear no-score state instead of zero", () => {

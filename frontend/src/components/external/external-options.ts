@@ -1,4 +1,5 @@
 import { getExternalSourceLabel } from '@/components/media/media-presentation';
+import { i18n } from '@/i18n';
 import type { MediaType } from '@/types/api-common';
 import type {
   ExternalSearchResponseSourceName,
@@ -14,29 +15,52 @@ export interface ExternalOptionItem<T extends string> {
 
 export type ExternalSourceSelection = 'AUTO' | ExternalSearchSourceName;
 
-export const externalSourceLabels: Record<ExternalSearchResponseSourceName, string> = {
-  AUTOMATIC: getExternalSourceLabel('AUTOMATIC'),
-  DEMO: getExternalSourceLabel('DEMO'),
-  TMDB: getExternalSourceLabel('TMDB'),
-  OPEN_LIBRARY: getExternalSourceLabel('OPEN_LIBRARY'),
-  RAWG: getExternalSourceLabel('RAWG'),
-  LIBRIVOX: getExternalSourceLabel('LIBRIVOX'),
-  PODCAST_INDEX: getExternalSourceLabel('PODCAST_INDEX'),
-  ANILIST: getExternalSourceLabel('ANILIST'),
-  YOUTUBE: getExternalSourceLabel('YOUTUBE'),
-};
+export function getExternalSourceLabels(): Record<ExternalSearchResponseSourceName, string> {
+  return {
+    AUTOMATIC: getExternalSourceLabel('AUTOMATIC'),
+    DEMO: getExternalSourceLabel('DEMO'),
+    TMDB: getExternalSourceLabel('TMDB'),
+    OPEN_LIBRARY: getExternalSourceLabel('OPEN_LIBRARY'),
+    RAWG: getExternalSourceLabel('RAWG'),
+    LIBRIVOX: getExternalSourceLabel('LIBRIVOX'),
+    PODCAST_INDEX: getExternalSourceLabel('PODCAST_INDEX'),
+    ANILIST: getExternalSourceLabel('ANILIST'),
+    YOUTUBE: getExternalSourceLabel('YOUTUBE'),
+  };
+}
 
-export const externalSearchSortLabels: Record<ExternalSearchSort, string> = {
-  relevance: 'Relevanz',
-  newest: 'Neueste',
-  most_viewed: 'Meistgesehen',
-};
+export function getExternalSearchSortLabel(sort: ExternalSearchSort): string {
+  const key = sort === 'most_viewed' ? 'mostViewed' : sort;
+  return i18n.global.t(`externalSearch.sortOptions.${key}`);
+}
 
-export const youTubeSearchSortOptions: ExternalOptionItem<ExternalSearchSort>[] = [
-  { value: 'relevance', label: 'Relevanz' },
-  { value: 'newest', label: 'Neueste' },
-  { value: 'most_viewed', label: 'Meistgesehen' },
-];
+export function getYouTubeSearchSortOptions(): ExternalOptionItem<ExternalSearchSort>[] {
+  return [
+    { value: 'relevance', label: getExternalSearchSortLabel('relevance') },
+    { value: 'newest', label: getExternalSearchSortLabel('newest') },
+    { value: 'most_viewed', label: getExternalSearchSortLabel('most_viewed') },
+  ];
+}
+
+export const externalSourceLabels = new Proxy({} as Record<ExternalSearchResponseSourceName, string>, {
+  get: (_, property) => {
+    if (typeof property !== 'string' || property.startsWith('__v_')) {
+      return undefined;
+    }
+
+    return getExternalSourceLabels()[property as ExternalSearchResponseSourceName];
+  },
+});
+
+export const externalSearchSortLabels = new Proxy({} as Record<ExternalSearchSort, string>, {
+  get: (_, property) => {
+    if (typeof property !== 'string' || property.startsWith('__v_')) {
+      return undefined;
+    }
+
+    return getExternalSearchSortLabel(property as ExternalSearchSort);
+  },
+});
 
 export function sourceOptionsForMediaType(
   mediaType: MediaType,
@@ -44,46 +68,46 @@ export function sourceOptionsForMediaType(
   switch (mediaType) {
     case 'FILM':
       return [
-        { value: 'AUTO', label: 'Automatisch (TMDB + AniList)' },
-        { value: 'TMDB', label: 'TMDB (Filme/Serien)' },
-        { value: 'ANILIST', label: 'AniList (Anime-Film)' },
-        { value: 'DEMO', label: 'Demo-Fallback' },
+        { value: 'AUTO', label: i18n.global.t('externalSearch.sourceOptions.autoFilmSeries') },
+        { value: 'TMDB', label: i18n.global.t('externalSearch.sourceOptions.tmdbFilmSeries') },
+        { value: 'ANILIST', label: i18n.global.t('externalSearch.sourceOptions.aniListFilm') },
+        { value: 'DEMO', label: i18n.global.t('externalSearch.sourceOptions.demoFallback') },
       ];
     case 'SERIES':
       return [
-        { value: 'AUTO', label: 'Automatisch (TMDB + AniList)' },
-        { value: 'TMDB', label: 'TMDB (Filme/Serien)' },
-        { value: 'ANILIST', label: 'AniList (Anime-Serie)' },
-        { value: 'DEMO', label: 'Demo-Fallback' },
+        { value: 'AUTO', label: i18n.global.t('externalSearch.sourceOptions.autoFilmSeries') },
+        { value: 'TMDB', label: i18n.global.t('externalSearch.sourceOptions.tmdbFilmSeries') },
+        { value: 'ANILIST', label: i18n.global.t('externalSearch.sourceOptions.aniListSeries') },
+        { value: 'DEMO', label: i18n.global.t('externalSearch.sourceOptions.demoFallback') },
       ];
     case 'BOOK':
       return [
-        { value: 'AUTO', label: 'Automatisch (Open Library + AniList)' },
-        { value: 'OPEN_LIBRARY', label: 'Open Library (Buecher)' },
-        { value: 'ANILIST', label: 'AniList (Manga)' },
-        { value: 'DEMO', label: 'Demo-Fallback' },
+        { value: 'AUTO', label: i18n.global.t('externalSearch.sourceOptions.autoBooks') },
+        { value: 'OPEN_LIBRARY', label: i18n.global.t('externalSearch.sourceOptions.openLibraryBooks') },
+        { value: 'ANILIST', label: i18n.global.t('externalSearch.sourceOptions.aniListManga') },
+        { value: 'DEMO', label: i18n.global.t('externalSearch.sourceOptions.demoFallback') },
       ];
     case 'GAME':
       return [
-        { value: 'AUTO', label: 'Automatisch (RAWG, sonst Demo)' },
-        { value: 'RAWG', label: 'RAWG (Games)' },
-        { value: 'DEMO', label: 'Demo-Fallback' },
+        { value: 'AUTO', label: i18n.global.t('externalSearch.sourceOptions.autoGames') },
+        { value: 'RAWG', label: i18n.global.t('externalSearch.sourceOptions.rawgGames') },
+        { value: 'DEMO', label: i18n.global.t('externalSearch.sourceOptions.demoFallback') },
       ];
     case 'AUDIOBOOK':
       return [
-        { value: 'AUTO', label: 'Automatisch (LibriVox)' },
-        { value: 'LIBRIVOX', label: 'LibriVox (Hoerbuecher)' },
-        { value: 'DEMO', label: 'Demo-Fallback' },
+        { value: 'AUTO', label: i18n.global.t('externalSearch.sourceOptions.autoAudiobooks') },
+        { value: 'LIBRIVOX', label: i18n.global.t('externalSearch.sourceOptions.libriVoxAudiobooks') },
+        { value: 'DEMO', label: i18n.global.t('externalSearch.sourceOptions.demoFallback') },
       ];
     case 'PODCAST':
       return [
-        { value: 'AUTO', label: 'Automatisch (Podcast Index)' },
-        { value: 'PODCAST_INDEX', label: 'Podcast Index (Podcast-Shows)' },
-        { value: 'DEMO', label: 'Demo-Fallback' },
+        { value: 'AUTO', label: i18n.global.t('externalSearch.sourceOptions.autoPodcasts') },
+        { value: 'PODCAST_INDEX', label: i18n.global.t('externalSearch.sourceOptions.podcastIndexShows') },
+        { value: 'DEMO', label: i18n.global.t('externalSearch.sourceOptions.demoFallback') },
       ];
     case 'VIDEO':
       return [
-        { value: 'YOUTUBE', label: 'YouTube (offizielle Videosuche)' },
+        { value: 'YOUTUBE', label: i18n.global.t('externalSearch.sourceOptions.youtubeOfficial') },
       ];
   }
 }
@@ -102,19 +126,5 @@ export function isSourceSelectionValid(
 }
 
 export function sourceHintForMediaType(mediaType: MediaType): string {
-  switch (mediaType) {
-    case 'FILM':
-    case 'SERIES':
-      return 'Automatisch durchsucht alle passenden Provider fuer den gewaehlten Medientyp: TMDB und AniList. Anime-Filme bleiben Film, Anime-Serien bleiben Serie.';
-    case 'BOOK':
-      return 'Automatisch durchsucht alle passenden Provider fuer den gewaehlten Medientyp: Open Library und AniList. Manga und Light Novels bleiben beim Import normale Buecher.';
-    case 'GAME':
-      return 'Automatisch durchsucht alle passenden Provider fuer den gewaehlten Medientyp: RAWG. Wenn kein API-Key gesetzt ist, faellt MoodMatch auf Demo zurueck.';
-    case 'AUDIOBOOK':
-      return 'Automatisch durchsucht alle passenden Provider fuer den gewaehlten Medientyp: LibriVox. Der Katalog ist auf gemeinfreie Hoerbuecher begrenzt.';
-    case 'PODCAST':
-      return 'Automatisch durchsucht alle passenden Provider fuer den gewaehlten Medientyp: Podcast Index. Einzelne Episoden werden nicht importiert.';
-    case 'VIDEO':
-      return 'YouTube-Suche nutzt die offizielle YouTube Data API fuer Video-Treffer. Fuer bekannte Links oder rohe IDs bleibt der separate YouTube-URL-Import darunter verfuegbar.';
-  }
+  return i18n.global.t(`externalSearch.sourceHint.${mediaType}`);
 }

@@ -1,15 +1,17 @@
 <script setup lang="ts">
+import { i18n } from "@/i18n";
 import TagChip from "@/components/tags/TagChip.vue";
 import type { InterestProfileMediaContributionResponse } from "@/types/api";
 import {
-  commitmentLevelLabels,
-  mediaTypeLabels,
+  getMatchingCommitmentLevelLabel,
+  getMatchingMediaTypeLabel,
 } from "@/components/matching/matching-format";
 import { formatDecimal } from "@/components/matching/matching-format";
 
 defineProps<{
   contribution: InterestProfileMediaContributionResponse;
 }>();
+const { t } = i18n.global;
 </script>
 
 <template>
@@ -17,28 +19,28 @@ defineProps<{
     <div class="profile-contribution-card__header">
       <div>
         <p class="eyebrow">
-          Woher dieses Signal kommt
+          {{ t("profileContribution.eyebrow") }}
         </p>
         <h3 class="profile-contribution-card__title">
           {{ contribution.media.title }}
         </h3>
         <p class="profile-contribution-card__meta">
-          {{ mediaTypeLabels[contribution.media.mediaType] }} ·
-          {{ commitmentLevelLabels[contribution.media.commitmentLevel] }} ·
-          Bewertung {{ contribution.media.rating ?? "keine" }}
+          {{ getMatchingMediaTypeLabel(contribution.media.mediaType) }} ·
+          {{ getMatchingCommitmentLevelLabel(contribution.media.commitmentLevel) }} ·
+          {{ t("profileContribution.rating", { value: contribution.media.rating ?? t("profileContribution.noRating") }) }}
         </p>
         <p class="profile-contribution-card__copy">
-          Dieses Medium staerkt dein Profil ueber die unten sichtbaren Tags.
+          {{ t("profileContribution.copy") }}
         </p>
       </div>
 
       <div class="profile-contribution-card__stats">
-        <span>Bewertungssignal
+        <span>{{ t("profileContribution.ratingSignal") }}
           {{
             formatDecimal(contribution.ratingWeight) ??
               contribution.ratingWeight
           }}</span>
-        <span>Favoriten-Bonus
+        <span>{{ t("profileContribution.favouriteBonus") }}
           {{
             formatDecimal(contribution.favouriteFactor) ??
               contribution.favouriteFactor

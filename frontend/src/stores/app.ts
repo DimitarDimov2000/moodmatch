@@ -3,7 +3,7 @@ import type { RouteLocationRaw } from 'vue-router';
 import { defineStore } from 'pinia';
 
 export interface NavigationItem {
-  label: string;
+  labelKey: string;
   to: RouteLocationRaw;
 }
 
@@ -17,37 +17,36 @@ export const useAppStore = defineStore('app', {
     appTitle: 'MoodMatch',
     navigationItems: [
       {
-        label: 'Dashboard',
+        labelKey: 'navigation.dashboard',
         to: { name: 'dashboard' },
       },
       {
-        label: 'Profil',
+        labelKey: 'navigation.profile',
         to: { name: 'profile' },
       },
       {
-        label: 'Suche',
+        labelKey: 'navigation.search',
         to: { name: 'external-search' },
       },
       {
-        label: 'Medien',
+        labelKey: 'navigation.media',
         to: { name: 'media-list' },
       },
       {
-        label: 'Kandidaten',
+        labelKey: 'navigation.candidates',
         to: { name: 'candidates' },
       },
       {
-        label: 'Swipe',
+        labelKey: 'navigation.swipe',
         to: { name: 'swipe' },
       },
       {
-        label: 'Matches',
+        labelKey: 'navigation.matches',
         to: { name: 'matches' },
       },
     ],
   }),
   getters: {
-    bootstrapSummary: () =>
-      'MoodMatch verbindet bereits Profil, Kandidaten, Matches, Swipe-Entscheidungen und typed API-basierte Medienfluesse in einer lauffaehigen lokalen Anwendung.',
+    bootstrapSummary: () => 'MoodMatch',
   },
 });

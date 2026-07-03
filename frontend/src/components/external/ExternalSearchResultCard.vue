@@ -3,8 +3,9 @@ import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 
 import MediaArtwork from '@/components/media/MediaArtwork.vue';
-import { mediaTypeLabels } from '@/components/media/media-options';
+import { getMediaTypeLabel } from '@/components/media/media-options';
 import { getExternalSourceLabel } from '@/components/media/media-presentation';
+import { i18n } from '@/i18n';
 import type { ExternalSearchResultResponse } from '@/types/api';
 
 const DESCRIPTION_PREVIEW_LIMIT = 220;
@@ -21,22 +22,32 @@ const props = defineProps<{
 const emit = defineEmits<{
   import: [result: ExternalSearchResultResponse];
 }>();
+const { t } = i18n.global;
+const activeLocale = computed(() => i18n.global.locale.value);
+const trackLocaleDependency = () => activeLocale.value;
 
-const sourceLabel = computed(() => getExternalSourceLabel(props.result.source));
-const mediaTypeLabel = computed(() => mediaTypeLabels[props.result.mediaType]);
+const sourceLabel = computed(() => {
+  trackLocaleDependency();
+  return getExternalSourceLabel(props.result.source);
+});
+const mediaTypeLabel = computed(() => {
+  trackLocaleDependency();
+  return getMediaTypeLabel(props.result.mediaType);
+});
 const subtypeLabel = computed(() => {
+  trackLocaleDependency();
   const format = props.result.externalSubjects.find((subject) => subject.startsWith('Format: '))?.replace('Format: ', '');
 
   if (props.result.source === 'OPEN_LIBRARY') {
-    return 'Buch';
+    return t('externalSearch.subtype.book');
   }
 
   if (props.result.source === 'LIBRIVOX') {
-    return 'Hoerbuch';
+    return t('externalSearch.subtype.audiobook');
   }
 
   if (props.result.source === 'PODCAST_INDEX') {
-    return 'Podcast-Show';
+    return t('externalSearch.subtype.podcastShow');
   }
 
   if (props.result.source !== 'ANILIST' || !format) {
@@ -44,56 +55,60 @@ const subtypeLabel = computed(() => {
   }
 
   if (props.result.mediaType === 'FILM') {
-    return 'Anime-Film';
+    return t('externalSearch.subtype.animeFilm');
   }
 
   if (props.result.mediaType === 'SERIES') {
-    return 'Anime-Serie';
+    return t('externalSearch.subtype.animeSeries');
   }
 
   if (format === 'NOVEL') {
-    return 'Light Novel';
+    return t('externalSearch.subtype.lightNovel');
   }
 
   if (format === 'ONE_SHOT') {
-    return 'One-shot';
+    return t('externalSearch.subtype.oneShot');
   }
 
-  return 'Manga';
+  return t('externalSearch.subtype.manga');
 });
 const creatorLabel = computed(() => {
+  trackLocaleDependency();
+
   if (props.result.source === 'ANILIST' && props.result.mediaType !== 'BOOK') {
-    return 'Studio';
+    return t('externalSearch.creatorStudio');
   }
 
   if (props.result.mediaType === 'BOOK') {
-    return 'Autor:innen';
+    return t('externalSearch.creatorBook');
   }
 
   if (props.result.mediaType === 'AUDIOBOOK') {
-    return 'Autor:in & Stimme';
+    return t('externalSearch.creatorAudiobook');
   }
 
   if (props.result.mediaType === 'PODCAST') {
-    return 'Host / Creator';
+    return t('externalSearch.creatorPodcast');
   }
 
   if (props.result.mediaType === 'GAME') {
-    return 'Studio / Publisher';
+    return t('externalSearch.creatorGame');
   }
 
   if (props.result.mediaType === 'VIDEO') {
-    return 'Kanal';
+    return t('externalSearch.creatorVideo');
   }
 
-  return 'Mitwirkende';
+  return t('externalSearch.creatorDefault');
 });
 const normalizedSubjects = computed(() =>
-  props.result.externalSubjects
-    .map((subject) => normalizeSubject(subject))
-    .filter((subject): subject is string => Boolean(subject))
-    .slice(0, 8),
-);
+  {
+    trackLocaleDependency();
+    return props.result.externalSubjects
+      .map((subject) => normalizeSubject(subject))
+      .filter((subject): subject is string => Boolean(subject))
+      .slice(0, 8);
+  });
 const descriptionPreview = computed(() => trimText(props.result.description, DESCRIPTION_PREVIEW_LIMIT));
 const hasTrimmedDescription = computed(
   () =>
@@ -103,21 +118,25 @@ const hasTrimmedDescription = computed(
 const visibleGenres = computed(() => props.result.externalGenres.slice(0, 6));
 const visibleSuggestedTags = computed(() => props.result.suggestedTags.slice(0, 6));
 const summaryFacts = computed(() =>
-  [
-    props.result.releaseYear ? `Jahr ${props.result.releaseYear}` : null,
-    props.result.originalTitle ? `Originaltitel: ${props.result.originalTitle}` : null,
-  ].filter((value): value is string => Boolean(value)),
-);
+  {
+    trackLocaleDependency();
+    return [
+      props.result.releaseYear ? t('externalSearch.year', { year: props.result.releaseYear }) : null,
+      props.result.originalTitle ? t('externalSearch.originalTitle', { title: props.result.originalTitle }) : null,
+    ].filter((value): value is string => Boolean(value));
+  });
 const importStatusBadge = computed(() => {
+  trackLocaleDependency();
+
   if (!props.importMessage || !props.importedMediaId) {
     return null;
   }
 
   if (props.importCreated === false) {
-    return 'Bereits vorhanden';
+    return t('externalSearch.resultExisting');
   }
 
-  return 'Importiert';
+  return t('externalSearch.resultImported');
 });
 const artworkVariant = computed(() =>
   props.result.mediaType === 'VIDEO' ? 'landscape' : 'poster',
@@ -142,27 +161,31 @@ function normalizeSubject(subject: string): string | null {
   }
 
   if (subject.startsWith('Status: ')) {
-    return `Status: ${formatStatusValue(subject.replace('Status: ', ''))}`;
+    return t('externalSearch.normalized.status', { value: formatStatusValue(subject.replace('Status: ', '')) });
   }
 
   if (subject.startsWith('Language: ')) {
-    return `Sprache: ${subject.replace('Language: ', '').toUpperCase()}`;
+    return t('externalSearch.normalized.language', { value: subject.replace('Language: ', '').toUpperCase() });
   }
 
   if (subject.startsWith('Explicit: ')) {
-    return `Explizit: ${subject.replace('Explicit: ', '') === 'No' ? 'Nein' : 'Ja'}`;
+    return t('externalSearch.normalized.explicit', {
+      value: subject.replace('Explicit: ', '') === 'No'
+        ? t('externalSearch.normalized.explicitNo')
+        : t('externalSearch.normalized.explicitYes'),
+    });
   }
 
   if (subject.startsWith('Feed type: ')) {
-    return `Feed: ${toSentenceCase(subject.replace('Feed type: ', ''))}`;
+    return t('externalSearch.normalized.feed', { value: toSentenceCase(subject.replace('Feed type: ', '')) });
   }
 
   if (subject.startsWith('Channel: ')) {
-    return `Kanal: ${subject.replace('Channel: ', '')}`;
+    return t('externalSearch.normalized.channel', { value: subject.replace('Channel: ', '') });
   }
 
   if (subject.startsWith('Category: ')) {
-    return `Kategorie: ${subject.replace('Category: ', '')}`;
+    return t('externalSearch.normalized.category', { value: subject.replace('Category: ', '') });
   }
 
   return subject;
@@ -171,11 +194,11 @@ function normalizeSubject(subject: string): string | null {
 function formatStatusValue(value: string): string {
   switch (value) {
     case 'FINISHED':
-      return 'Abgeschlossen';
+      return t('externalSearch.normalized.finished');
     case 'RELEASING':
-      return 'Laufend';
+      return t('externalSearch.normalized.releasing');
     case 'NOT_YET_RELEASED':
-      return 'Noch nicht erschienen';
+      return t('externalSearch.normalized.notReleased');
     default:
       return toSentenceCase(value.replace(/_/g, ' '));
   }
@@ -204,7 +227,7 @@ function toSentenceCase(value: string): string {
       <div class="external-result-card__copy">
         <div class="external-result-card__header">
           <div class="external-result-card__eyebrow-row">
-            <span class="eyebrow">Importvorschau</span>
+            <span class="eyebrow">{{ t('externalSearch.resultPreview') }}</span>
             <span class="badge badge--accent">{{ sourceLabel }}</span>
             <span class="badge">{{ mediaTypeLabel }}</span>
             <span
@@ -264,7 +287,7 @@ function toSentenceCase(value: string): string {
           class="external-result-card__section"
         >
           <p class="external-result-card__section-label">
-            Genres
+            {{ t('externalSearch.genres') }}
           </p>
           <div class="external-result-card__chip-row">
             <span
@@ -282,7 +305,7 @@ function toSentenceCase(value: string): string {
           class="external-result-card__section"
         >
           <p class="external-result-card__section-label">
-            Hinweise
+            {{ t('externalSearch.subjects') }}
           </p>
           <div class="external-result-card__chip-row">
             <span
@@ -297,14 +320,14 @@ function toSentenceCase(value: string): string {
 
         <div class="external-result-card__section">
           <p class="external-result-card__section-label">
-            Gemappte Tags
+            {{ t('externalSearch.suggestedTags') }}
           </p>
 
           <p
             v-if="visibleSuggestedTags.length === 0"
             class="body-muted external-result-card__supporting-copy"
           >
-            Noch keine passenden Tag-Vorschlaege vorhanden.
+            {{ t('externalSearch.noSuggestedTags') }}
           </p>
 
           <div
@@ -337,7 +360,7 @@ function toSentenceCase(value: string): string {
         <footer class="external-result-card__footer">
           <div class="external-result-card__footer-copy">
             <p class="external-result-card__attribution-label">
-              Provider
+              {{ t('externalSearch.providerData') }}
             </p>
             <p class="body-muted external-result-card__supporting-copy">
               {{ result.attribution }}
@@ -364,14 +387,14 @@ function toSentenceCase(value: string): string {
               target="_blank"
               rel="noreferrer"
             >
-              Quelle oeffnen
+              {{ t('externalSearch.sourceLink') }}
             </a>
             <RouterLink
               v-if="importedMediaId"
               :to="{ name: 'media-detail', params: { id: importedMediaId } }"
               class="button button--secondary"
             >
-              Details
+              {{ t('common.actions.details') }}
             </RouterLink>
             <button
               v-else
@@ -380,7 +403,7 @@ function toSentenceCase(value: string): string {
               :disabled="isImporting"
               @click="emit('import', props.result)"
             >
-              {{ isImporting ? 'Import laeuft...' : 'In Mediathek importieren' }}
+              {{ isImporting ? t('common.actions.importLoading') : t('common.actions.importToLibrary') }}
             </button>
           </div>
         </footer>

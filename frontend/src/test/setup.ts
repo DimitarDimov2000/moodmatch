@@ -1,9 +1,13 @@
 import { config } from '@vue/test-utils';
 import { vi } from 'vitest';
 
+import { i18n, initializeI18n } from '@/i18n';
+
 config.global.renderStubDefaultSlot = true;
+config.global.plugins = [i18n];
 
 window.scrollTo = () => {};
+initializeI18n();
 
 type MediaQueryChangeListener = (event: MediaQueryListEvent) => void;
 

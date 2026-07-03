@@ -17,6 +17,7 @@ import ExternalSearchResultCard from '@/components/external/ExternalSearchResult
 import YouTubeUrlImportForm from '@/components/external/YouTubeUrlImportForm.vue';
 import { mediaTypeLabels } from '@/components/media/media-options';
 import { getExternalSourceLabel } from '@/components/media/media-presentation';
+import { i18n } from '@/i18n';
 import type {
   ExternalImportRequest,
   ExternalSearchResponse,
@@ -41,34 +42,41 @@ const youTubeResolveError = ref('');
 const resolvedYouTubeResult = ref<ExternalSearchResultResponse | null>(null);
 const providerFilter = ref<'ALL' | ExternalSearchResultResponse['source']>('ALL');
 const resultMediaTypeFilter = ref<'ALL' | MediaType>('ALL');
+const { t } = i18n.global;
+const activeLocale = computed(() => i18n.global.locale.value);
+const trackLocaleDependency = () => activeLocale.value;
 
-const providerSummaryRows = [
-  {
-    label: 'Film & Serie',
-    providers: ['TMDB', 'AniList'],
-    note: 'Anime-Filme bleiben Film, Anime-Serien bleiben Serie.',
-  },
-  {
-    label: 'Buch',
-    providers: ['Open Library', 'AniList'],
-    note: 'Manga und Light Novels landen als normale Buecher in deiner Mediathek.',
-  },
-  {
-    label: 'Spiel',
-    providers: ['RAWG', 'Demo'],
-    note: 'Wenn RAWG fehlt, bleibt der Demo-Fallback verfuegbar.',
-  },
-  {
-    label: 'Hoerbuch & Podcast',
-    providers: ['LibriVox', 'Podcast Index'],
-    note: 'Podcast Index braucht Backend-Key und Secret, LibriVox deckt gemeinfreie Hoerbuecher ab.',
-  },
-  {
-    label: 'Video',
-    providers: ['YouTube'],
-    note: 'YouTube-Suche und der separate URL-Import bleiben bewusst getrennt.',
-  },
-] as const;
+const providerSummaryRows = computed(() => {
+  trackLocaleDependency();
+
+  return [
+    {
+      label: t('externalSearch.providerSummary.filmSeriesLabel'),
+      providers: ['TMDB', 'AniList'],
+      note: t('externalSearch.providerSummary.filmSeriesNote'),
+    },
+    {
+      label: t('externalSearch.providerSummary.bookLabel'),
+      providers: ['Open Library', 'AniList'],
+      note: t('externalSearch.providerSummary.bookNote'),
+    },
+    {
+      label: t('externalSearch.providerSummary.gameLabel'),
+      providers: ['RAWG', 'Demo'],
+      note: t('externalSearch.providerSummary.gameNote'),
+    },
+    {
+      label: t('externalSearch.providerSummary.audioLabel'),
+      providers: ['LibriVox', 'Podcast Index'],
+      note: t('externalSearch.providerSummary.audioNote'),
+    },
+    {
+      label: t('externalSearch.providerSummary.videoLabel'),
+      providers: ['YouTube'],
+      note: t('externalSearch.providerSummary.videoNote'),
+    },
+  ];
+});
 
 const warningMessage = computed(() => {
   if (!searchResponse.value || searchResponse.value.warnings.length === 0) {
@@ -79,18 +87,22 @@ const warningMessage = computed(() => {
 });
 
 const resolvedSourceLabel = computed(() => {
+  trackLocaleDependency();
+
   if (!searchResponse.value) {
     return '';
   }
 
   if (searchResponse.value.source === 'AUTOMATIC') {
-    return 'automatischen Quellen';
+    return t('externalSearch.automaticSources');
   }
 
   return externalSourceLabels[searchResponse.value.source];
 });
 
 const providerFilterOptions = computed(() => {
+  trackLocaleDependency();
+
   if (!searchResponse.value) {
     return [];
   }
@@ -102,6 +114,8 @@ const providerFilterOptions = computed(() => {
 });
 
 const mediaTypeFilterOptions = computed(() => {
+  trackLocaleDependency();
+
   if (!searchResponse.value) {
     return [];
   }
@@ -131,15 +145,19 @@ const filteredResults = computed(() => {
 });
 
 const automaticSearchExplanation = computed(() => {
+  trackLocaleDependency();
+
   if (searchResponse.value?.source !== 'AUTOMATIC') {
     if (searchResponse.value?.source === 'YOUTUBE' && mediaType.value === 'VIDEO') {
-      return `Pruefe die Treffer, importiere passende Videos direkt in die Mediathek und nutze dabei die Sortierung ${externalSearchSortLabels[sort.value]}.`;
+      return t('externalSearch.youtubeExplanation', {
+        sort: externalSearchSortLabels[sort.value],
+      });
     }
 
-    return 'Pruefe die normalisierten Metadaten und uebernimm passende Treffer direkt in deine Mediathek.';
+    return t('externalSearch.directExplanation');
   }
 
-  return 'Automatisch kombiniert fuer diesen Medientyp alle passenden Quellen und zeigt dir nur normalisierte Treffer fuer den Import.';
+  return t('externalSearch.autoExplanation');
 });
 
 async function runSearch() {
@@ -153,7 +171,7 @@ async function runSearch() {
 
   if (!trimmedQuery) {
     searchResponse.value = null;
-    errorMessage.value = 'Bitte gib zuerst einen Suchbegriff ein.';
+    errorMessage.value = t('externalSearch.emptyQuery');
     return;
   }
 
@@ -237,7 +255,7 @@ async function resolveYouTube() {
   resolvedYouTubeResult.value = null;
 
   if (!trimmedValue) {
-    youTubeResolveError.value = 'Bitte gib zuerst eine YouTube-URL oder Video-ID ein.';
+    youTubeResolveError.value = t('externalSearch.emptyResolve');
     return;
   }
 
@@ -260,7 +278,7 @@ function toUserMessage(error: unknown): string {
     return normalizeExternalMessage(error.message);
   }
 
-  return 'Die externe Suche konnte gerade nicht geladen werden.';
+  return t('externalSearch.searchError');
 }
 
 function toImportUserMessage(error: unknown): string {
@@ -268,7 +286,7 @@ function toImportUserMessage(error: unknown): string {
     return normalizeExternalMessage(error.message);
   }
 
-  return 'Der Import konnte gerade nicht abgeschlossen werden.';
+  return t('externalSearch.importError');
 }
 
 function toResolveUserMessage(error: unknown): string {
@@ -276,7 +294,7 @@ function toResolveUserMessage(error: unknown): string {
     return normalizeExternalMessage(error.message);
   }
 
-  return 'Die YouTube-URL konnte gerade nicht aufgeloest werden.';
+  return t('externalSearch.resolveError');
 }
 
 function isProviderConfigurationMessage(message: string): boolean {
@@ -319,7 +337,7 @@ function toImportRequest(result: ExternalSearchResultResponse): ExternalImportRe
 
 function normalizeExternalMessage(message: string): string {
   if (message === 'Enter a valid YouTube URL or video ID.') {
-    return 'Bitte gib eine gueltige YouTube-URL oder Video-ID ein.';
+    return t('externalSearch.invalidResolve');
   }
 
   if (message.includes('provider is not configured')) {
@@ -327,10 +345,10 @@ function normalizeExternalMessage(message: string): string {
     const envHint = message.match(/MOODMATCH_[A-Z0-9_]+/)?.[0];
 
     if (envHint) {
-      return `${provider} ist aktuell nicht verbunden. Hinterlege ${envHint} im Backend, um Suche oder Import zu nutzen.`;
+      return t('externalSearch.providerMissingEnv', { provider, env: envHint });
     }
 
-    return `${provider} ist aktuell nicht verbunden. Pruefe die Backend-Konfiguration und versuche es danach erneut.`;
+    return t('externalSearch.providerMissingGeneric', { provider });
   }
 
   return message;
@@ -340,7 +358,7 @@ function extractProviderName(message: string): string {
   const providerToken = message.split(' provider')[0]?.trim();
 
   if (!providerToken) {
-    return 'Der Provider';
+    return t('externalSearch.providerFilter');
   }
 
   const sourceKey = providerToken.toUpperCase().replace(/\s+/g, '_');
@@ -362,14 +380,13 @@ interface ImportState {
     <header class="page-header">
       <div>
         <p class="eyebrow">
-          Externe Suche
+          {{ t('externalSearch.eyebrow') }}
         </p>
         <h1 class="page-title">
-          Externe Medien suchen und importieren
+          {{ t('externalSearch.title') }}
         </h1>
         <p class="page-copy">
-          Suche in passenden Quellen, pruefe die normalisierten Metadaten und uebernimm
-          interessante Treffer direkt in deine Mediathek.
+          {{ t('externalSearch.intro') }}
         </p>
       </div>
 
@@ -378,7 +395,7 @@ interface ImportState {
           :to="{ name: 'media-create' }"
           class="button button--secondary"
         >
-          Medium manuell anlegen
+          {{ t('externalSearch.manualCreate') }}
         </RouterLink>
       </div>
     </header>
@@ -386,21 +403,20 @@ interface ImportState {
     <section class="external-search-view__workflow page-card">
       <div class="external-search-view__workflow-copy">
         <p class="eyebrow">
-          Import-Workflow
+          {{ t('externalSearch.workflowEyebrow') }}
         </p>
         <h2 class="section-title">
-          Suchen, pruefen, importieren
+          {{ t('externalSearch.workflowTitle') }}
         </h2>
         <p class="body-muted">
-          Erst suchst du in externen Quellen, dann pruefst du die normalisierten Felder
-          und importierst nur die Treffer, die wirklich in deine Sammlung passen.
+          {{ t('externalSearch.workflowCopy') }}
         </p>
       </div>
 
       <div class="external-search-view__step-row">
-        <span class="badge">1 Suche</span>
-        <span class="badge">2 Vorschau</span>
-        <span class="badge badge--accent">3 Import in die Mediathek</span>
+        <span class="badge">{{ t('externalSearch.workflowStepSearch') }}</span>
+        <span class="badge">{{ t('externalSearch.workflowStepPreview') }}</span>
+        <span class="badge badge--accent">{{ t('externalSearch.workflowStepImport') }}</span>
       </div>
 
       <div class="external-search-view__provider-grid">
@@ -430,7 +446,7 @@ interface ImportState {
 
     <AppMessage
       v-if="warningMessage"
-      title="Provider-Hinweis"
+      :title="t('externalSearch.providerHintTitle')"
       :description="warningMessage"
       tone="info"
     />
@@ -439,14 +455,13 @@ interface ImportState {
       <section class="external-search-view__lane">
         <div class="external-search-view__lane-copy">
           <p class="eyebrow">
-            Externe Treffer
+            {{ t('externalSearch.resultsEyebrow') }}
           </p>
           <h2 class="section-title">
-            Suche ueber Provider
+            {{ t('externalSearch.resultsTitle') }}
           </h2>
           <p class="body-muted">
-            Waehle Medientyp und Quelle, starte die Suche und vergleiche die normalisierten Treffer
-            vor dem Import.
+            {{ t('externalSearch.resultsCopy') }}
           </p>
         </div>
 
@@ -464,14 +479,13 @@ interface ImportState {
       <section class="external-search-view__youtube-stack">
         <div class="external-search-view__lane-copy">
           <p class="eyebrow">
-            YouTube Direktimport
+            {{ t('externalSearch.youtubeImportEyebrow') }}
           </p>
           <h2 class="section-title">
-            YouTube-Video per URL oder ID pruefen
+            {{ t('externalSearch.youtubeImportTitle') }}
           </h2>
           <p class="body-muted">
-            Fuege eine bekannte URL oder Video-ID ein, lade die Vorschau und importiere das Video
-            anschliessend als normales Medium.
+            {{ t('externalSearch.youtubeImportCopy') }}
           </p>
         </div>
 
@@ -483,14 +497,14 @@ interface ImportState {
 
         <AppMessage
           v-if="youTubeResolveLoading"
-          title="YouTube-Vorschau wird geladen"
-          description="MoodMatch laedt die offiziellen YouTube-Metadaten fuer diese URL oder Video-ID."
+          :title="t('common.actions.loadingPreview')"
+          :description="t('externalSearch.resolveCard')"
           tone="info"
         />
 
         <AppMessage
           v-else-if="youTubeResolveError"
-          title="YouTube-Import konnte nicht vorbereitet werden"
+          :title="t('externalSearch.youtubeResolveWarningTitle')"
           :description="youTubeResolveError"
           tone="warning"
         />
@@ -510,21 +524,21 @@ interface ImportState {
 
     <AppMessage
       v-if="loading"
-      title="Suche laeuft"
-      description="MoodMatch sammelt gerade normalisierte Treffer aus den passenden Quellen."
+      :title="t('externalSearch.searchingTitle')"
+      :description="t('externalSearch.loadingDescription')"
       tone="info"
     />
 
     <AppMessage
       v-else-if="warningOnlyMessage"
-      title="Provider aktuell nicht bereit"
+      :title="t('externalSearch.warningOnlyTitle')"
       :description="warningOnlyMessage"
       tone="warning"
     />
 
     <AppMessage
       v-else-if="errorMessage"
-      title="Suche konnte nicht abgeschlossen werden"
+      :title="t('externalSearch.searchFailedTitle')"
       :description="errorMessage"
       tone="error"
     >
@@ -534,21 +548,21 @@ interface ImportState {
           type="button"
           @click="runSearch"
         >
-          Erneut versuchen
+          {{ t('common.actions.retry') }}
         </button>
       </div>
     </AppMessage>
 
     <AppMessage
       v-else-if="!hasSearched"
-      title="Bereit fuer die erste Suche"
-      description="Gib einen Suchbegriff ein, pruefe danach die Vorschau und importiere nur die Treffer, die du wirklich behalten willst."
+      :title="t('externalSearch.readyTitle')"
+      :description="t('externalSearch.readyDescription')"
     />
 
     <AppMessage
       v-else-if="searchResponse && searchResponse.results.length === 0"
-      title="Keine Ergebnisse gefunden"
-      description="Fuer diese Kombination aus Suchbegriff, Medientyp und Quelle wurden keine passenden Treffer gefunden. Probiere einen anderen Begriff oder wechsle die Quelle."
+      :title="t('externalSearch.emptyTitle')"
+      :description="t('externalSearch.emptyDescription')"
     />
 
     <section
@@ -558,9 +572,9 @@ interface ImportState {
       <header class="external-search-view__results-header page-card">
         <div>
           <p class="eyebrow">
-            Resultate
+            {{ t('externalSearch.resultsEyebrow') }}
           </p>
-          <h2>{{ filteredResults.length }} Treffer aus {{ resolvedSourceLabel }}</h2>
+          <h2>{{ t('externalSearch.resultsCount', { count: filteredResults.length, source: resolvedSourceLabel }) }}</h2>
           <p class="body-muted">
             {{ automaticSearchExplanation }}
           </p>
@@ -574,14 +588,14 @@ interface ImportState {
             v-if="providerFilterOptions.length > 1"
             class="external-search-view__filter"
           >
-            <span>Provider</span>
+            <span>{{ t('externalSearch.providerFilter') }}</span>
             <select
               v-model="providerFilter"
               class="input"
               name="resultProviderFilter"
             >
               <option value="ALL">
-                Alle
+                {{ t('externalSearch.all') }}
               </option>
               <option
                 v-for="option in providerFilterOptions"
@@ -597,14 +611,14 @@ interface ImportState {
             v-if="mediaTypeFilterOptions.length > 1"
             class="external-search-view__filter"
           >
-            <span>Medientyp</span>
+            <span>{{ t('externalSearch.mediaTypeFilter') }}</span>
             <select
               v-model="resultMediaTypeFilter"
               class="input"
               name="resultMediaTypeFilter"
             >
               <option value="ALL">
-                Alle
+                {{ t('externalSearch.all') }}
               </option>
               <option
                 v-for="option in mediaTypeFilterOptions"
@@ -620,8 +634,8 @@ interface ImportState {
 
       <AppMessage
         v-if="filteredResults.length === 0"
-        title="Keine Treffer fuer die aktuellen Filter"
-        description="Passe den Provider- oder Medientyp-Filter an, um weitere Ergebnisse anzuzeigen."
+        :title="t('externalSearch.filteredEmptyTitle')"
+        :description="t('externalSearch.filteredEmptyDescription')"
         tone="info"
       />
 

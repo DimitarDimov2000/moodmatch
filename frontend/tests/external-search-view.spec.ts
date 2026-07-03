@@ -48,11 +48,11 @@ describe('ExternalSearchView', () => {
     const wrapper = mountView();
 
     expect(wrapper.text()).toContain('Externe Medien suchen und importieren');
-    expect(wrapper.text()).toContain('Bereit fuer die erste Suche');
+    expect(wrapper.text()).toContain('Bereit für die erste Suche');
 
     await wrapper.get('select[name="mediaType"]').setValue('AUDIOBOOK');
 
-    expect(wrapper.text()).toContain('LibriVox (Hoerbuecher)');
+    expect(wrapper.text()).toContain('LibriVox (Hörbücher)');
     expect(wrapper.get('option[value="LIBRIVOX"]').attributes('disabled')).toBeUndefined();
     expect(wrapper.text()).not.toContain('Spotify');
   });
@@ -75,7 +75,7 @@ describe('ExternalSearchView', () => {
 
     expect(wrapper.text()).toContain('Automatisch (Podcast Index)');
     expect(wrapper.text()).toContain('Podcast Index (Podcast-Shows)');
-    expect(wrapper.text()).toContain('Automatisch durchsucht alle passenden Provider fuer den gewaehlten Medientyp: Podcast Index');
+    expect(wrapper.text()).toContain('Automatisch durchsucht alle passenden Provider für den gewählten Medientyp: Podcast Index');
     expect(wrapper.get('option[value="PODCAST_INDEX"]').attributes('disabled')).toBeUndefined();
     expect(wrapper.text()).not.toContain('Spotify');
     expect(wrapper.text()).not.toContain('Music');
@@ -84,7 +84,7 @@ describe('ExternalSearchView', () => {
   it('enables normal youtube query search for videos while keeping the dedicated url import lane', async () => {
     const wrapper = mountView();
 
-    expect(wrapper.text()).toContain('YouTube-Video per URL oder ID pruefen');
+    expect(wrapper.text()).toContain('YouTube-Video per URL oder ID prüfen');
     expect(wrapper.get('input[name="youtubeUrl"]').attributes('placeholder')).toContain('youtube.com/watch');
 
     await wrapper.get('select[name="mediaType"]').setValue('VIDEO');
@@ -263,7 +263,7 @@ describe('ExternalSearchView', () => {
     await wrapper.get('form.youtube-url-import-form').trigger('submit');
     await flushPromises();
 
-    expect(wrapper.text()).toContain('Bitte gib eine gueltige YouTube-URL oder Video-ID ein.');
+    expect(wrapper.text()).toContain('Bitte gib eine gültige YouTube-URL oder Video-ID ein.');
     expect(importExternalMediaMock).not.toHaveBeenCalled();
   });
 
@@ -396,7 +396,7 @@ describe('ExternalSearchView', () => {
     const wrapper = mountView();
 
     expect(wrapper.text()).toContain('Automatisch (TMDB + AniList)');
-    expect(wrapper.text()).toContain('Automatisch durchsucht alle passenden Provider fuer den gewaehlten Medientyp');
+    expect(wrapper.text()).toContain('Automatisch durchsucht alle passenden Provider für den gewählten Medientyp');
     expect(wrapper.text()).toContain('AniList (Anime-Film)');
     expect(wrapper.get('option[value="ANILIST"]').attributes('disabled')).toBeUndefined();
 
@@ -461,7 +461,7 @@ describe('ExternalSearchView', () => {
     expect(wrapper.text()).toContain('AniList');
     expect(wrapper.text()).toContain('Film');
     expect(wrapper.text()).toContain('Anime-Film');
-    expect(wrapper.text()).toContain('Automatisch kombiniert fuer diesen Medientyp');
+    expect(wrapper.text()).toContain('Automatisch kombiniert für diesen Medientyp');
     expect(wrapper.text()).toContain('Provider-Hinweis');
     expect(wrapper.text()).toContain('TMDB ist aktuell nicht verbunden');
   });
