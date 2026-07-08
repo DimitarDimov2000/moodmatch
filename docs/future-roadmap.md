@@ -1,99 +1,94 @@
 # Future Roadmap
 
-This document describes future work that is intentionally not implemented yet. It is a roadmap note, not part of the current shipped behavior.
+This document lists work that is intentionally outside the final local-demo prototype scope.
 
-## i18n / German-English Copy Consistency
-
-Current state:
-
-- The current app mixes English and German labels, route titles, and explanatory copy.
-
-Intended future goal:
-
-- Introduce a deliberate internationalization strategy and make the UI copy consistent across routes, components, and documentation.
-
-Why it is deferred:
-
-- The current checkpoint prioritizes documenting and stabilizing behavior rather than changing copy architecture or adding i18n runtime support.
-
-## Real External API Providers
+## Deployment And Operations
 
 Current state:
 
-- External search uses an offline deterministic `DEMO` provider only.
+- the repository is optimized for local development, demo use, and source submission
 
-Intended future goal:
+Future work:
 
-- Add real provider integrations behind the existing backend-only adapter boundary.
+- deployment environment setup
+- environment separation for dev/staging/prod
+- monitoring, logging, and operational runbooks
+- backup/recovery considerations
 
-Why it is deferred:
-
-- The project currently focuses on the explainable local core and avoids introducing API-key handling, network variability, and provider-specific operational concerns.
-
-## External Import Flow Into Local Media/Candidates
-
-Current state:
-
-- External search can preview normalized results and suggested tags, but it does not import anything into the local library.
-
-Intended future goal:
-
-- Let users review external preview data and import it into local media or candidate records with explicit confirmation of what becomes local data.
-
-Why it is deferred:
-
-- Import adds persistence decisions, duplicate handling, tag-confirmation UX, and broader validation flows that are intentionally outside the current checkpoint.
-
-## Persistent Swipe-Like/Save Behavior
+## Auth And Security Hardening
 
 Current state:
 
-- Swipe `like` and `skip` are local to the current round.
-- Swipe `reject` persists by setting the media item to `NOT_INTERESTED`.
+- local email/password auth supports the prototype and demo workflow
+- bearer-token handling is suitable for local/dev use
 
-Intended future goal:
+Future work:
 
-- Add a clear persisted save/like behavior that updates local data without confusing it with the existing domain `favourite` field.
+- stronger production session/token strategy
+- HTTPS-first deployment assumptions
+- secret-management improvements
+- broader security review for public deployment
 
-Why it is deferred:
-
-- The current implementation keeps swipe semantics simple and avoids overloading the meaning of `favourite` or introducing new persistence rules prematurely.
-
-## E2E / Browser Tests
-
-Current state:
-
-- The project relies on backend tests plus frontend unit/component/view tests.
-- No browser-level E2E suite is installed yet.
-
-Intended future goal:
-
-- Add end-to-end/browser coverage for core user flows such as media creation, scoring visibility, swipe behavior, and external preview.
-
-Why it is deferred:
-
-- The current checkpoint avoids adding new tooling and keeps validation focused on the existing backend/frontend test layers.
-
-## Production Hardening
+## End-To-End Test Coverage
 
 Current state:
 
-- The project is runnable locally and is better documented after the checkpoint phases.
-- The app is not presented as production-ready.
+- frontend lint/unit-test/build checks exist
+- backend automated tests exist
+- final QA also relied on manual browser verification
 
-Intended future goal:
+Future work:
 
-- Harden configuration, secrets handling, deployment setup, monitoring, operational safeguards, and environment separation for a real deployment posture.
+- browser-level E2E coverage for login, import, profile readiness, matches, and swipe flows
+- richer CI reporting around UI regression checks
 
-Why it is deferred:
+## Provider Resilience And Metadata Quality
 
-- Production readiness requires deployment-specific decisions that are intentionally outside the scope of the current academic checkpoint.
+Current state:
 
-Possible future hardening topics:
+- provider integrations work at prototype level with warnings/fallback behavior
+- provider quality still depends on API keys, quota, network, and third-party metadata quality
 
-- secret management
-- separate production datasource settings
-- deployment-specific logging and monitoring
-- reverse-proxy and CORS review
-- backup and restore considerations
-- operational startup and recovery guidance
+Future work:
+
+- better metadata cleanup and normalization
+- stronger retry/error handling where appropriate
+- relevance tuning for provider-specific search behavior
+- additional public showcase polish around provider attribution and edge cases
+
+## Import Readiness UX
+
+Current state:
+
+- imported titles become local data, but they may still need tags, ratings, and other signals before scoring becomes meaningful
+
+Future work:
+
+- faster onboarding from import to match-ready state
+- clearer guidance around missing tags/signals
+- optional workflows for confirming or refining suggested tags
+
+## Swipe Persistence Semantics
+
+Current state:
+
+- swipe is intentionally prototype-level
+- reject persists as `NOT_INTERESTED`
+- like and skip remain local to the active flow
+
+Future work:
+
+- explicit persisted save/like behavior
+- clearer long-term relationship between swipe decisions, favourites, and candidate management
+
+## Asset And Showcase Polish
+
+Current state:
+
+- the app is demo-ready, but some branding assets and repository presentation elements remain prototype-grade
+
+Future work:
+
+- optimize large SVG assets where worthwhile
+- add curated screenshots or short demo media to the repository
+- tighten final public-facing presentation material

@@ -1,12 +1,12 @@
 # Local Setup
 
-This guide describes the standard local development and authenticated demo-QA setup for MoodMatch.
+This guide describes the current local development, testing, and demo-QA workflow for MoodMatch.
 
 The goal is repeatability:
 
-- keep real secrets out of Git
-- stop manually exporting backend variables for every session
-- make protected-route QA easy for Codex and manual browser checks
+- keep secrets out of Git
+- use the committed helper scripts instead of ad-hoc shell setup
+- make protected-route QA easy for local manual checks
 
 ## Prerequisites
 
@@ -15,15 +15,17 @@ The goal is repeatability:
 - PostgreSQL
 - `curl`
 
-## 1. Start PostgreSQL Locally
+## 1. Start PostgreSQL
 
-The local backend expects PostgreSQL on:
+The backend expects a PostgreSQL database reachable from your local machine.
+
+Typical local defaults:
 
 - host: `localhost`
 - port: `5432`
 - database: `moodmatch`
 
-If you still need a local database and user, one simple setup is:
+If you need a simple local setup:
 
 ```bash
 psql postgres
@@ -34,46 +36,47 @@ CREATE USER moodmatch WITH PASSWORD 'moodmatch';
 CREATE DATABASE moodmatch OWNER moodmatch;
 ```
 
-If you already use different local credentials, keep them local and put them into your root `.env.local`.
+If you prefer different local credentials, keep them local and place them in the root `.env.local`.
 
 ## 2. Create Local Env Files
 
-Copy the committed examples first:
+Copy the committed examples:
 
 ```bash
 cp .env.local.example .env.local
 cp frontend/.env.local.example frontend/.env.local
 ```
 
-Files to keep local only:
+Files that must stay local only:
 
 - `.env.local`
-- `backend/.env.local`
 - `frontend/.env.local`
 
-Example files are safe to commit because they contain placeholders only:
+Committed placeholder/reference files:
 
 - `.env.local.example`
 - `frontend/.env.local.example`
 - `backend/.env.example`
 
-## 3. Fill Local Env Vars Safely
+## 3. Fill The Root `.env.local`
 
-Edit the new root `.env.local` and set your real local-only values.
+The root `.env.local` is the source used by the backend dev script and the demo-user helper.
 
-Core backend values:
+Required local values:
 
 - `MOODMATCH_DB_URL`
 - `MOODMATCH_DB_USERNAME`
 - `MOODMATCH_DB_PASSWORD`
 - `MOODMATCH_AUTH_MODE=local-password`
-- `MOODMATCH_PRIVATE_ENDPOINT_POLICY=authenticated`
 - `QUARKUS_HTTP_CORS_ENABLED=true`
 - `QUARKUS_HTTP_CORS_ORIGINS=http://localhost:5173`
+
+Recommended CORS values:
+
 - `QUARKUS_HTTP_CORS_METHODS=GET,POST,PUT,PATCH,DELETE,OPTIONS`
 - `QUARKUS_HTTP_CORS_HEADERS=Accept,Authorization,Content-Type,Origin,X-Requested-With`
 
-Optional backend-only provider keys:
+Optional provider keys:
 
 - `MOODMATCH_TMDB_API_KEY`
 - `MOODMATCH_RAWG_API_KEY`
@@ -81,34 +84,44 @@ Optional backend-only provider keys:
 - `MOODMATCH_PODCASTINDEX_SECRET`
 - `MOODMATCH_YOUTUBE_API_KEY`
 
-Optional local demo-QA account values used by the helper script:
+Optional local demo-user values:
 
 - `MOODMATCH_DEMO_EMAIL`
 - `MOODMATCH_DEMO_PASSWORD`
 - `MOODMATCH_DEMO_DISPLAY_NAME`
+- `MOODMATCH_LOCAL_BACKEND_URL` if you are not using `http://localhost:8080`
 
-The frontend local file should normally stay as:
-
-```dotenv
-VITE_AUTH_MODE=local-password
-VITE_API_BASE_URL=http://localhost:8080
-```
-
-Important safety rules:
+Safety rules:
 
 - Do not commit `.env.local`.
 - Do not commit `frontend/.env.local`.
 - Do not commit real API keys.
 - Do not commit personal credentials.
 
-## 4. Start The Backend
+## 4. Fill `frontend/.env.local`
 
-The backend local helper reads the root `.env.local`, exports the variables for the current process, and starts Quarkus dev mode.
+The committed example is valid for normal local development:
+
+```dotenv
+VITE_AUTH_MODE=local-password
+VITE_API_BASE_URL=http://localhost:8080
+```
+
+The frontend also has a Vite `/api` proxy for local development, but the committed local example keeps the backend URL explicit and matches the current helper docs.
+
+## 5. Start The Backend
+
+From `backend/`:
 
 ```bash
-cd backend
 ./scripts/dev-local.sh
 ```
+
+This script:
+
+- reads the root `.env.local`
+- exports those variables into the backend process
+- starts Quarkus dev mode
 
 Default backend URL:
 
@@ -116,15 +129,15 @@ Default backend URL:
 http://localhost:8080
 ```
 
-Quick smoke check:
+Quick health check:
 
 ```bash
 curl http://localhost:8080/api/health
 ```
 
-Flyway migrations still run automatically on backend startup.
+Flyway migrations run automatically on backend startup.
 
-## 5. Start The Frontend
+## 6. Start The Frontend
 
 If dependencies are not installed yet:
 
@@ -146,103 +159,86 @@ Default frontend URL:
 http://localhost:5173
 ```
 
-## 6. Create Or Check The Local Demo User
+## 7. Create Or Verify The Demo User
 
-Use the local helper from the project root:
+From the repo root:
 
 ```bash
 ./scripts/dev-create-demo-user.sh
 ```
 
-What it does:
+The helper:
 
 - reads `MOODMATCH_DEMO_EMAIL`, `MOODMATCH_DEMO_PASSWORD`, and `MOODMATCH_DEMO_DISPLAY_NAME` from the root `.env.local`
-- talks to the local backend at `http://localhost:8080` by default
+- talks to `MOODMATCH_LOCAL_BACKEND_URL` or `http://localhost:8080` by default
 - sends `POST /api/auth/register`
-- if the user already exists, checks the configured credentials with `POST /api/auth/login`
+- if the user already exists, verifies the credentials with `POST /api/auth/login`
 
 This is local QA only:
 
-- no bypass login
-- no backend auth changes
-- no seeded demo user migration
+- no auth bypass
+- no seeded production/demo user
+- no backend behavior change
 
-## 7. Demo QA Login Instructions
+## 8. Local Demo QA Flow
 
 After the helper succeeds:
 
 1. Open `http://localhost:5173`.
-2. Log in with `MOODMATCH_DEMO_EMAIL` and `MOODMATCH_DEMO_PASSWORD` from your root `.env.local`.
-3. Continue with the authenticated verification flow below.
-
-## 8. Standard Codex / Manual Browser QA Workflow
-
-Use this exact order for reliable authenticated QA:
-
-1. PostgreSQL is running.
-2. Backend is running on `http://localhost:8080`.
-3. Frontend is running on `http://localhost:5173`.
-4. Demo user exists.
-5. Log in with the local demo account.
-6. Verify protected routes:
+2. Log in with `MOODMATCH_DEMO_EMAIL` and `MOODMATCH_DEMO_PASSWORD`.
+3. Verify protected routes:
    `Dashboard`, `Profile`, `External Search`, `Media Library`, `Candidates`, `Swipe`, `Matches`
-7. Check the DE/EN language switch.
-8. Check the dark/light/system theme switch.
-9. Check both desktop and mobile widths.
+4. Check the German/English switch.
+5. Check dark, light, and system theme behavior.
+6. Check desktop and mobile widths.
 
-## 9. Run Backend Tests Cleanly
+## 9. Frontend Checks
 
-Use the clean backend helper instead of a shell that may still contain local exports:
+From `frontend/`:
 
 ```bash
-cd backend
-./scripts/test-clean.sh
+npm run lint
+npm run test
+npm run build
 ```
 
-This script:
-
-- does not load `.env.local`
-- unsets common auth, DB, CORS, OIDC, and provider variables before running tests
-- runs `./mvnw test`
-
-## 10. Run Frontend Checks
-
-Run the standard frontend checks:
+Optional extra check:
 
 ```bash
-cd frontend
-npm run lint && npm run test && npm run build
-```
-
-Useful extra check:
-
-```bash
-cd frontend
 npm run typecheck
 ```
 
-## Provider Notes
+## 10. Clean Backend Test
 
-Provider behavior is unchanged. Local secrets stay backend-only.
+From `backend/`:
 
-Current provider notes:
+```bash
+./scripts/test-clean.sh
+```
 
-- TMDB for `FILM` and `SERIES` uses `MOODMATCH_TMDB_API_KEY` when configured.
-- Open Library for `BOOK` does not need a secret in the current integration.
-- LibriVox for `AUDIOBOOK` does not need a secret in the current integration.
-- RAWG for `GAME` uses `MOODMATCH_RAWG_API_KEY` when configured.
-- Podcast Index for `PODCAST` uses `MOODMATCH_PODCASTINDEX_KEY` and `MOODMATCH_PODCASTINDEX_SECRET` when configured.
-- AniList does not need a secret in the current integration.
-- YouTube search and URL import use `MOODMATCH_YOUTUBE_API_KEY` on the backend only.
+This helper:
 
-If provider keys are missing, the existing application behavior stays the same. This package does not change provider logic.
+- does not load `.env.local`
+- unsets common auth, DB, CORS, OIDC, and provider variables
+- runs `./mvnw test`
 
-## Security Reminder
+## 11. Provider Notes
 
-Never commit any of the following:
+- `TMDB` for `FILM` and `SERIES` uses `MOODMATCH_TMDB_API_KEY` when configured.
+- `OPEN_LIBRARY` for `BOOK` does not need a secret in the current integration.
+- `LIBRIVOX` for `AUDIOBOOK` does not need a secret in the current integration.
+- `RAWG` for `GAME` uses `MOODMATCH_RAWG_API_KEY` when configured.
+- `PODCAST_INDEX` for `PODCAST` uses `MOODMATCH_PODCASTINDEX_KEY` and `MOODMATCH_PODCASTINDEX_SECRET` when configured.
+- `ANILIST` does not need a secret in the current integration.
+- `YOUTUBE` search and URL import use `MOODMATCH_YOUTUBE_API_KEY` on the backend only.
+- Missing provider keys must not block local core app development or automated tests.
+
+## 12. Security Reminder
+
+Never commit:
 
 - `.env.local`
-- `backend/.env.local`
 - `frontend/.env.local`
 - real API keys
 - real personal credentials
+- real bearer tokens

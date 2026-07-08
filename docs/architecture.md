@@ -1,144 +1,148 @@
 # Architecture
 
-MoodMatch is a small monorepo application with three active layers:
+MoodMatch is a monorepo prototype with a Vue frontend, a Quarkus backend, and a relational datastore for local development.
 
-1. A Vue 3 + TypeScript frontend
-2. A Quarkus + Java backend
-3. A PostgreSQL database for local development
+The core principle is explainability:
 
-The app is deterministic, explainable, locally grounded, and rule-based. External preview data may help users discover metadata, but it does not drive MoodMatch scoring.
+- matching stays deterministic
+- provider data is normalized but not treated as the source of truth for scoring
+- imported titles become local user-owned media before they meaningfully influence recommendations
 
-## Current Repository Structure
+## Repository Structure
 
 | Path | Purpose |
 | --- | --- |
-| `frontend/` | Route-based UI for dashboard, media management, profile, candidates, matches, swipe mode, and external search preview |
-| `backend/` | REST API, validation, persistence, deterministic profile/matching logic, external search provider abstraction, and Flyway migrations |
-| `docs/` | Setup notes, API contract, data model, testing notes, checkpoint docs, and ADRs |
+| `frontend/` | Vue 3 SPA for auth, media management, external search/import, profile, candidates, swipe, and matches |
+| `backend/` | Quarkus API for auth, persistence, provider integrations, profile logic, matching logic, and Flyway migrations |
+| `docs/` | Setup, architecture, scoring, API, provider, testing, and historical project notes |
+| `scripts/` | Repo-level helper scripts such as demo-user creation |
 
 ## Frontend
 
-The frontend is a Vite-powered Vue 3 app with typed API modules and route-level views.
+The frontend is a Vite-powered Vue 3 single-page application.
 
-Current user-facing areas:
+It owns:
 
-- Dashboard
-- Media library
-- Media create/edit/detail flows
-- Profile view
-- Candidate view
-- Matches view
-- Swipe mode
-- External search preview
+- login and local account flows
+- protected route navigation
+- media library screens
+- manual media create/edit/detail flows
+- external search, URL resolve, and import UI
+- profile/readiness views
+- candidate and match views
+- swipe-style decision flow
+- theme and language switching
 
-The frontend talks to the backend through `/api`. In local development, Vite proxies `/api` to `http://localhost:8080`. The API base can also be overridden through `VITE_API_BASE_URL`.
+API behavior:
 
-The dashboard is currently assembled in the frontend from existing media, profile, candidates, and matches endpoints. There is no dedicated `/api/dashboard` backend endpoint yet.
+- the frontend can use `VITE_API_BASE_URL`
+- the default local Vite dev server also proxies `/api` to `http://localhost:8080`
+- provider secrets never live in the frontend
 
 ## Backend
 
 The backend exposes REST endpoints under `/api` and owns:
 
-- request validation
-- structured error responses
-- entity persistence
-- Flyway-based schema setup
-- starter tag seeding
-- media CRUD rules
-- status and favourite validation
+- local email/password registration and login
+- bearer-token validation for protected routes in `local-password` mode
+- current-user scoping for media and matching data
+- media CRUD and validation
+- Flyway schema migration and validation
+- tag listing and external-tag suggestion mapping
 - interest profile calculation
-- candidate listing
+- candidate loading
 - deterministic match scoring and explanations
-- preview-only external search normalization
-
-The external search path is backend-only. The frontend never calls external providers directly.
+- external provider search, URL resolve, and import normalization
 
 ## Database
 
-Local development uses PostgreSQL. The backend dev profile expects:
+Local development uses PostgreSQL. The backend expects the datasource from the root `.env.local`.
 
-- database: `moodmatch`
-- user: `moodmatch`
-- password: `moodmatch`
-- port: `5432`
+Flyway behavior:
 
-Flyway runs automatically on startup and applies the committed migrations before the backend serves requests.
+- migrations run on backend startup
+- schema validation stays enabled
+- committed migrations are the source of truth for local database shape
 
-Backend tests use H2 in PostgreSQL compatibility mode together with the same Flyway migrations.
+Backend tests use H2 in PostgreSQL-compatibility mode so automated tests and CI do not require a running PostgreSQL instance.
 
-## Current Data Flow
+## Provider Architecture
 
-### Media Management
+External provider access is backend-only.
 
-```text
-Frontend view/form
-→ frontend API module
-→ /api/media
-→ MediaResource
-→ MediaService
-→ repositories/entities
-→ PostgreSQL
-```
+Current providers:
 
-### Profile And Matching
+- `DEMO`
+- `TMDB`
+- `OPEN_LIBRARY`
+- `LIBRIVOX`
+- `RAWG`
+- `ANILIST`
+- `PODCAST_INDEX`
+- `YOUTUBE`
 
-```text
-Frontend profile/matches/dashboard views
-→ /api/profile, /api/candidates, /api/matches
-→ backend services
-→ confirmed local media + tags
-→ deterministic weights and scores
-→ explanation-focused DTOs
-```
+Key rules:
 
-The exact scoring rules and edge cases are documented in [Scoring And Matching](scoring-and-matching.md).
+- the frontend never sends provider secrets directly
+- provider responses are normalized into shared API DTOs
+- imports create normal local `MediaItem` data plus external reference metadata
+- provider availability can add warnings or fallback behavior, but should not require real keys for tests
 
-### External Search Preview
+## High-Level Data Flow
+
+### Local Media Flow
 
 ```text
-ExternalSearchView
-→ /api/external/search
-→ ExternalSearchService
-→ DemoExternalSearchProvider
-→ normalized preview DTOs
-→ read-only frontend cards
+Vue views/components
+-> frontend API client
+-> /api/media
+-> backend resource/service layer
+-> persistence layer
+-> PostgreSQL
 ```
 
-### Swipe Mode
+### Profile And Matching Flow
 
 ```text
-SwipeView
-→ /api/candidates and /api/matches for queue context
-→ local like/skip round state in the frontend
-→ reject persists via PATCH /api/media/{id}/status to NOT_INTERESTED
+Current user's consumed/rated/tagged media
+-> interest profile calculation
+-> WANT_TO_CONSUME candidate loading
+-> deterministic weighted tag overlap
+-> explanation-focused DTOs
+-> profile/candidates/matches/swipe UI
 ```
 
-## Important Semantics
+### External Search And Import Flow
 
-- Favourite is a persisted domain field, not a swipe action.
-- Swipe like and skip are local to the active swipe round.
-- Swipe reject persists as `NOT_INTERESTED`.
-- Matching uses confirmed local tags only.
-- External preview results do not import automatically and do not affect scores automatically.
+```text
+External Search view
+-> /api/external/search or /api/external/resolve-url
+-> backend provider adapter(s)
+-> normalized external DTOs
+-> user chooses import
+-> /api/external/import
+-> imported title becomes local user-owned media
+```
 
-## Current Boundaries
+## Scoring Boundary
+
+MoodMatch does not use a generative model for ranking. Matching is driven by persisted local tags, ratings, favourites, and readiness rules. External metadata can help discovery and import, but it is not the final authority for scoring until it has become confirmed local data.
+
+## Current Prototype Boundaries
 
 Implemented now:
 
-- media CRUD and tag replacement
-- seeded tags and schema migrations
-- profile calculation
-- candidate listing
-- deterministic matches
-- swipe UI over existing APIs
-- offline DEMO external search preview
+- local email/password auth
+- protected frontend routes
+- multi-provider external search/import
+- profile readiness and deterministic match explanations
+- swipe-oriented local decision flow
+- German/English UI switching
+- dark/light/system theming
 
-Not implemented yet:
+Not finished as production work:
 
-- external import into the local library
-- real provider integrations
-- dedicated dashboard endpoint
-- dedicated decision-mode filter API
-- persistent swipe-like/save behavior
-
-See [Future Roadmap](future-roadmap.md) for deferred work that is intentionally outside the current checkpoint.
+- hardened deployment/auth/session infrastructure
+- end-to-end browser automation
+- a fully finalized persisted swipe-like/save model
+- public deployment as a default repo outcome
