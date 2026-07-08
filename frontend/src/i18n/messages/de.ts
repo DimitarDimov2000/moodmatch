@@ -581,6 +581,8 @@ export const deMessages = {
     resultPreview: 'Importvorschau',
     resultImported: 'Importiert',
     resultExisting: 'Bereits vorhanden',
+    importCreated: 'In deine Mediathek importiert.',
+    importExisting: 'Dieser Titel ist bereits in deiner Mediathek vorhanden.',
     year: 'Jahr {year}',
     originalTitle: 'Originaltitel: {title}',
     creatorBook: 'Autor:innen',

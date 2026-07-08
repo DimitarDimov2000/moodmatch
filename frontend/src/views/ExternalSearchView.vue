@@ -230,7 +230,9 @@ async function importResult(result: ExternalSearchResultResponse) {
       [key]: {
         importing: false,
         error: '',
-        message: response.message,
+        message: response.created
+          ? t('externalSearch.importCreated')
+          : t('externalSearch.importExisting'),
         mediaId: response.media.id,
         created: response.created,
       },

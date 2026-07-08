@@ -322,7 +322,7 @@ describe('ExternalSearchView', () => {
       externalSubjects: ['Vue 3', 'Tutorial', 'Channel: MoodMatch Dev'],
       attribution: 'Metadata from YouTube',
     });
-    expect(wrapper.text()).toContain('Imported into your media library.');
+    expect(wrapper.text()).toContain('In deine Mediathek importiert.');
   });
 
   it('imports a searched youtube result through the existing import flow', async () => {
@@ -389,7 +389,7 @@ describe('ExternalSearchView', () => {
       externalSubjects: ['Channel: MoodMatch Dev'],
       attribution: 'Metadata from YouTube',
     });
-    expect(wrapper.text()).toContain('Imported into your media library.');
+    expect(wrapper.text()).toContain('In deine Mediathek importiert.');
   });
 
   it('enables AniList for anime and manga without exposing anime or manga core media types', async () => {
@@ -720,7 +720,7 @@ describe('ExternalSearchView', () => {
       externalSubjects: ['Language: en', 'Explicit: No', 'Feed type: podcast'],
       attribution: 'Metadata from Podcast Index',
     });
-    expect(wrapper.text()).toContain('Imported into your media library.');
+    expect(wrapper.text()).toContain('In deine Mediathek importiert.');
     expect(wrapper.text()).toContain('Details');
   });
 
@@ -805,7 +805,7 @@ describe('ExternalSearchView', () => {
       externalSubjects: ['English'],
       attribution: 'LibriVox public domain audiobook catalog',
     });
-    expect(wrapper.text()).toContain('Imported into your media library.');
+    expect(wrapper.text()).toContain('In deine Mediathek importiert.');
     expect(wrapper.text()).toContain('Details');
   });
 

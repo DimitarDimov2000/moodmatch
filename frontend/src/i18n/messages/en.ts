@@ -581,6 +581,8 @@ export const enMessages = {
     resultPreview: 'Import preview',
     resultImported: 'Imported',
     resultExisting: 'Already exists',
+    importCreated: 'Imported into your media library.',
+    importExisting: 'This title is already in your media library.',
     year: 'Year {year}',
     originalTitle: 'Original title: {title}',
     creatorBook: 'Authors',
