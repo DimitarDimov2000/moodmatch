@@ -39,6 +39,28 @@ describe('router auth protection', () => {
     expect(router.currentRoute.value.name).toBe('profile');
   });
 
+  it('redirects authenticated users away from the login route', async () => {
+    const pinia = createPinia();
+    const authStore = useAuthStore(pinia);
+    authStore.setAuthMode('local-password');
+    authStore.setAuthenticatedSession({
+      token: 'local-token',
+      user: {
+        id: 'user-id',
+        email: 'melli@example.com',
+      },
+    });
+
+    const router = createAppRouter({
+      history: createMemoryHistory(),
+      pinia,
+    });
+
+    await router.push('/login');
+
+    expect(router.currentRoute.value.name).toBe('dashboard');
+  });
+
   it('keeps not-found behavior working in auth-required mode', async () => {
     const pinia = createPinia();
     const authStore = useAuthStore(pinia);

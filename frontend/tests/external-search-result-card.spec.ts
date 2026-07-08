@@ -472,7 +472,7 @@ describe('ExternalSearchResultCard', () => {
     });
 
     expect(wrapper.text()).toContain('Buch');
-    expect(wrapper.text()).toContain('Cover fehlt');
+    expect(wrapper.get('.media-artwork__fallback-copy').text()).toContain('Very Long Book');
     expect(wrapper.get('.media-artwork__fallback-copy').attributes('aria-label')).toBe(
       'Buch Platzhalter',
     );

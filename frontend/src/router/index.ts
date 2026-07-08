@@ -140,6 +140,14 @@ export function createAppRouter({ history = createWebHistory(), pinia }: CreateA
     const authStore = useAuthStore(pinia);
     await authStore.initialize();
 
+    if (to.name === 'login' && authStore.isAuthenticated) {
+      const redirect = typeof to.query.redirect === 'string' && to.query.redirect !== '/login'
+        ? to.query.redirect
+        : '/';
+
+      return redirect;
+    }
+
     if (to.meta.requiresAuth && !authStore.canAccessProtectedRoutes) {
       return {
         name: 'login',

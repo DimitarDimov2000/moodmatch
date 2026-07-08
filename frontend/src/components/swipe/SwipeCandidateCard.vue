@@ -71,6 +71,10 @@ const activePointerId = ref<number | null>(null);
 const detailsLoading = ref(false);
 const detailsMedia = ref<MediaResponse | null>(null);
 const detailsErrorMessage = ref('');
+const coverImageReady = ref(false);
+const coverImageFailed = ref(false);
+const peekCoverImageReady = ref(false);
+const peekCoverImageFailed = ref(false);
 
 let detailsRequestVersion = 0;
 
@@ -197,8 +201,19 @@ watch(
     detailsLoading.value = false;
     detailsMedia.value = null;
     detailsErrorMessage.value = '';
+    coverImageReady.value = false;
+    coverImageFailed.value = false;
     resetGesturePosition();
   },
+);
+
+watch(
+  () => props.nextItem?.candidate.media.id ?? null,
+  () => {
+    peekCoverImageReady.value = false;
+    peekCoverImageFailed.value = false;
+  },
+  { immediate: true },
 );
 
 watch(
@@ -318,6 +333,22 @@ function resetGesturePosition() {
 
 function toggleDetails() {
   emit('toggleDetails');
+}
+
+function handleCoverImageLoad() {
+  coverImageReady.value = true;
+}
+
+function handleCoverImageError() {
+  coverImageFailed.value = true;
+}
+
+function handlePeekCoverImageLoad() {
+  peekCoverImageReady.value = true;
+}
+
+function handlePeekCoverImageError() {
+  peekCoverImageFailed.value = true;
 }
 
 async function ensureDetailsLoaded() {
@@ -446,13 +477,16 @@ defineExpose({
         :class="getGradientSeed(nextItem.candidate.media.id)"
       >
         <img
-          v-if="nextItem.candidate.media.coverUrl"
+          v-if="nextItem.candidate.media.coverUrl && !peekCoverImageFailed"
           class="swipe-candidate-card__peek-cover-image"
+          :class="{ 'swipe-candidate-card__peek-cover-image--ready': peekCoverImageReady }"
           :src="nextItem.candidate.media.coverUrl"
           :alt="t('swipeCards.coverAlt', { title: nextItem.candidate.media.title })"
+          @load="handlePeekCoverImageLoad"
+          @error="handlePeekCoverImageError"
         >
         <div
-          v-else
+          v-if="!nextItem.candidate.media.coverUrl || peekCoverImageFailed || !peekCoverImageReady"
           class="swipe-candidate-card__peek-cover-fallback"
           aria-hidden="true"
         >
@@ -526,13 +560,16 @@ defineExpose({
           :class="gradientSeed"
         >
           <img
-            v-if="item.candidate.media.coverUrl"
+            v-if="item.candidate.media.coverUrl && !coverImageFailed"
             class="swipe-candidate-card__cover-image"
+            :class="{ 'swipe-candidate-card__cover-image--ready': coverImageReady }"
             :src="item.candidate.media.coverUrl"
             :alt="t('swipeCards.coverAlt', { title: item.candidate.media.title })"
+            @load="handleCoverImageLoad"
+            @error="handleCoverImageError"
           >
           <div
-            v-else
+            v-if="!item.candidate.media.coverUrl || coverImageFailed || !coverImageReady"
             class="swipe-candidate-card__cover-fallback"
             aria-hidden="true"
           >
@@ -814,6 +851,12 @@ defineExpose({
 
 .swipe-candidate-card__peek-cover-image {
   object-fit: cover;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.swipe-candidate-card__peek-cover-image--ready {
+  opacity: 1;
 }
 
 .swipe-candidate-card__peek-cover-fallback {
@@ -1007,6 +1050,12 @@ defineExpose({
 
 .swipe-candidate-card__cover-image {
   object-fit: cover;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.swipe-candidate-card__cover-image--ready {
+  opacity: 1;
 }
 
 .swipe-candidate-card__cover-fallback {

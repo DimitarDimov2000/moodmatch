@@ -99,8 +99,7 @@ function handleError() {
       :aria-label="t('mediaArtwork.placeholder', { label: fallback.label })"
     >
       <span class="media-artwork__label">{{ fallback.label }}</span>
-      <span class="media-artwork__initials">{{ fallback.initials }}</span>
-      <span class="media-artwork__hint">{{ fallback.hint }}</span>
+      <span class="media-artwork__title">{{ title }}</span>
     </div>
   </div>
 </template>
@@ -201,17 +200,15 @@ function handleError() {
   text-transform: uppercase;
 }
 
-.media-artwork__initials {
-  font-size: clamp(1.7rem, 4vw, 2.35rem);
+.media-artwork__title {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: clamp(1rem, 2.9vw, 1.6rem);
   font-weight: 800;
   letter-spacing: -0.04em;
-  line-height: 1;
-}
-
-.media-artwork__hint {
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 0.82rem;
-  font-weight: 600;
+  line-height: 1.05;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .media-artwork--film {

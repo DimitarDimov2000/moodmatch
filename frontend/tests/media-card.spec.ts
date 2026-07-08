@@ -48,7 +48,7 @@ describe('MediaCard', () => {
     expect(wrapper.text()).toContain('Open Library');
     expect(wrapper.text()).not.toContain('OPEN_LIBRARY');
     expect(wrapper.text()).toContain('Buch');
-    expect(wrapper.text()).toContain('Cover fehlt');
+    expect(wrapper.get('.media-artwork__fallback-copy').text()).toContain('The Left Hand of Darkness');
     expect(wrapper.get('.media-artwork__fallback-copy').attributes('aria-label')).toBe('Buch Platzhalter');
   });
 });

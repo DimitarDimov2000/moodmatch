@@ -133,6 +133,10 @@ option {
   background: var(--theme-input-disabled-background);
 }
 
+select {
+  padding-right: 2.85rem;
+}
+
 textarea {
   min-height: 8rem;
   resize: vertical;

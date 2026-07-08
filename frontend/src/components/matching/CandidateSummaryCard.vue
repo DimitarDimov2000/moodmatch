@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
+import MediaArtwork from "@/components/media/MediaArtwork.vue";
 import TagChip from "@/components/tags/TagChip.vue";
 import { i18n } from "@/i18n";
 import type { CandidateMediaResponse } from "@/types/api";
@@ -80,18 +81,12 @@ const metaLine = computed(() => {
     :class="{ 'candidate-summary-card--compact': compact }"
   >
     <div class="candidate-summary-card__media">
-      <img
-        v-if="candidate.media.coverUrl"
-        :src="candidate.media.coverUrl"
-        :alt="t('candidateCard.coverAlt', { title: candidate.media.title })"
+      <MediaArtwork
         class="candidate-summary-card__cover"
-      >
-      <div
-        v-else
-        class="candidate-summary-card__cover candidate-summary-card__cover--placeholder"
-      >
-        {{ candidate.media.title.slice(0, 1).toUpperCase() }}
-      </div>
+        :title="candidate.media.title"
+        :media-type="candidate.media.mediaType"
+        :cover-url="candidate.media.coverUrl"
+      />
 
       <div class="candidate-summary-card__copy">
         <div class="candidate-summary-card__header">
@@ -187,19 +182,8 @@ const metaLine = computed(() => {
 
 .candidate-summary-card__cover {
   width: 100%;
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
   border-radius: calc(var(--radius-lg) - 6px);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface-muted);
-}
-
-.candidate-summary-card__cover--placeholder {
-  display: grid;
-  place-items: center;
-  font-size: 1.9rem;
-  font-weight: 700;
-  color: var(--color-text-muted);
+  overflow: hidden;
 }
 
 .candidate-summary-card__copy {
@@ -305,6 +289,18 @@ const metaLine = computed(() => {
 
   .candidate-summary-card__cover {
     max-width: 7rem;
+  }
+
+  .candidate-summary-card__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.55rem;
+  }
+
+  .candidate-summary-card__status {
+    min-height: 1.7rem;
+    padding: 0.2rem 0.58rem;
+    font-size: 0.8rem;
   }
 }
 </style>
