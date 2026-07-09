@@ -88,6 +88,7 @@ const metaLine = computed(() => {
         :title="displayTitle"
         :media-type="candidate.media.mediaType"
         :cover-url="candidate.media.coverUrl"
+        :show-fallback-title="false"
       />
 
       <div class="candidate-summary-card__copy">

@@ -677,22 +677,42 @@ function getMatchCardToneClass(score: number | string | null): string {
   align-items: center;
   justify-content: center;
   align-self: start;
-  min-width: 2.45rem;
-  min-height: 2.45rem;
-  padding: 0.2rem 0.48rem;
+  width: 2.65rem;
+  min-width: 2.65rem;
+  height: 2.65rem;
+  min-height: 2.65rem;
+  padding: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--color-surface-secondary) 84%, var(--color-surface));
   color: var(--color-text-primary);
-  font-size: 0.94rem;
+  font-size: 1.02rem;
   font-weight: 800;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.16);
+  line-height: 1;
+  text-shadow:
+    0 1px 1px rgba(4, 7, 17, 0.34),
+    0 0 0.55rem rgba(255, 255, 255, 0.18);
+}
+
+.matches-view__highlight-rank::after {
+  content: "";
+  position: absolute;
+  inset: 0.24rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 .matches-view__highlight-rank--gold {
   border-color: color-mix(in srgb, #d1a457 34%, var(--color-border));
-  background: color-mix(in srgb, #f1d8a5 54%, var(--color-surface));
-  color: color-mix(in srgb, #7a5210 86%, var(--color-text-primary));
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.38), transparent 29%),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, #f1d8a5 62%, var(--color-surface)),
+      color-mix(in srgb, #b78935 42%, var(--color-surface))
+    );
+  color: color-mix(in srgb, var(--color-text-primary) 88%, #d1a457 12%);
   box-shadow:
     0 0 1.65rem rgba(209, 164, 87, 0.48),
     0 0 3.2rem rgba(209, 164, 87, 0.18),
@@ -701,8 +721,14 @@ function getMatchCardToneClass(score: number | string | null): string {
 
 .matches-view__highlight-rank--silver {
   border-color: color-mix(in srgb, #aab5c3 34%, var(--color-border));
-  background: color-mix(in srgb, #dbe3ed 58%, var(--color-surface));
-  color: color-mix(in srgb, #526071 82%, var(--color-text-primary));
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.38), transparent 29%),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, #dbe3ed 66%, var(--color-surface)),
+      color-mix(in srgb, #8794a8 42%, var(--color-surface))
+    );
+  color: color-mix(in srgb, var(--color-text-primary) 88%, #aab5c3 12%);
   box-shadow:
     0 0 1.5rem rgba(170, 181, 195, 0.42),
     0 0 2.8rem rgba(170, 181, 195, 0.14),
@@ -711,8 +737,14 @@ function getMatchCardToneClass(score: number | string | null): string {
 
 .matches-view__highlight-rank--bronze {
   border-color: color-mix(in srgb, #b97a54 34%, var(--color-border));
-  background: color-mix(in srgb, #ebc0a8 56%, var(--color-surface));
-  color: color-mix(in srgb, #7d4729 84%, var(--color-text-primary));
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.34), transparent 29%),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, #ebc0a8 62%, var(--color-surface)),
+      color-mix(in srgb, #a96746 42%, var(--color-surface))
+    );
+  color: color-mix(in srgb, var(--color-text-primary) 88%, #b97a54 12%);
   box-shadow:
     0 0 1.5rem rgba(185, 122, 84, 0.42),
     0 0 2.8rem rgba(185, 122, 84, 0.14),

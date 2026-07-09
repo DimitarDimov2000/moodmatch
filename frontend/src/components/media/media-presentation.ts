@@ -3,7 +3,7 @@ import { i18n } from '@/i18n';
 import type { ExternalSourceName, MediaType } from '@/types/api';
 
 export type DisplayableExternalSource = ExternalSourceName | 'AUTOMATIC';
-export type MediaArtworkVariant = 'poster' | 'landscape';
+export type MediaArtworkVariant = 'poster' | 'landscape' | 'hero';
 
 interface MediaArtworkFallbackConfig {
   hint: string;
@@ -11,7 +11,6 @@ interface MediaArtworkFallbackConfig {
 }
 
 export interface MediaArtworkFallback {
-  initials: string;
   label: string;
   hint: string;
   accent: string;
@@ -62,39 +61,36 @@ export function getDisplayText(value: string | null | undefined): string {
 
 export function getMediaArtworkFallback(
   mediaType: MediaType,
-  title: string,
   variant: MediaArtworkVariant = 'poster',
 ): MediaArtworkFallback {
   const config = fallbackConfigByMediaType[mediaType];
-  const initials = getTitleInitials(title);
 
   return {
-    initials,
     label: getMediaTypeLabel(mediaType),
     hint:
-      variant === 'landscape' && mediaType === 'VIDEO'
+      (variant === 'landscape' || variant === 'hero') && mediaType === 'VIDEO'
         ? i18n.global.t('mediaArtwork.previewComing')
         : i18n.global.t(config.hint),
     accent: config.accent,
   };
 }
 
-function getTitleInitials(title: string): string {
-  const normalizedTitle = getDisplayText(title);
-  const tokens = normalizedTitle
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2);
-
-  if (tokens.length === 0) {
-    return 'MM';
+export function normalizeArtworkUrl(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') {
+    return null;
   }
 
-  const initials = tokens
-    .map((token) => token.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, '').slice(0, 1))
-    .join('')
-    .toUpperCase();
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
 
-  return initials || normalizedTitle.slice(0, 2).toUpperCase() || 'MM';
+export function getMediaArtworkFallbackAlt(mediaType: MediaType, title: string): string {
+  return i18n.global.t('mediaArtwork.placeholderAlt', {
+    label: getMediaTypeLabel(mediaType),
+    title: getDisplayText(title).trim(),
+  });
+}
+
+export function getMediaArtworkFallbackTitle(title: string): string {
+  return getDisplayText(title).replace(/\s+/g, ' ').trim();
 }

@@ -228,6 +228,7 @@ function toSentenceCase(value: string): string {
           :media-type="result.mediaType"
           :cover-url="result.coverUrl"
           :variant="artworkVariant"
+          :show-fallback-title="false"
         />
       </div>
 

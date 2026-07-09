@@ -418,6 +418,7 @@ export const enMessages = {
     thumbnailMissing: 'Thumbnail missing',
     previewComing: 'Preview coming soon',
     placeholder: '{label} placeholder',
+    placeholderAlt: '{label} placeholder for {title}',
   },
   mediaForm: {
     title: 'Title',

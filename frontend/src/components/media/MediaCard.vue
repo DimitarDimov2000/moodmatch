@@ -76,6 +76,7 @@ const tagSummary = computed(() =>
           :title="displayTitle"
           :media-type="media.mediaType"
           :cover-url="media.coverUrl"
+          :show-fallback-title="false"
         />
 
         <div class="media-card__actions">

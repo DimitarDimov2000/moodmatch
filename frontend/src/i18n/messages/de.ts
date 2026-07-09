@@ -418,6 +418,7 @@ export const deMessages = {
     thumbnailMissing: 'Thumbnail fehlt',
     previewComing: 'Vorschau folgt',
     placeholder: '{label} Platzhalter',
+    placeholderAlt: '{label} Platzhalter für {title}',
   },
   mediaForm: {
     title: 'Titel',

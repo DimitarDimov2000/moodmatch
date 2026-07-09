@@ -244,6 +244,18 @@ describe('SwipeView', () => {
     expect(progressValues(wrapper)).toEqual(['1', '1', '0']);
   });
 
+  it('keeps swipe fallback artwork intentional without repeating the title inside the cover', async () => {
+    const wrapper = await mountView();
+
+    await wrapper.get('.swipe-decision-controls__button--like').trigger('click');
+    await settleDecisionAnimation();
+
+    expect(wrapper.text()).toContain('Silo');
+    expect(wrapper.find('.swipe-candidate-card__cover .media-artwork__title').exists()).toBe(false);
+    expect(wrapper.find('.swipe-candidate-card__cover .media-artwork--hero').exists()).toBe(true);
+    expect(wrapper.find('.swipe-candidate-card__cover .media-artwork__label').text()).toBe('Serie');
+  });
+
   it('left action advances the queue as a local pass', async () => {
     const wrapper = await mountView();
 

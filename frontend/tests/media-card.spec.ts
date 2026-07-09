@@ -48,8 +48,11 @@ describe('MediaCard', () => {
     expect(wrapper.text()).toContain('Open Library');
     expect(wrapper.text()).not.toContain('OPEN_LIBRARY');
     expect(wrapper.text()).toContain('Buch');
-    expect(wrapper.get('.media-artwork__fallback-copy').text()).toContain('The Left Hand of Darkness');
-    expect(wrapper.get('.media-artwork__fallback-copy').attributes('aria-label')).toBe('Buch Platzhalter');
+    expect(wrapper.get('.media-artwork__fallback-copy').text()).not.toContain('The Left Hand of Darkness');
+    expect(wrapper.find('.media-artwork__title').exists()).toBe(false);
+    expect(wrapper.get('.media-artwork__fallback-copy').attributes('aria-label')).toBe(
+      'Buch Platzhalter für The Left Hand of Darkness',
+    );
   });
 
   it('decodes HTML entities in visible media copy', () => {
@@ -140,8 +143,7 @@ describe('MediaCard', () => {
 
     expect(wrapper.find('.media-artwork__fallback-copy').exists()).toBe(true);
     expect(wrapper.find('.media-artwork__loading-shell').exists()).toBe(false);
-    expect(wrapper.get('.media-artwork__fallback-copy').text()).toContain(
-      'A Long Way to a Small, Angry Planet',
-    );
+    expect(wrapper.get('.media-artwork__fallback-copy').text()).toContain('Buch');
+    expect(wrapper.find('.media-artwork__title').exists()).toBe(false);
   });
 });

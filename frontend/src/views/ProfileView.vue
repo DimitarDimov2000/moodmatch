@@ -93,7 +93,7 @@ function toUserMessage(error: unknown): string {
     </AppMessage>
 
     <template v-else-if="profile">
-      <section class="overview-stats">
+      <section class="overview-stats profile-view__overview-stats">
         <article
           class="page-card overview-stat-card"
           :class="profile.isReadyForMatching ? 'overview-stat-card--success' : 'overview-stat-card--warning'"
@@ -271,6 +271,18 @@ function toUserMessage(error: unknown): string {
 
 @media (max-width: 980px) {
   .profile-view__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .profile-view__overview-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 540px) {
+  .profile-view__overview-stats {
     grid-template-columns: 1fr;
   }
 }

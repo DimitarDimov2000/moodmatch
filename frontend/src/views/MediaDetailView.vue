@@ -13,6 +13,7 @@ import {
 } from '@/api/media';
 import { listTags } from '@/api/tags';
 import AppMessage from '@/components/common/AppMessage.vue';
+import MediaArtwork from '@/components/media/MediaArtwork.vue';
 import MediaForm, { type MediaFormSubmitPayload } from '@/components/media/MediaForm.vue';
 import MediaStatusControls from '@/components/media/MediaStatusControls.vue';
 import {
@@ -304,18 +305,13 @@ function toDeleteUserMessage(error: unknown): string {
             </dl>
           </div>
 
-          <img
-            v-if="media.coverUrl"
-            :src="media.coverUrl"
-            :alt="t('mediaArtwork.coverAlt', { title: media.title })"
+          <MediaArtwork
             class="media-detail__cover"
-          >
-          <div
-            v-else
-            class="media-detail__cover media-detail__cover--placeholder"
-          >
-            {{ media.title.slice(0, 1).toUpperCase() }}
-          </div>
+            :title="media.title"
+            :media-type="media.mediaType"
+            :cover-url="media.coverUrl"
+            :show-fallback-title="false"
+          />
         </article>
 
         <MediaStatusControls
@@ -474,19 +470,6 @@ function toDeleteUserMessage(error: unknown): string {
 
 .media-detail__cover {
   width: 100%;
-  aspect-ratio: 4 / 5;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border);
-  object-fit: cover;
-  background: var(--color-surface-muted);
-}
-
-.media-detail__cover--placeholder {
-  display: grid;
-  place-items: center;
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--color-text-muted);
 }
 
 .media-detail__layout {

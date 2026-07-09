@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 
 import { ApiRequestError } from '@/api/client';
+import MediaArtwork from '@/components/media/MediaArtwork.vue';
 import { getDisplayText, getExternalSourceLabel } from '@/components/media/media-presentation';
 import { i18n } from '@/i18n';
 import { getMediaById } from '@/api/media';
@@ -76,10 +77,6 @@ const activePointerId = ref<number | null>(null);
 const detailsLoading = ref(false);
 const detailsMedia = ref<MediaResponse | null>(null);
 const detailsErrorMessage = ref('');
-const coverImageReady = ref(false);
-const coverImageFailed = ref(false);
-const peekCoverImageReady = ref(false);
-const peekCoverImageFailed = ref(false);
 
 let detailsRequestVersion = 0;
 let reducedMotionQuery: MediaQueryList | null = null;
@@ -225,19 +222,8 @@ watch(
     detailsLoading.value = false;
     detailsMedia.value = null;
     detailsErrorMessage.value = '';
-    coverImageReady.value = false;
-    coverImageFailed.value = false;
     resetGesturePosition();
   },
-);
-
-watch(
-  () => props.nextItem?.candidate.media.id ?? null,
-  () => {
-    peekCoverImageReady.value = false;
-    peekCoverImageFailed.value = false;
-  },
-  { immediate: true },
 );
 
 watch(
@@ -379,22 +365,6 @@ function toggleDetails() {
   emit('toggleDetails');
 }
 
-function handleCoverImageLoad() {
-  coverImageReady.value = true;
-}
-
-function handleCoverImageError() {
-  coverImageFailed.value = true;
-}
-
-function handlePeekCoverImageLoad() {
-  peekCoverImageReady.value = true;
-}
-
-function handlePeekCoverImageError() {
-  peekCoverImageFailed.value = true;
-}
-
 async function ensureDetailsLoaded() {
   if (detailsMedia.value || detailsLoading.value) {
     return;
@@ -532,27 +502,14 @@ defineExpose({
         class="swipe-candidate-card__peek-cover"
         :class="getGradientSeed(nextItem.candidate.media.id)"
       >
-        <img
-          v-if="nextItem.candidate.media.coverUrl && !peekCoverImageFailed"
-          class="swipe-candidate-card__peek-cover-image"
-          :class="{ 'swipe-candidate-card__peek-cover-image--ready': peekCoverImageReady }"
-          :src="nextItem.candidate.media.coverUrl"
-          :alt="t('swipeCards.coverAlt', { title: nextTitle })"
-          @load="handlePeekCoverImageLoad"
-          @error="handlePeekCoverImageError"
-        >
-        <div
-          v-if="!nextItem.candidate.media.coverUrl || peekCoverImageFailed || !peekCoverImageReady"
-          class="swipe-candidate-card__peek-cover-fallback"
-          aria-hidden="true"
-        >
-          <span class="swipe-candidate-card__peek-cover-type">
-            {{ mediaTypeLabels[nextItem.candidate.media.mediaType] }}
-          </span>
-          <span class="swipe-candidate-card__peek-cover-title">
-            {{ nextTitle }}
-          </span>
-        </div>
+        <MediaArtwork
+          class="swipe-candidate-card__peek-cover-artwork"
+          :title="nextTitle"
+          :media-type="nextItem.candidate.media.mediaType"
+          :cover-url="nextItem.candidate.media.coverUrl"
+          variant="hero"
+          :show-fallback-title="false"
+        />
 
         <div class="swipe-candidate-card__peek-cover-overlay">
           <div class="swipe-candidate-card__peek-top">
@@ -601,27 +558,14 @@ defineExpose({
           class="swipe-candidate-card__cover"
           :class="gradientSeed"
         >
-          <img
-            v-if="item.candidate.media.coverUrl && !coverImageFailed"
-            class="swipe-candidate-card__cover-image"
-            :class="{ 'swipe-candidate-card__cover-image--ready': coverImageReady }"
-            :src="item.candidate.media.coverUrl"
-            :alt="t('swipeCards.coverAlt', { title: currentTitle })"
-            @load="handleCoverImageLoad"
-            @error="handleCoverImageError"
-          >
-          <div
-            v-if="!item.candidate.media.coverUrl || coverImageFailed || !coverImageReady"
-            class="swipe-candidate-card__cover-fallback"
-            aria-hidden="true"
-          >
-            <span class="swipe-candidate-card__cover-fallback-type">
-              {{ mediaTypeLabels[item.candidate.media.mediaType] }}
-            </span>
-            <span class="swipe-candidate-card__cover-fallback-title">
-              {{ currentTitle }}
-            </span>
-          </div>
+          <MediaArtwork
+            class="swipe-candidate-card__cover-artwork"
+            :title="currentTitle"
+            :media-type="item.candidate.media.mediaType"
+            :cover-url="item.candidate.media.coverUrl"
+            variant="hero"
+            :show-fallback-title="false"
+          />
 
           <div class="swipe-candidate-card__cover-overlay">
             <div class="swipe-candidate-card__hero-top">
@@ -894,61 +838,15 @@ defineExpose({
   overflow: hidden;
 }
 
-.swipe-candidate-card__peek-cover-image,
-.swipe-candidate-card__peek-cover-fallback {
+.swipe-candidate-card__peek-cover-artwork,
+.swipe-candidate-card__cover-artwork {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-}
-
-.swipe-candidate-card__peek-cover-image {
-  object-fit: cover;
-  opacity: 0;
-  transition: opacity 180ms ease;
-}
-
-.swipe-candidate-card__peek-cover-image--ready {
-  opacity: 1;
-}
-
-.swipe-candidate-card__peek-cover-fallback {
-  display: grid;
-  align-content: end;
-  gap: 0.35rem;
-  padding: 1rem;
-  color: var(--theme-swipe-cover-fallback-text);
-  text-align: left;
-  background: var(--theme-swipe-cover-fallback-overlay);
-}
-
-.swipe-candidate-card__peek-cover-type,
-.swipe-candidate-card__cover-fallback-type {
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-  min-height: 1.7rem;
-  padding: 0.22rem 0.62rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: var(--radius-full);
-  background: rgba(10, 16, 36, 0.24);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.swipe-candidate-card__peek-cover-title,
-.swipe-candidate-card__cover-fallback-title {
-  display: -webkit-box;
-  overflow: hidden;
-  font-size: clamp(1rem, 2.8vw, 1.3rem);
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 1.04;
-  overflow-wrap: anywhere;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .swipe-candidate-card__peek-cover-overlay {
@@ -1076,34 +974,6 @@ defineExpose({
 
 .swipe-candidate-card__cover--mint {
   background: linear-gradient(135deg, #2b2d42, #84a98c);
-}
-
-.swipe-candidate-card__cover-image,
-.swipe-candidate-card__cover-fallback {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.swipe-candidate-card__cover-image {
-  object-fit: cover;
-  opacity: 0;
-  transition: opacity 180ms ease;
-}
-
-.swipe-candidate-card__cover-image--ready {
-  opacity: 1;
-}
-
-.swipe-candidate-card__cover-fallback {
-  display: grid;
-  align-content: end;
-  gap: 0.4rem;
-  padding: 1rem;
-  color: var(--theme-swipe-cover-fallback-text);
-  text-align: left;
-  background: var(--theme-swipe-cover-fallback-overlay);
 }
 
 .swipe-candidate-card__cover-overlay {
@@ -1420,10 +1290,6 @@ defineExpose({
     font-size: 1.12rem;
   }
 
-  .swipe-candidate-card__cover-fallback {
-    padding: 1rem;
-  }
-
   .swipe-candidate-card__body,
   .swipe-candidate-card__details-panel {
     padding-inline: 0.95rem;
@@ -1451,9 +1317,7 @@ defineExpose({
 
 @media (prefers-reduced-motion: reduce) {
   .swipe-candidate-card,
-  .swipe-candidate-card__peek,
-  .swipe-candidate-card__cover-image,
-  .swipe-candidate-card__peek-cover-image {
+  .swipe-candidate-card__peek {
     transition-duration: 1ms !important;
   }
 

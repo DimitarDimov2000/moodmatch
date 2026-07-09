@@ -151,13 +151,26 @@ const { t } = i18n.global;
   pointer-events: none;
 }
 
+.profile-contribution-card__stat-card::after {
+  content: "";
+  position: absolute;
+  inset: 0.34rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: calc(var(--radius-md) - 4px);
+  opacity: 0.64;
+  pointer-events: none;
+}
+
 .profile-contribution-card__stat-card--rating {
   border-color: color-mix(in srgb, #6f76cf 34%, var(--color-border));
   background:
     radial-gradient(circle at 88% 18%, rgba(192, 203, 255, 0.24), transparent 36%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 34%),
     color-mix(in srgb, #d9dcfb 42%, var(--color-surface-secondary));
-  box-shadow: 0 10px 22px rgba(92, 100, 184, 0.08);
+  box-shadow:
+    0 0 1.25rem rgba(115, 121, 213, 0.18),
+    0 10px 22px rgba(92, 100, 184, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .profile-contribution-card__stat-card--favourite {
@@ -166,15 +179,33 @@ const { t } = i18n.global;
     radial-gradient(circle at 88% 18%, rgba(255, 215, 142, 0.24), transparent 36%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 34%),
     color-mix(in srgb, #efd6a5 44%, var(--color-surface-secondary));
-  box-shadow: 0 10px 24px rgba(165, 120, 38, 0.09);
+  box-shadow:
+    0 0 1.25rem rgba(208, 146, 61, 0.18),
+    0 10px 24px rgba(165, 120, 38, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.profile-contribution-card__stat-card--rating::after {
+  border-color: rgba(207, 220, 255, 0.34);
+}
+
+.profile-contribution-card__stat-card--favourite::after {
+  border-color: rgba(255, 222, 157, 0.34);
 }
 
 .profile-contribution-card__stat-label,
 .profile-contribution-card__metric-label {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
   color: color-mix(in srgb, var(--color-text-secondary) 82%, var(--color-text-muted));
-  font-size: 0.68rem;
+  font-size: clamp(0.58rem, 0.75vw, 0.64rem);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.055em;
+  line-height: 1.12;
+  hyphens: auto;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
   text-transform: uppercase;
 }
 
@@ -183,17 +214,19 @@ const { t } = i18n.global;
   z-index: 1;
   margin-top: auto;
   justify-self: start;
-  font-size: 1.66rem;
+  font-size: 1.78rem;
   letter-spacing: 0;
   line-height: 0.95;
 }
 
 .profile-contribution-card__stat-card--rating .profile-contribution-card__stat-value {
-  color: color-mix(in srgb, #5b5fb2 84%, var(--color-text-primary));
+  color: color-mix(in srgb, var(--color-text-primary) 86%, #7379d5 14%);
+  text-shadow: 0 0 0.72rem rgba(155, 177, 255, 0.24);
 }
 
 .profile-contribution-card__stat-card--favourite .profile-contribution-card__stat-value {
-  color: color-mix(in srgb, #815912 84%, var(--color-text-primary));
+  color: color-mix(in srgb, var(--color-text-primary) 86%, #d0923d 14%);
+  text-shadow: 0 0 0.72rem rgba(255, 205, 120, 0.22);
 }
 
 .profile-contribution-card__tags {
@@ -216,19 +249,27 @@ const { t } = i18n.global;
 }
 
 .profile-contribution-card__tag-metric {
+  position: relative;
+  overflow: hidden;
   display: grid;
   gap: 0.02rem;
   justify-items: start;
   min-width: 3.35rem;
   padding: 0.24rem 0.44rem;
-  border: 1px solid color-mix(in srgb, #667fc2 26%, var(--color-border));
+  border: 1px solid color-mix(in srgb, #82b8ff 46%, var(--color-border));
   border-radius: calc(var(--radius-md) - 2px);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 34%),
-    color-mix(in srgb, #d8e2f4 24%, var(--color-surface));
+    radial-gradient(circle at 88% 16%, rgba(134, 188, 255, 0.28), transparent 48%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), transparent 36%),
+    color-mix(in srgb, #6f86bd 30%, var(--color-surface));
+  box-shadow:
+    0 0 0.85rem rgba(100, 157, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .profile-contribution-card__value {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
@@ -236,10 +277,11 @@ const { t } = i18n.global;
   padding: 0;
   border: 0;
   background: transparent;
-  color: color-mix(in srgb, #8ca4e0 58%, var(--color-text-primary));
+  color: color-mix(in srgb, var(--color-text-primary) 86%, #a6ceff 14%);
   font-size: 0.98rem;
   font-weight: 800;
   line-height: 1;
+  text-shadow: 0 0 0.65rem rgba(134, 188, 255, 0.22);
 }
 
 .profile-contribution-card__tag-row :deep(.tag-chip) {

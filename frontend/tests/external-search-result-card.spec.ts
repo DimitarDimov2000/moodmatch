@@ -510,9 +510,10 @@ describe('ExternalSearchResultCard', () => {
     });
 
     expect(wrapper.text()).toContain('Buch');
-    expect(wrapper.get('.media-artwork__fallback-copy').text()).toContain('Very Long Book');
+    expect(wrapper.get('.media-artwork__fallback-copy').text()).not.toContain('Very Long Book');
+    expect(wrapper.find('.media-artwork__title').exists()).toBe(false);
     expect(wrapper.get('.media-artwork__fallback-copy').attributes('aria-label')).toBe(
-      'Buch Platzhalter',
+      'Buch Platzhalter für Very Long Book',
     );
     expect(wrapper.get('.external-result-card__description').text()).toContain('…');
     expect(wrapper.text()).toContain('Hinweis');

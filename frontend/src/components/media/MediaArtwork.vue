@@ -3,6 +3,9 @@ import { computed, ref, watch } from 'vue';
 
 import {
   getMediaArtworkFallback,
+  getMediaArtworkFallbackAlt,
+  getMediaArtworkFallbackTitle,
+  normalizeArtworkUrl,
   type MediaArtworkVariant,
 } from '@/components/media/media-presentation';
 import { i18n } from '@/i18n';
@@ -15,11 +18,13 @@ const props = withDefaults(
     coverUrl?: string | null;
     variant?: MediaArtworkVariant;
     altPrefix?: string;
+    showFallbackTitle?: boolean;
   }>(),
   {
     coverUrl: null,
     variant: 'poster',
     altPrefix: '',
+    showFallbackTitle: true,
   },
 );
 
@@ -29,28 +34,34 @@ const imageFailed = ref(false);
 const { t } = i18n.global;
 const activeLocale = computed(() => i18n.global.locale.value);
 const trackLocaleDependency = () => activeLocale.value;
+const normalizedCoverUrl = computed(() => normalizeArtworkUrl(props.coverUrl));
 const fallback = computed(() => {
   trackLocaleDependency();
-  return getMediaArtworkFallback(props.mediaType, props.title, props.variant);
+  return getMediaArtworkFallback(props.mediaType, props.variant);
 });
 const altText = computed(() => {
   trackLocaleDependency();
   return props.altPrefix ? `${props.altPrefix} ${props.title}` : t('mediaArtwork.coverAlt', { title: props.title });
 });
-const showImage = computed(() => Boolean(props.coverUrl) && !imageFailed.value);
+const fallbackAltText = computed(() => {
+  trackLocaleDependency();
+  return getMediaArtworkFallbackAlt(props.mediaType, props.title);
+});
+const fallbackTitle = computed(() => getMediaArtworkFallbackTitle(props.title));
+const showFallbackTitle = computed(() => props.showFallbackTitle && fallbackTitle.value.length > 0);
+const showImage = computed(() => Boolean(normalizedCoverUrl.value) && !imageFailed.value);
 const showFallback = computed(
-  () => !props.coverUrl || !imageReady.value || imageFailed.value,
+  () => !normalizedCoverUrl.value || !imageReady.value || imageFailed.value,
+);
+const accessibleFallback = computed(
+  () => !normalizedCoverUrl.value || imageFailed.value,
 );
 
 watch(
-  () => props.coverUrl,
-  (value) => {
+  normalizedCoverUrl,
+  () => {
     imageReady.value = false;
     imageFailed.value = false;
-
-    if (!value) {
-      imageReady.value = true;
-    }
   },
   { immediate: true },
 );
@@ -78,7 +89,7 @@ function handleError() {
   >
     <img
       v-if="showImage"
-      :src="coverUrl ?? undefined"
+      :src="normalizedCoverUrl ?? undefined"
       :alt="altText"
       class="media-artwork__image"
       :class="{ 'media-artwork__image--ready': imageReady }"
@@ -91,18 +102,41 @@ function handleError() {
     <div
       v-if="showFallback"
       class="media-artwork__fallback-copy"
-      :aria-label="t('mediaArtwork.placeholder', { label: fallback.label })"
+      :role="accessibleFallback ? 'img' : undefined"
+      :aria-label="accessibleFallback ? fallbackAltText : undefined"
+      :aria-hidden="accessibleFallback ? undefined : 'true'"
     >
-      <span
-        class="media-artwork__monogram"
+      <div
+        class="media-artwork__ambient"
         aria-hidden="true"
       >
-        {{ fallback.initials }}
-      </span>
+        <span class="media-artwork__orb media-artwork__orb--primary" />
+        <span class="media-artwork__orb media-artwork__orb--secondary" />
+        <span class="media-artwork__ring media-artwork__ring--outer" />
+        <span class="media-artwork__ring media-artwork__ring--inner" />
+      </div>
       <div class="media-artwork__fallback-body">
-        <span class="media-artwork__label">{{ fallback.label }}</span>
-        <span class="media-artwork__title">{{ title }}</span>
-        <span class="media-artwork__hint">{{ fallback.hint }}</span>
+        <div class="media-artwork__topline">
+          <span class="media-artwork__label">{{ fallback.label }}</span>
+          <span
+            class="media-artwork__seal"
+            aria-hidden="true"
+          >
+            MM
+          </span>
+        </div>
+        <span
+          v-if="showFallbackTitle"
+          class="media-artwork__title"
+        >
+          {{ fallbackTitle }}
+        </span>
+        <span
+          v-if="variant !== 'hero'"
+          class="media-artwork__hint"
+        >
+          {{ fallback.hint }}
+        </span>
       </div>
     </div>
   </div>
@@ -113,12 +147,14 @@ function handleError() {
   position: relative;
   isolation: isolate;
   width: 100%;
+  height: 100%;
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background:
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 32%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 34%),
+    radial-gradient(circle at 14% 16%, rgba(255, 255, 255, 0.18), transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 34%),
     var(--color-surface-secondary);
   box-shadow: var(--shadow-card);
 }
@@ -129,8 +165,21 @@ function handleError() {
   inset: 0;
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 44%),
-    radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.12), transparent 36%);
-  opacity: 0.9;
+    radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.12), transparent 36%),
+    linear-gradient(120deg, rgba(255, 255, 255, 0.04), transparent 55%);
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+.media-artwork::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 1.1rem 1.1rem;
+  opacity: 0.06;
   pointer-events: none;
 }
 
@@ -140,6 +189,10 @@ function handleError() {
 
 .media-artwork--landscape {
   aspect-ratio: 16 / 9;
+}
+
+.media-artwork--hero {
+  aspect-ratio: auto;
 }
 
 .media-artwork__image,
@@ -167,8 +220,6 @@ function handleError() {
   position: relative;
   display: grid;
   align-content: end;
-  justify-items: start;
-  gap: 0.5rem;
   height: 100%;
   padding: 1rem 1rem 1.05rem;
   color: rgba(255, 255, 255, 0.94);
@@ -178,26 +229,76 @@ function handleError() {
   padding: 0.95rem 1.1rem 1rem;
 }
 
+.media-artwork--hero .media-artwork__fallback-copy {
+  padding: 1rem;
+}
+
+.media-artwork__ambient {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.media-artwork__orb,
+.media-artwork__ring {
+  position: absolute;
+  border-radius: 999px;
+}
+
+.media-artwork__orb {
+  filter: blur(2px);
+  opacity: 0.88;
+}
+
+.media-artwork__orb--primary {
+  top: 0.9rem;
+  right: 1rem;
+  width: clamp(4rem, 18vw, 6rem);
+  height: clamp(4rem, 18vw, 6rem);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.04) 66%, transparent 74%);
+}
+
+.media-artwork__orb--secondary {
+  left: -1rem;
+  bottom: -1.35rem;
+  width: clamp(4.5rem, 20vw, 6.8rem);
+  height: clamp(4.5rem, 20vw, 6.8rem);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.02) 70%, transparent 76%);
+}
+
+.media-artwork__ring {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  opacity: 0.72;
+}
+
+.media-artwork__ring--outer {
+  right: -1.2rem;
+  bottom: 1.4rem;
+  width: clamp(4.6rem, 24vw, 7rem);
+  height: clamp(4.6rem, 24vw, 7rem);
+}
+
+.media-artwork__ring--inner {
+  left: 0.95rem;
+  top: 0.95rem;
+  width: clamp(2.5rem, 10vw, 3.8rem);
+  height: clamp(2.5rem, 10vw, 3.8rem);
+}
+
 .media-artwork__fallback-body {
   position: relative;
   z-index: 1;
   display: grid;
-  gap: 0.28rem;
+  gap: 0.42rem;
   max-width: min(100%, 14rem);
 }
 
-.media-artwork__monogram {
-  position: absolute;
-  right: 0.8rem;
-  bottom: 0.55rem;
-  z-index: 0;
-  color: rgba(255, 255, 255, 0.16);
-  font-size: clamp(2.5rem, 9vw, 4.2rem);
-  font-weight: 800;
-  letter-spacing: -0.08em;
-  line-height: 0.82;
-  pointer-events: none;
-  user-select: none;
+.media-artwork__topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
 }
 
 .media-artwork__label {
@@ -212,6 +313,22 @@ function handleError() {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.media-artwork__seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.9rem;
+  min-height: 1.9rem;
+  padding: 0.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(8, 12, 24, 0.18);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
 }
 
 .media-artwork__title {
@@ -231,6 +348,7 @@ function handleError() {
   color: rgba(255, 255, 255, 0.76);
   font-size: 0.78rem;
   line-height: 1.3;
+  text-wrap: balance;
 }
 
 .media-artwork--landscape .media-artwork__fallback-body {
@@ -245,13 +363,27 @@ function handleError() {
   max-width: 24ch;
 }
 
-.media-artwork--landscape .media-artwork__monogram {
-  font-size: clamp(2.1rem, 7vw, 3.5rem);
+.media-artwork--hero .media-artwork__fallback-body {
+  max-width: min(100%, 11rem);
+  gap: 0.35rem;
+}
+
+.media-artwork--hero .media-artwork__label {
+  min-height: 1.6rem;
+  padding-inline: 0.58rem;
+  font-size: 0.7rem;
+}
+
+.media-artwork--hero .media-artwork__seal {
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  font-size: 0.66rem;
 }
 
 .media-artwork--film {
   background:
     radial-gradient(circle at top right, rgba(255, 214, 153, 0.32), transparent 34%),
+    radial-gradient(circle at 12% 76%, rgba(255, 248, 220, 0.18), transparent 28%),
     linear-gradient(135deg, rgba(255, 169, 64, 0.54), rgba(59, 130, 246, 0.2) 72%),
     rgba(34, 43, 78, 0.78);
 }
@@ -259,6 +391,7 @@ function handleError() {
 .media-artwork--series {
   background:
     radial-gradient(circle at top right, rgba(158, 200, 255, 0.32), transparent 34%),
+    radial-gradient(circle at 18% 82%, rgba(197, 214, 255, 0.18), transparent 24%),
     linear-gradient(135deg, rgba(59, 130, 246, 0.52), rgba(139, 124, 255, 0.24) 70%),
     rgba(34, 43, 78, 0.78);
 }
@@ -266,6 +399,7 @@ function handleError() {
 .media-artwork--book {
   background:
     radial-gradient(circle at top right, rgba(182, 255, 214, 0.26), transparent 34%),
+    radial-gradient(circle at 18% 80%, rgba(222, 255, 232, 0.16), transparent 22%),
     linear-gradient(135deg, rgba(22, 163, 74, 0.44), rgba(74, 222, 128, 0.18) 74%),
     rgba(34, 43, 78, 0.78);
 }
@@ -273,6 +407,7 @@ function handleError() {
 .media-artwork--audiobook {
   background:
     radial-gradient(circle at top right, rgba(255, 194, 213, 0.3), transparent 34%),
+    radial-gradient(circle at 16% 82%, rgba(255, 232, 239, 0.16), transparent 24%),
     linear-gradient(135deg, rgba(239, 68, 68, 0.42), rgba(255, 79, 135, 0.2) 72%),
     rgba(34, 43, 78, 0.78);
 }
@@ -280,6 +415,7 @@ function handleError() {
 .media-artwork--game {
   background:
     radial-gradient(circle at top right, rgba(153, 255, 239, 0.26), transparent 34%),
+    radial-gradient(circle at 14% 82%, rgba(225, 255, 245, 0.16), transparent 22%),
     linear-gradient(135deg, rgba(15, 118, 110, 0.5), rgba(34, 197, 94, 0.2) 70%),
     rgba(34, 43, 78, 0.78);
 }
@@ -287,6 +423,7 @@ function handleError() {
 .media-artwork--podcast {
   background:
     radial-gradient(circle at top right, rgba(255, 221, 160, 0.3), transparent 34%),
+    radial-gradient(circle at 15% 84%, rgba(255, 245, 217, 0.16), transparent 24%),
     linear-gradient(135deg, rgba(217, 119, 6, 0.48), rgba(251, 191, 36, 0.18) 72%),
     rgba(34, 43, 78, 0.78);
 }
@@ -294,6 +431,7 @@ function handleError() {
 .media-artwork--video {
   background:
     radial-gradient(circle at top right, rgba(211, 194, 255, 0.32), transparent 34%),
+    radial-gradient(circle at 18% 82%, rgba(236, 228, 255, 0.16), transparent 24%),
     linear-gradient(135deg, rgba(147, 51, 234, 0.5), rgba(59, 130, 246, 0.22) 72%),
     rgba(34, 43, 78, 0.78);
 }

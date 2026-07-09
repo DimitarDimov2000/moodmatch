@@ -556,7 +556,7 @@ const matchesSummaryDescription = computed(() => {
 
 .dashboard__hero-title--leading {
   display: grid;
-  gap: 0.12rem;
+  gap: 0.38rem;
   max-width: none;
 }
 
@@ -567,32 +567,23 @@ const matchesSummaryDescription = computed(() => {
 
 .dashboard__hero-title-emphasis {
   max-width: 20ch;
-  font-size: clamp(1.34rem, 2.55vw, 1.88rem);
+  font-size: clamp(1.55rem, 3vw, 2rem);
   font-weight: 800;
   line-height: 1.04;
-  color: color-mix(in srgb, #82a7d7 45%, var(--color-text-primary));
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, #f6fbff 86%, var(--color-text-primary)) 0%,
-    #bfd4f1 42%,
-    #e6d6b8 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--color-text-primary);
+  -webkit-text-fill-color: var(--color-text-primary);
   text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.12),
-    0 8px 18px rgba(86, 112, 150, 0.16);
+    0 1px 0 color-mix(in srgb, var(--color-surface) 84%, transparent),
+    0 8px 18px color-mix(in srgb, var(--color-accent-secondary) 16%, transparent);
   text-wrap: balance;
 }
 
 .dashboard__hero-title-copy {
   color: var(--color-text-secondary);
-  max-width: none;
-  font-size: clamp(0.86rem, 1vw, 0.95rem);
+  max-width: 34ch;
+  font-size: clamp(0.98rem, 1.35vw, 1.12rem);
   font-weight: 600;
-  line-height: 1.12;
-  white-space: nowrap;
+  line-height: 1.25;
 }
 
 .dashboard__hero-copy .page-copy {
