@@ -1,5 +1,7 @@
 # Auth Implementation Plan
 
+> Historical implementation record, kept for traceability. The plan below describes the path that led to the implemented local-password flow; it is not a future task list.
+
 This document now reflects the implemented local email/password direction.
 
 ## Implemented Direction

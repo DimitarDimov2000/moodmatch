@@ -1,5 +1,7 @@
 # Phase 19 Checkpoint
 
+> Historical planning document / checkpoint, kept for traceability. Use the current reference docs and root README for the final repository state.
+
 This document freezes the current project state after Phase 18 so MoodMatch is understandable, runnable, testable, and presentable without changing application behavior.
 
 Phase 19.1 improves checkpoint and reviewer-readiness posture, but it does not make the application production-ready.

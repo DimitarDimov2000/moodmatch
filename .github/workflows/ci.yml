@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   frontend:
     name: Frontend Checks
@@ -56,4 +59,4 @@ jobs:
           cache: maven
 
       - name: Run backend tests
-        run: ./mvnw -B test
+        run: ./scripts/test-clean.sh

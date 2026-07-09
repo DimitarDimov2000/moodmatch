@@ -1,5 +1,7 @@
 # MoodMatch Authentication Architecture
 
+> Historical planning document / checkpoint, kept for traceability. The final local-password implementation is documented in [auth-provider-decision.md](auth-provider-decision.md) and the root [README](../README.md).
+
 ## 1. Purpose
 
 MoodMatch is moving from a local single-user MVP toward a deployable university prototype for several private daily users.

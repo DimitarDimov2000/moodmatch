@@ -1,5 +1,7 @@
 # MoodMatch User Ownership Plan
 
+> Historical planning document / checkpoint, kept for traceability. User ownership is implemented now; see [architecture.md](architecture.md), [data-model.md](data-model.md), and the root [README](../README.md) for the final behavior.
+
 ## 1. Purpose
 
 MoodMatch is moving from a local single-user MVP to a deployable university prototype for several private daily users.

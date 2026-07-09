@@ -1,82 +1,53 @@
-# Local Setup
+# Local setup
 
-This guide describes the current local development, testing, and demo-QA workflow for MoodMatch.
-
-The goal is repeatability:
-
-- keep secrets out of Git
-- use the committed helper scripts instead of ad-hoc shell setup
-- make protected-route QA easy for local manual checks
+This guide describes the supported local development, test, and demo workflow for the final MoodMatch repository.
 
 ## Prerequisites
 
 - Java 21
+- Maven, or use the included `backend/mvnw` wrapper
 - Node.js and npm
 - PostgreSQL
-- `curl`
+- `curl` for the demo-user helper
 
-## 1. Start PostgreSQL
+## 1. Prepare PostgreSQL
 
-The backend expects a PostgreSQL database reachable from your local machine.
+Create a local database and user using credentials of your choice. For example, use your normal PostgreSQL administration tool or `psql`; do not copy personal credentials into Git. The default database name expected by the example is `moodmatch`, on `localhost:5432`.
 
-Typical local defaults:
+Put the resulting JDBC URL, username, and password in the uncommitted root `.env.local`.
 
-- host: `localhost`
-- port: `5432`
-- database: `moodmatch`
+## 2. Create local env files
 
-If you need a simple local setup:
-
-```bash
-psql postgres
-```
-
-```sql
-CREATE USER moodmatch WITH PASSWORD 'moodmatch';
-CREATE DATABASE moodmatch OWNER moodmatch;
-```
-
-If you prefer different local credentials, keep them local and place them in the root `.env.local`.
-
-## 2. Create Local Env Files
-
-Copy the committed examples:
+From the repository root:
 
 ```bash
 cp .env.local.example .env.local
 cp frontend/.env.local.example frontend/.env.local
 ```
 
-Files that must stay local only:
+The committed reference files are:
 
-- `.env.local`
-- `frontend/.env.local`
+- `.env.local.example` — backend database, local auth, CORS, optional provider keys, and demo account placeholders
+- `backend/.env.example` — backend variable reference with provider URL overrides
+- `frontend/.env.local.example` — Vite API/auth settings for local development
+- `frontend/.env.example` — frontend variable reference
 
-Committed placeholder/reference files:
+Never commit `.env.local`, `frontend/.env.local`, real provider keys, personal passwords, or bearer tokens.
 
-- `.env.local.example`
-- `frontend/.env.local.example`
-- `backend/.env.example`
+## 3. Configure `.env.local`
 
-## 3. Fill The Root `.env.local`
+Required for the normal local-password flow:
 
-The root `.env.local` is the source used by the backend dev script and the demo-user helper.
+```dotenv
+MOODMATCH_DB_URL=jdbc:postgresql://localhost:5432/moodmatch
+MOODMATCH_DB_USERNAME=<your-local-database-user>
+MOODMATCH_DB_PASSWORD=<your-local-database-password>
+MOODMATCH_AUTH_MODE=local-password
+QUARKUS_HTTP_CORS_ENABLED=true
+QUARKUS_HTTP_CORS_ORIGINS=http://localhost:5173
+```
 
-Required local values:
-
-- `MOODMATCH_DB_URL`
-- `MOODMATCH_DB_USERNAME`
-- `MOODMATCH_DB_PASSWORD`
-- `MOODMATCH_AUTH_MODE=local-password`
-- `QUARKUS_HTTP_CORS_ENABLED=true`
-- `QUARKUS_HTTP_CORS_ORIGINS=http://localhost:5173`
-
-Recommended CORS values:
-
-- `QUARKUS_HTTP_CORS_METHODS=GET,POST,PUT,PATCH,DELETE,OPTIONS`
-- `QUARKUS_HTTP_CORS_HEADERS=Accept,Authorization,Content-Type,Origin,X-Requested-With`
-
-Optional provider keys:
+Recommended CORS values are already present in the example. Provider keys are optional:
 
 - `MOODMATCH_TMDB_API_KEY`
 - `MOODMATCH_RAWG_API_KEY`
@@ -84,161 +55,112 @@ Optional provider keys:
 - `MOODMATCH_PODCASTINDEX_SECRET`
 - `MOODMATCH_YOUTUBE_API_KEY`
 
-Optional local demo-user values:
+For the local demo helper, set `MOODMATCH_DEMO_EMAIL`, `MOODMATCH_DEMO_PASSWORD`, and optionally `MOODMATCH_DEMO_DISPLAY_NAME` to values that exist only in your local env file. `MOODMATCH_LOCAL_BACKEND_URL` is optional and defaults to `http://localhost:8080`.
 
-- `MOODMATCH_DEMO_EMAIL`
-- `MOODMATCH_DEMO_PASSWORD`
-- `MOODMATCH_DEMO_DISPLAY_NAME`
-- `MOODMATCH_LOCAL_BACKEND_URL` if you are not using `http://localhost:8080`
+## 4. Configure the frontend
 
-Safety rules:
-
-- Do not commit `.env.local`.
-- Do not commit `frontend/.env.local`.
-- Do not commit real API keys.
-- Do not commit personal credentials.
-
-## 4. Fill `frontend/.env.local`
-
-The committed example is valid for normal local development:
+The committed local example uses:
 
 ```dotenv
 VITE_AUTH_MODE=local-password
+VITE_AUTH_PROVIDER=local-password
 VITE_API_BASE_URL=http://localhost:8080
 ```
 
-The frontend also has a Vite `/api` proxy for local development, but the committed local example keeps the backend URL explicit and matches the current helper docs.
+The frontend also supports the Vite `/api` proxy when `VITE_API_BASE_URL=/api` is used. The explicit local backend URL in the example makes the runtime boundary clear and matches the CORS setup.
 
-## 5. Start The Backend
+## 5. Start the backend
 
-From `backend/`:
+From the repository root:
 
 ```bash
+cd backend
 ./scripts/dev-local.sh
 ```
 
-This script:
+The script loads the root `.env.local`, exports it for the process, and starts Quarkus dev mode through `./mvnw`. The default backend URL is `http://localhost:8080`.
 
-- reads the root `.env.local`
-- exports those variables into the backend process
-- starts Quarkus dev mode
-
-Default backend URL:
-
-```text
-http://localhost:8080
-```
-
-Quick health check:
+Check the health endpoint:
 
 ```bash
 curl http://localhost:8080/api/health
 ```
 
-Flyway migrations run automatically on backend startup.
+Flyway applies and validates migrations during startup.
 
-## 6. Start The Frontend
+## 6. Start the frontend
 
-If dependencies are not installed yet:
+In a second terminal:
 
 ```bash
 cd frontend
 npm install
-```
-
-Start the frontend:
-
-```bash
-cd frontend
 npm run dev
 ```
 
-Default frontend URL:
+The default frontend URL is `http://localhost:5173`.
 
-```text
-http://localhost:5173
-```
+## 7. Create or verify a demo user
 
-## 7. Create Or Verify The Demo User
-
-From the repo root:
+After the backend is running, from the repository root:
 
 ```bash
 ./scripts/dev-create-demo-user.sh
 ```
 
-The helper:
+The helper reads the local demo values, calls the normal register endpoint, and if the account already exists verifies the credentials through the normal login endpoint. It does not bypass auth or seed a production account.
 
-- reads `MOODMATCH_DEMO_EMAIL`, `MOODMATCH_DEMO_PASSWORD`, and `MOODMATCH_DEMO_DISPLAY_NAME` from the root `.env.local`
-- talks to `MOODMATCH_LOCAL_BACKEND_URL` or `http://localhost:8080` by default
-- sends `POST /api/auth/register`
-- if the user already exists, verifies the credentials with `POST /api/auth/login`
+Open `http://localhost:5173` and sign in with the local values from `.env.local`.
 
-This is local QA only:
+## 8. Suggested local demo flow
 
-- no auth bypass
-- no seeded production/demo user
-- no backend behavior change
+1. Login.
+2. Review Dashboard.
+3. Search/import a title.
+4. Open Media Library and Media Detail.
+5. Review Profile readiness and signals.
+6. Inspect Candidates.
+7. Use Swipe.
+8. Explain a result in Matches.
+9. Switch German/English and dark/light/system theme if demonstrating UI preferences.
 
-## 8. Local Demo QA Flow
+## 9. Verification commands
 
-After the helper succeeds:
-
-1. Open `http://localhost:5173`.
-2. Log in with `MOODMATCH_DEMO_EMAIL` and `MOODMATCH_DEMO_PASSWORD`.
-3. Verify protected routes:
-   `Dashboard`, `Profile`, `External Search`, `Media Library`, `Candidates`, `Swipe`, `Matches`
-4. Check the German/English switch.
-5. Check dark, light, and system theme behavior.
-6. Check desktop and mobile widths.
-
-## 9. Frontend Checks
-
-From `frontend/`:
+Frontend:
 
 ```bash
+cd frontend
 npm run lint
 npm run test
 npm run build
 ```
 
-Optional extra check:
+Backend:
 
 ```bash
-npm run typecheck
-```
-
-## 10. Clean Backend Test
-
-From `backend/`:
-
-```bash
+cd backend
 ./scripts/test-clean.sh
 ```
 
-This helper:
+`test-clean.sh` intentionally does not load `.env.local` and unsets database, auth, CORS, OIDC, and provider overrides before running `./mvnw test`. This keeps local secrets and live provider configuration out of automated tests.
 
-- does not load `.env.local`
-- unsets common auth, DB, CORS, OIDC, and provider variables
-- runs `./mvnw test`
+## Provider setup notes
 
-## 11. Provider Notes
+- TMDB: films/series; requires `MOODMATCH_TMDB_API_KEY`.
+- Open Library: books; no secret required by the current public search integration.
+- RAWG: games; requires `MOODMATCH_RAWG_API_KEY`.
+- AniList: anime/manga mapped into existing media types; no key required.
+- Podcast Index: podcast shows/feeds; requires `MOODMATCH_PODCASTINDEX_KEY` and `MOODMATCH_PODCASTINDEX_SECRET`.
+- LibriVox: public-domain audiobooks; no key required.
+- YouTube Data API: video search and URL import; requires `MOODMATCH_YOUTUBE_API_KEY`.
+- DEMO: offline fallback/test source; no key required.
 
-- `TMDB` for `FILM` and `SERIES` uses `MOODMATCH_TMDB_API_KEY` when configured.
-- `OPEN_LIBRARY` for `BOOK` does not need a secret in the current integration.
-- `LIBRIVOX` for `AUDIOBOOK` does not need a secret in the current integration.
-- `RAWG` for `GAME` uses `MOODMATCH_RAWG_API_KEY` when configured.
-- `PODCAST_INDEX` for `PODCAST` uses `MOODMATCH_PODCASTINDEX_KEY` and `MOODMATCH_PODCASTINDEX_SECRET` when configured.
-- `ANILIST` does not need a secret in the current integration.
-- `YOUTUBE` search and URL import use `MOODMATCH_YOUTUBE_API_KEY` on the backend only.
-- Missing provider keys must not block local core app development or automated tests.
+Provider quality and availability vary. Missing optional keys should not block the core application or clean test suite.
 
-## 12. Security Reminder
+## Troubleshooting
 
-Never commit:
-
-- `.env.local`
-- `frontend/.env.local`
-- real API keys
-- real personal credentials
-- real bearer tokens
+- **Backend does not start:** confirm PostgreSQL is running and the three `MOODMATCH_DB_*` values point to an accessible local database.
+- **Frontend cannot reach the API:** confirm the backend is on port 8080 and `VITE_API_BASE_URL` matches the chosen direct or proxy setup.
+- **Demo helper fails:** confirm the backend is running and the local demo email/password variables are set.
+- **Live search is unavailable:** configure the relevant backend-only provider key, or use DEMO/fallback behavior for local testing.
+- **CORS errors with a direct frontend URL:** confirm `QUARKUS_HTTP_CORS_ORIGINS=http://localhost:5173`.

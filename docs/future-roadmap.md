@@ -1,94 +1,39 @@
-# Future Roadmap
+# Future roadmap
 
-This document lists work that is intentionally outside the final local-demo prototype scope.
+MoodMatch's core university-project workflows are implemented. This document separates truthful current limitations from enhancements that are intentionally outside the local/demo submission scope.
 
-## Deployment And Operations
+## Known limitations today
 
-Current state:
+- Live provider quality depends on third-party APIs, network access, quotas, rate limits, metadata quality, and optional local keys.
+- Missing artwork uses a fallback; provider imagery is not guaranteed.
+- Local-password bearer-token auth is appropriate for the local/demo prototype, not a production account platform.
+- The repository does not provide a guaranteed public deployment or hosted database.
+- Matching is deterministic and explainable rather than learned from a large behavioural dataset.
+- Swipe decisions support the current local decision flow; long-term persisted recommendation feedback is not part of the current scope.
+- Browser-level end-to-end automation and operational monitoring are not included in the current test/operations setup.
 
-- the repository is optimized for local development, demo use, and source submission
+## Future enhancements
 
-Future work:
+### Deployment and operations
 
-- deployment environment setup
-- environment separation for dev/staging/prod
-- monitoring, logging, and operational runbooks
-- backup/recovery considerations
+- production deployment and environment separation
+- hosted PostgreSQL, secret management, monitoring, logging, and backup/recovery runbooks
+- a CI/CD deployment pipeline after a hosting target is chosen
 
-## Auth And Security Hardening
+### Authentication and account management
 
-Current state:
+- OAuth or another production identity provider where appropriate
+- secure HTTP-only session cookies, account recovery, email verification, and broader security hardening
 
-- local email/password auth supports the prototype and demo workflow
-- bearer-token handling is suitable for local/dev use
+### Recommendation quality
 
-Future work:
+- richer recommendation learning and relevance tuning
+- improved tag confirmation/onboarding from import to match-ready state
+- more provider backups, artwork resolution, caching, and metadata cleanup
 
-- stronger production session/token strategy
-- HTTPS-first deployment assumptions
-- secret-management improvements
-- broader security review for public deployment
+### Product and QA support
 
-## End-To-End Test Coverage
-
-Current state:
-
-- frontend lint/unit-test/build checks exist
-- backend automated tests exist
-- final QA also relied on manual browser verification
-
-Future work:
-
-- browser-level E2E coverage for login, import, profile readiness, matches, and swipe flows
-- richer CI reporting around UI regression checks
-
-## Provider Resilience And Metadata Quality
-
-Current state:
-
-- provider integrations work at prototype level with warnings/fallback behavior
-- provider quality still depends on API keys, quota, network, and third-party metadata quality
-
-Future work:
-
-- better metadata cleanup and normalization
-- stronger retry/error handling where appropriate
-- relevance tuning for provider-specific search behavior
-- additional public showcase polish around provider attribution and edge cases
-
-## Import Readiness UX
-
-Current state:
-
-- imported titles become local data, but they may still need tags, ratings, and other signals before scoring becomes meaningful
-
-Future work:
-
-- faster onboarding from import to match-ready state
-- clearer guidance around missing tags/signals
-- optional workflows for confirming or refining suggested tags
-
-## Swipe Persistence Semantics
-
-Current state:
-
-- swipe is intentionally prototype-level
-- reject persists as `NOT_INTERESTED`
-- like and skip remain local to the active flow
-
-Future work:
-
-- explicit persisted save/like behavior
-- clearer long-term relationship between swipe decisions, favourites, and candidate management
-
-## Asset And Showcase Polish
-
-Current state:
-
-- the app is demo-ready, but some branding assets and repository presentation elements remain prototype-grade
-
-Future work:
-
-- optimize large SVG assets where worthwhile
-- add curated screenshots or short demo media to the repository
-- tighten final public-facing presentation material
+- explicit persisted save/like semantics for swipe feedback
+- better demo-data reset/admin tooling
+- browser-level E2E tests for login, import, profile readiness, matches, and swipe flows
+- additional accessibility and visual regression coverage

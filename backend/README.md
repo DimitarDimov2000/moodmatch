@@ -1,36 +1,41 @@
 # MoodMatch Backend
 
-This directory contains the Quarkus backend for MoodMatch. It provides the REST API, local authentication flow, persistence, provider integrations, Flyway migrations, and deterministic profile/matching logic used by the frontend.
+The `backend/` directory contains the Quarkus REST API for MoodMatch. It owns local authentication, user ownership, media and tag management, profile readiness, candidate selection, deterministic matching, external provider integration, and database migrations.
 
-## Stack
+## Stack and runtime
 
-- Quarkus
-- Java 21
-- Maven
-- Hibernate ORM Panache
-- Flyway
+- Java 21 and Quarkus
+- REST/JSON resources with Hibernate ORM Panache
 - PostgreSQL for local development
-- H2 for backend tests
+- H2 in PostgreSQL compatibility mode for tests
+- Flyway migrations
+- Maven via the included `mvnw` wrapper
 
-## Backend Purpose
+## Package/component overview
 
-The backend owns:
+- `resource/` — REST endpoints under `/api`
+- `service/` — application rules, current-user resolution, local auth, profile, candidates, matching, media, tags, and external orchestration
+- `auth/` — local password hashing, session tokens, and bearer-token filtering
+- `external/` — provider gateways and normalized adapter contracts for external metadata
+- `dto/` — request/response contracts exchanged with the frontend
+- `entity/` — persistence model and enums
+- `repository/` — Panache repositories and user-scoped data access
+- `mapper/` — entity/provider to DTO mapping
+- `src/main/resources/db/migration/` — committed Flyway schema migrations
+- `src/test/` — Quarkus resource/service/provider tests and migration checks
 
-- local email/password auth endpoints
-- bearer-token validation for protected app endpoints in `local-password` mode
-- media CRUD and validation
-- tag listing and replacement
-- interest profile calculation
-- candidate selection
-- deterministic match scoring and explanation payloads
-- external provider search, URL resolve, and import normalization
-- Flyway-based schema setup and validation
+Important REST areas are `/api/auth`, `/api/media`, `/api/tags`, `/api/profile`, `/api/candidates`, `/api/matches`, `/api/external`, and `/api/health`. The complete implemented endpoint contract is documented in [../docs/api-contract.md](../docs/api-contract.md).
 
-## Required Local Environment
+## Local configuration
 
-Local development uses the root `.env.local` file, loaded by `backend/scripts/dev-local.sh`.
+The normal development script loads the repository root `.env.local`:
 
-Required values:
+```bash
+cp ../.env.local.example ../.env.local
+./scripts/dev-local.sh
+```
+
+Required local values include:
 
 - `MOODMATCH_DB_URL`
 - `MOODMATCH_DB_USERNAME`
@@ -39,22 +44,7 @@ Required values:
 - `QUARKUS_HTTP_CORS_ENABLED=true`
 - `QUARKUS_HTTP_CORS_ORIGINS=http://localhost:5173`
 
-Common optional local values:
-
-- `QUARKUS_HTTP_CORS_METHODS`
-- `QUARKUS_HTTP_CORS_HEADERS`
-- `MOODMATCH_DEMO_EMAIL`
-- `MOODMATCH_DEMO_PASSWORD`
-- `MOODMATCH_DEMO_DISPLAY_NAME`
-
-Reference examples:
-
-- `../.env.local.example`
-- `./.env.example`
-
-## Provider Environment Variables
-
-Optional backend-only provider keys:
+Provider keys are optional and backend-only:
 
 - `MOODMATCH_TMDB_API_KEY`
 - `MOODMATCH_RAWG_API_KEY`
@@ -62,120 +52,43 @@ Optional backend-only provider keys:
 - `MOODMATCH_PODCASTINDEX_SECRET`
 - `MOODMATCH_YOUTUBE_API_KEY`
 
-Optional provider base URL overrides:
+`backend/.env.example` is a backend variable reference. It contains placeholders only; it is not loaded automatically by the scripts. Optional provider base URL overrides are listed there.
 
-- `MOODMATCH_TMDB_BASE_URL`
-- `MOODMATCH_TMDB_IMAGE_BASE_URL`
-- `MOODMATCH_TMDB_WEBSITE_BASE_URL`
-- `MOODMATCH_LIBRIVOX_BASE_URL`
-- `MOODMATCH_PODCASTINDEX_BASE_URL`
-- `MOODMATCH_ANILIST_BASE_URL`
-- `MOODMATCH_RAWG_BASE_URL`
-- `MOODMATCH_RAWG_WEBSITE_BASE_URL`
+## Authentication modes
 
-## Auth Mode Notes
+- `local-password` is the normal local/demo mode. Users register and log in through `/api/auth/register` and `/api/auth/login`; protected requests use a bearer token.
+- `local-demo` remains available as a development/test fallback where configured, but it is not the normal submission setup.
+- OIDC/Google configuration is not required for the current prototype.
 
-- Normal prototype development uses `local-password`.
-- In `local-password` mode, private app endpoints are authenticated endpoints and require a valid bearer token.
-- Protected paths include `/api/media`, `/api/profile`, `/api/candidates`, `/api/matches`, `/api/external/*`, `/api/auth/me`, and `/api/auth/logout`.
-- Backend tests still use the test profile and do not require a running local account setup.
+Auth sessions and media ownership are backed by the committed migrations. The backend resolves the current user server-side; the frontend does not submit arbitrary ownership identifiers.
 
-## Local Run
+## PostgreSQL and Flyway
 
-From the `backend/` directory:
+PostgreSQL is the local runtime database. Flyway applies and validates the committed migrations during startup. They cover the initial media/tag schema, starter tags, user ownership, local password auth, and external provider references.
+
+Do not edit an applied migration for local experiments; add a new migration when the schema changes. This submission does not require or include a schema change.
+
+## Scripts
+
+From `backend/`:
 
 ```bash
-./scripts/dev-local.sh
+./scripts/dev-local.sh     # loads root .env.local and starts Quarkus dev mode
+./scripts/test-clean.sh    # clears local override variables and runs ./mvnw test
 ```
 
-What the script does:
+`test-clean.sh` intentionally does not load `.env.local`, PostgreSQL credentials, or live provider keys. It is the command used by CI and by the repository README for reproducible backend checks.
 
-- loads the root `.env.local`
-- exports the variables for the backend process
-- starts Quarkus dev mode with `./mvnw quarkus:dev`
-
-Default local backend URL:
-
-```text
-http://localhost:8080
-```
-
-Health check:
-
-```text
-GET /api/health
-```
-
-## Clean Backend Test
-
-From the `backend/` directory:
+## Tests
 
 ```bash
 ./scripts/test-clean.sh
 ```
 
-This helper intentionally:
+The tests cover REST resources, services, local auth, ownership isolation, DTO/entity mapping, profile readiness, matching/scoring, migrations, and provider adapters. H2 and test profiles keep the suite independent of a running PostgreSQL instance and real provider credentials.
 
-- does not load the root `.env.local`
-- unsets common DB, auth, CORS, OIDC, and provider variables first
-- runs `./mvnw test`
+## Provider behavior
 
-Tests use H2 in PostgreSQL-compatibility mode plus the committed Flyway migrations, so CI and local test runs do not require PostgreSQL or live provider credentials.
+Provider gateways are normalized behind `external/adapter/`. The active integrations are TMDB, Open Library, RAWG, AniList, Podcast Index, LibriVox, YouTube, and the offline DEMO fallback. Missing optional keys are reported through controlled warnings/errors and must not make the clean test suite depend on external services.
 
-## Flyway And Persistence
-
-- Flyway migrations live in `src/main/resources/db/migration/`.
-- Local startup validates the schema and migrates on backend startup.
-- PostgreSQL is the normal local-development database.
-- Backend tests exercise the same migration set against H2 compatibility mode.
-
-## Provider Integration Overview
-
-The backend integrates providers behind a normalized adapter layer:
-
-- `DEMO`: offline fallback/demo data
-- `TMDB`: films and series
-- `OPEN_LIBRARY`: books
-- `LIBRIVOX`: public-domain audiobooks
-- `RAWG`: games
-- `ANILIST`: anime/manga mapped into existing media types
-- `PODCAST_INDEX`: podcast shows/feeds
-- `YOUTUBE`: video query search and URL resolve/import
-
-Provider keys stay server-side only. Missing keys must not break backend tests or CI.
-
-## Troubleshooting
-
-### PostgreSQL Is Not Running
-
-- Start PostgreSQL locally before running `./scripts/dev-local.sh`.
-- Verify `MOODMATCH_DB_URL` points to the expected local database.
-
-### Wrong Database Credentials
-
-- Recheck `MOODMATCH_DB_USERNAME` and `MOODMATCH_DB_PASSWORD` in the root `.env.local`.
-- Confirm the configured database/user actually exists in PostgreSQL.
-
-### Missing Provider Keys
-
-- Real provider search/import may warn, partially degrade, or fail depending on the provider.
-- Backend tests and CI should still pass without real provider keys.
-
-### CORS Issues
-
-- Confirm `QUARKUS_HTTP_CORS_ENABLED=true`.
-- Confirm `QUARKUS_HTTP_CORS_ORIGINS=http://localhost:5173` for the normal Vite dev origin.
-
-### Datasource URL Missing
-
-- `./scripts/dev-local.sh` expects the root `.env.local`.
-- If `MOODMATCH_DB_URL` is missing, copy `../.env.local.example` to `../.env.local` and fill it first.
-
-## Security Notes
-
-- Keep API keys on the backend only.
-- Do not commit `.env.local`, `frontend/.env.local`, or real secrets.
-- Do not commit personal passwords or real bearer tokens.
-- Prototype bearer-token auth is suitable for local demo/dev use, not a finished production deployment model.
-
-For full setup and repo-level guidance, see [../docs/local-setup.md](../docs/local-setup.md) and [../README.md](../README.md).
+For local setup, provider limitations, and security reminders, see [../docs/local-setup.md](../docs/local-setup.md), [../docs/external-media-sources.md](../docs/external-media-sources.md), and the [root README](../README.md).

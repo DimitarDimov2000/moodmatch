@@ -1,5 +1,7 @@
 # MoodMatch Finalization Plan
 
+> Historical planning document / checkpoint, kept for traceability. The repository has moved beyond this plan; current setup and limitations are documented in the root README and current docs index.
+
 ## 1. Current Baseline
 
 MoodMatch is currently a working local full-stack MVP/checkpoint.

@@ -1,5 +1,7 @@
 # Provider Verification Checklist
 
+> Historical verification checklist, kept for traceability. Provider configuration and current limitations are documented in [external-media-sources.md](external-media-sources.md) and [local-setup.md](local-setup.md).
+
 Use this checklist for the Package 2.12 closeout pass and for local deployment smoke tests.
 
 ## Backend Startup
