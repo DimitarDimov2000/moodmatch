@@ -191,6 +191,44 @@ describe('ExternalSearchResultCard', () => {
     expect(wrapper.text()).toContain('Noch keine passenden Tag-Vorschläge vorhanden.');
   });
 
+  it('decodes encoded provider metadata in visible result copy', () => {
+    const wrapper = mount(ExternalSearchResultCard, {
+      global: {
+        stubs: {
+          RouterLink: {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+      props: {
+        result: {
+          source: 'YOUTUBE',
+          externalId: 'video-1',
+          mediaType: 'VIDEO',
+          title: 'Tusk Ventures CEO on OpenAI proposing a 5% stake to the government: &#39;It makes zero sense&#39;',
+          originalTitle: 'Commentary &amp; context',
+          creatorNames: ['Channel: AI &amp; Policy'],
+          description: 'A quick breakdown of why the proposal &#39;does not add up&#39;.',
+          releaseYear: 2026,
+          coverUrl: null,
+          sourceUrl: 'https://youtube.com/watch?v=video-1',
+          externalGenres: [],
+          externalSubjects: ['Channel: AI & Policy'],
+          suggestedTags: [],
+          attribution: 'Metadata from YouTube',
+          warnings: [],
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain("government: 'It makes zero sense'");
+    expect(wrapper.text()).toContain('Commentary & context');
+    expect(wrapper.text()).toContain('Channel: AI & Policy');
+    expect(wrapper.text()).toContain("proposal 'does not add up'");
+    expect(wrapper.text()).not.toContain('&#39;');
+    expect(wrapper.text()).not.toContain('&amp;');
+  });
+
   it('renders RAWG game metadata clearly', () => {
     const wrapper = mount(ExternalSearchResultCard, {
       global: {

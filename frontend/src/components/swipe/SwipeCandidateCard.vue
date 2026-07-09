@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 
 import { ApiRequestError } from '@/api/client';
+import { getDisplayText, getExternalSourceLabel } from '@/components/media/media-presentation';
 import { i18n } from '@/i18n';
 import { getMediaById } from '@/api/media';
 import { sourceTypeLabels } from '@/components/media/media-options';
-import { getExternalSourceLabel } from '@/components/media/media-presentation';
 import {
   formatDecimal,
   mediaTypeLabels,
@@ -26,9 +26,12 @@ import type {
 } from '@/types/swipe';
 
 const INTENT_THRESHOLD = 24;
-const HORIZONTAL_THRESHOLD = 100;
+const DEFAULT_HORIZONTAL_THRESHOLD = 120;
+const MIN_HORIZONTAL_THRESHOLD = 110;
+const MAX_HORIZONTAL_THRESHOLD = 150;
 const HORIZONTAL_CLAMP = 170;
-const VERTICAL_CLAMP = 42;
+const MOTION_DURATION_MS = 220;
+const REDUCED_MOTION_DURATION_MS = 1;
 const DESCRIPTION_PREVIEW_LIMIT = 260;
 
 const props = withDefaults(
@@ -54,6 +57,7 @@ const emit = defineEmits<{
   decisionRequest: [action: SwipeDecisionAction];
   toggleDetails: [];
   detailsLoadError: [message: string];
+  feedbackChange: [feedback: { intent: SwipeGestureIntent; intensity: number }];
 }>();
 const { t } = i18n.global;
 const activeLocale = computed(() => i18n.global.locale.value);
@@ -67,6 +71,7 @@ const dragX = ref(0);
 const dragY = ref(0);
 const startX = ref(0);
 const startY = ref(0);
+const horizontalThreshold = ref(DEFAULT_HORIZONTAL_THRESHOLD);
 const activePointerId = ref<number | null>(null);
 const detailsLoading = ref(false);
 const detailsMedia = ref<MediaResponse | null>(null);
@@ -77,6 +82,7 @@ const peekCoverImageReady = ref(false);
 const peekCoverImageFailed = ref(false);
 
 let detailsRequestVersion = 0;
+let reducedMotionQuery: MediaQueryList | null = null;
 
 const insight = computed<SwipeInsightSummary>(() =>
   {
@@ -99,6 +105,8 @@ const metaLine = computed(() => {
   return parts.join(' · ');
 });
 const gradientSeed = computed(() => getGradientSeed(props.item.candidate.media.id));
+const currentTitle = computed(() => getDisplayText(props.item.candidate.media.title));
+const nextTitle = computed(() => getDisplayText(props.nextItem?.candidate.media.title ?? null));
 const reasonChips = computed(() => insight.value.reasonChips);
 const matchingTags = computed(() => props.item.match?.matchingTags ?? []);
 const extraCandidateTags = computed(() => props.item.match?.extraCandidateTags ?? []);
@@ -135,7 +143,9 @@ const technicalScoreRows = computed(() => {
     },
   ];
 });
-const descriptionPreview = computed(() => trimText(detailsMedia.value?.description ?? null, DESCRIPTION_PREVIEW_LIMIT));
+const descriptionPreview = computed(() =>
+  trimText(getDisplayText(detailsMedia.value?.description ?? null), DESCRIPTION_PREVIEW_LIMIT),
+);
 const sourceLabel = computed(() => {
   const media = detailsMedia.value;
 
@@ -179,10 +189,18 @@ const cardTransitionDuration = computed(() => {
     return '0ms';
   }
 
-  return prefersReducedMotion.value ? '40ms' : '220ms';
+  return `${prefersReducedMotion.value ? REDUCED_MOTION_DURATION_MS : MOTION_DURATION_MS}ms`;
 });
-const cardRotation = computed(() => clamp(dragX.value / 18, -8, 8));
+const cardRotation = computed(() =>
+  prefersReducedMotion.value ? 0 : clamp(dragX.value / 22, -7, 7));
 const cardOpacity = computed(() => clamp(1 - Math.abs(dragX.value) / 520, 0.78, 1));
+const feedbackIntensity = computed(() =>
+  clamp(
+    (Math.abs(dragX.value) - INTENT_THRESHOLD) /
+      (horizontalThreshold.value - INTENT_THRESHOLD),
+    0,
+    1,
+  ));
 const cardStyle = computed(() => ({
   opacity: String(cardOpacity.value),
   transform: `translate3d(${dragX.value}px, ${dragY.value}px, 0) rotate(${cardRotation.value}deg)`,
@@ -190,8 +208,14 @@ const cardStyle = computed(() => ({
 }));
 
 onMounted(() => {
-  prefersReducedMotion.value =
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  reducedMotionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)') ?? null;
+  prefersReducedMotion.value = reducedMotionQuery?.matches ?? false;
+  reducedMotionQuery?.addEventListener?.('change', handleReducedMotionChange);
+});
+
+onBeforeUnmount(() => {
+  reducedMotionQuery?.removeEventListener?.('change', handleReducedMotionChange);
+  emit('feedbackChange', { intent: 'none', intensity: 0 });
 });
 
 watch(
@@ -225,6 +249,17 @@ watch(
   },
 );
 
+watch(
+  [gestureIntent, feedbackIntensity, showIntentIndicators],
+  ([intent, intensity, visible]) => {
+    emit('feedbackChange', {
+      intent: visible ? intent : 'none',
+      intensity: visible ? intensity : 0,
+    });
+  },
+  { immediate: true },
+);
+
 function handlePointerDown(event: PointerEvent) {
   if (
     props.interactionLocked ||
@@ -238,13 +273,18 @@ function handlePointerDown(event: PointerEvent) {
   activePointerId.value = event.pointerId;
   startX.value = event.clientX;
   startY.value = event.clientY;
+  horizontalThreshold.value = getHorizontalThreshold(event.currentTarget);
   dragging.value = true;
   dragX.value = 0;
   dragY.value = 0;
 
   const currentTarget = event.currentTarget;
   if (currentTarget instanceof Element && 'setPointerCapture' in currentTarget) {
-    currentTarget.setPointerCapture(event.pointerId);
+    try {
+      currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Capture can fail if the pointer ended before this handler ran.
+    }
   }
 }
 
@@ -262,7 +302,7 @@ function handlePointerMove(event: PointerEvent) {
     -HORIZONTAL_CLAMP,
     HORIZONTAL_CLAMP,
   );
-  dragY.value = clamp(rawY * 0.12, -VERTICAL_CLAMP, VERTICAL_CLAMP);
+  dragY.value = 0;
 }
 
 function handlePointerUp(event: PointerEvent) {
@@ -272,12 +312,12 @@ function handlePointerUp(event: PointerEvent) {
 
   releasePointer(event);
 
-  if (gestureIntent.value === 'like' && Math.abs(dragX.value) >= HORIZONTAL_THRESHOLD) {
+  if (gestureIntent.value === 'like' && Math.abs(dragX.value) >= horizontalThreshold.value) {
     awaitDecision('like');
     return;
   }
 
-  if (gestureIntent.value === 'skip' && Math.abs(dragX.value) >= HORIZONTAL_THRESHOLD) {
+  if (gestureIntent.value === 'skip' && Math.abs(dragX.value) >= horizontalThreshold.value) {
     awaitDecision('skip');
     return;
   }
@@ -299,8 +339,12 @@ function releasePointer(event: PointerEvent) {
 
   const currentTarget = event.currentTarget;
   if (currentTarget instanceof Element && 'releasePointerCapture' in currentTarget) {
-    if (currentTarget.hasPointerCapture?.(event.pointerId)) {
-      currentTarget.releasePointerCapture(event.pointerId);
+    try {
+      if (currentTarget.hasPointerCapture?.(event.pointerId)) {
+        currentTarget.releasePointerCapture(event.pointerId);
+      }
+    } catch {
+      // Pointer cancellation may release capture before this handler runs.
     }
   }
 
@@ -319,7 +363,7 @@ async function playDecisionAnimation(action: SwipeDecisionAction): Promise<void>
   dragX.value = action === 'like' ? getExitDistance() : -getExitDistance();
   dragY.value = 0;
 
-  await wait(prefersReducedMotion.value ? 40 : 220);
+  await wait(prefersReducedMotion.value ? REDUCED_MOTION_DURATION_MS : MOTION_DURATION_MS);
 }
 
 function resetGesturePosition() {
@@ -395,6 +439,18 @@ function getGestureIntent(x: number, y: number): SwipeGestureIntent {
   }
 
   return x >= 0 ? 'like' : 'skip';
+}
+
+function getHorizontalThreshold(target: EventTarget | null): number {
+  if (!(target instanceof HTMLElement) || target.clientWidth <= 0) {
+    return DEFAULT_HORIZONTAL_THRESHOLD;
+  }
+
+  return clamp(target.clientWidth * 0.3, MIN_HORIZONTAL_THRESHOLD, MAX_HORIZONTAL_THRESHOLD);
+}
+
+function handleReducedMotionChange(event: MediaQueryListEvent) {
+  prefersReducedMotion.value = event.matches;
 }
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
@@ -481,7 +537,7 @@ defineExpose({
           class="swipe-candidate-card__peek-cover-image"
           :class="{ 'swipe-candidate-card__peek-cover-image--ready': peekCoverImageReady }"
           :src="nextItem.candidate.media.coverUrl"
-          :alt="t('swipeCards.coverAlt', { title: nextItem.candidate.media.title })"
+          :alt="t('swipeCards.coverAlt', { title: nextTitle })"
           @load="handlePeekCoverImageLoad"
           @error="handlePeekCoverImageError"
         >
@@ -490,7 +546,12 @@ defineExpose({
           class="swipe-candidate-card__peek-cover-fallback"
           aria-hidden="true"
         >
-          {{ mediaTypeLabels[nextItem.candidate.media.mediaType] }}
+          <span class="swipe-candidate-card__peek-cover-type">
+            {{ mediaTypeLabels[nextItem.candidate.media.mediaType] }}
+          </span>
+          <span class="swipe-candidate-card__peek-cover-title">
+            {{ nextTitle }}
+          </span>
         </div>
 
         <div class="swipe-candidate-card__peek-cover-overlay">
@@ -508,7 +569,7 @@ defineExpose({
               {{ t('swipeCards.recommendation') }}
             </p>
             <h3 class="swipe-candidate-card__peek-title">
-              {{ nextItem.candidate.media.title }}
+              {{ nextTitle }}
             </h3>
             <p class="swipe-candidate-card__peek-meta">
               {{ mediaTypeLabels[nextItem.candidate.media.mediaType] }}
@@ -520,25 +581,6 @@ defineExpose({
         </div>
       </div>
     </article>
-
-    <div
-      class="swipe-candidate-card__intents"
-      :class="{ 'swipe-candidate-card__intents--visible': showIntentIndicators }"
-      aria-hidden="true"
-    >
-      <span
-        class="swipe-candidate-card__intent swipe-candidate-card__intent--skip"
-        :class="{ 'swipe-candidate-card__intent--active': gestureIntent === 'skip' }"
-      >
-        {{ t('swipeCards.intentSkip') }}
-      </span>
-      <span
-        class="swipe-candidate-card__intent swipe-candidate-card__intent--like"
-        :class="{ 'swipe-candidate-card__intent--active': gestureIntent === 'like' }"
-      >
-        {{ t('swipeCards.intentLike') }}
-      </span>
-    </div>
 
     <article
       class="swipe-candidate-card page-card"
@@ -564,7 +606,7 @@ defineExpose({
             class="swipe-candidate-card__cover-image"
             :class="{ 'swipe-candidate-card__cover-image--ready': coverImageReady }"
             :src="item.candidate.media.coverUrl"
-            :alt="t('swipeCards.coverAlt', { title: item.candidate.media.title })"
+            :alt="t('swipeCards.coverAlt', { title: currentTitle })"
             @load="handleCoverImageLoad"
             @error="handleCoverImageError"
           >
@@ -573,7 +615,12 @@ defineExpose({
             class="swipe-candidate-card__cover-fallback"
             aria-hidden="true"
           >
-            {{ mediaTypeLabels[item.candidate.media.mediaType] }}
+            <span class="swipe-candidate-card__cover-fallback-type">
+              {{ mediaTypeLabels[item.candidate.media.mediaType] }}
+            </span>
+            <span class="swipe-candidate-card__cover-fallback-title">
+              {{ currentTitle }}
+            </span>
           </div>
 
           <div class="swipe-candidate-card__cover-overlay">
@@ -586,6 +633,9 @@ defineExpose({
                 class="swipe-candidate-card__score-badge"
                 :class="`swipe-candidate-card__score-badge--${insight.valueTone}`"
               >
+                <span class="swipe-candidate-card__score-eyebrow">
+                  {{ t('matching.scoreEyebrow') }}
+                </span>
                 <span class="swipe-candidate-card__score-label">{{ insight.valueLabel }}</span>
                 <span class="swipe-candidate-card__score-caption">{{ insight.valueCaption }}</span>
               </div>
@@ -596,7 +646,7 @@ defineExpose({
                 {{ t('swipeCards.recommendation') }}
               </p>
               <h2 class="swipe-candidate-card__title">
-                {{ item.candidate.media.title }}
+                {{ currentTitle }}
               </h2>
               <p class="swipe-candidate-card__meta">
                 {{ metaLine }}
@@ -805,18 +855,21 @@ defineExpose({
 
 <style scoped>
 .swipe-candidate-card__stage {
+  --swipe-active-card-width: min(calc(100% - 1rem), 25rem);
+
   position: relative;
-  padding: 0 0.85rem 1.15rem 0;
+  padding-bottom: 1.15rem;
   overflow: visible;
 }
 
 .swipe-candidate-card__peek {
   position: absolute;
-  inset: 0.9rem 0 0 0.95rem;
-  z-index: 0;
+  inset: 0.9rem auto 0 50%;
+  z-index: 1;
+  width: var(--swipe-active-card-width);
   padding: 0;
   opacity: 0;
-  transform: translate3d(0.5rem, 0.6rem, 0) scale(0.978);
+  transform: translate3d(calc(-50% + 0.5rem), 0.6rem, 0) scale(0.978);
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--color-surface-secondary) 84%, var(--color-accent-soft)),
@@ -832,12 +885,12 @@ defineExpose({
 
 .swipe-candidate-card__peek--visible {
   opacity: 0.88;
-  transform: translate3d(0.82rem, 0.95rem, 0) scale(0.962);
+  transform: translate3d(calc(-50% + 0.82rem), 0.95rem, 0) scale(0.962);
 }
 
 .swipe-candidate-card__peek-cover {
   position: relative;
-  aspect-ratio: 4 / 6;
+  aspect-ratio: 4 / 5.2;
   overflow: hidden;
 }
 
@@ -861,13 +914,41 @@ defineExpose({
 
 .swipe-candidate-card__peek-cover-fallback {
   display: grid;
-  place-items: center;
+  align-content: end;
+  gap: 0.35rem;
   padding: 1rem;
   color: var(--theme-swipe-cover-fallback-text);
-  font-size: 1.05rem;
-  font-weight: 700;
-  text-align: center;
+  text-align: left;
   background: var(--theme-swipe-cover-fallback-overlay);
+}
+
+.swipe-candidate-card__peek-cover-type,
+.swipe-candidate-card__cover-fallback-type {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 1.7rem;
+  padding: 0.22rem 0.62rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-full);
+  background: rgba(10, 16, 36, 0.24);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.swipe-candidate-card__peek-cover-title,
+.swipe-candidate-card__cover-fallback-title {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: clamp(1rem, 2.8vw, 1.3rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.04;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .swipe-candidate-card__peek-cover-overlay {
@@ -943,6 +1024,7 @@ defineExpose({
   max-width: 18ch;
   color: #fff;
   line-height: 1.02;
+  overflow-wrap: anywhere;
 }
 
 .swipe-candidate-card__peek-meta {
@@ -950,55 +1032,11 @@ defineExpose({
   font-size: 0.86rem;
 }
 
-.swipe-candidate-card__intents {
-  position: absolute;
-  inset: 1rem 1rem auto;
-  z-index: 2;
-  display: flex;
-  justify-content: space-between;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.swipe-candidate-card__intents--visible {
-  opacity: 1;
-}
-
-.swipe-candidate-card__intent {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.1rem;
-  padding: 0.4rem 0.9rem;
-  border: 1px solid transparent;
-  border-radius: var(--radius-full);
-  background: var(--theme-swipe-intent-background);
-  color: var(--theme-swipe-intent-text);
-  font-size: 0.9rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  transition:
-    transform 180ms ease,
-    background-color 180ms ease,
-    border-color 180ms ease;
-}
-
-.swipe-candidate-card__intent--active {
-  transform: translateY(-2px);
-}
-
-.swipe-candidate-card__intent--skip.swipe-candidate-card__intent--active {
-  background: color-mix(in srgb, var(--color-surface) 18%, var(--color-warning));
-  border-color: color-mix(in srgb, var(--color-warning) 40%, transparent);
-}
-
-.swipe-candidate-card__intent--like.swipe-candidate-card__intent--active {
-  background: color-mix(in srgb, var(--color-surface) 14%, var(--color-success));
-  border-color: color-mix(in srgb, var(--color-success) 45%, transparent);
-}
-
 .swipe-candidate-card {
   position: relative;
-  z-index: 1;
+  z-index: 2;
+  width: var(--swipe-active-card-width);
+  margin-inline: auto;
   overflow: hidden;
   border-radius: calc(var(--radius-xl) + 2px);
   box-shadow: var(--shadow-swipe-card);
@@ -1023,7 +1061,7 @@ defineExpose({
 
 .swipe-candidate-card__cover {
   position: relative;
-  aspect-ratio: 4 / 5.55;
+  aspect-ratio: 4 / 4.8;
   overflow: hidden;
   background: linear-gradient(135deg, #1f2937, #334155);
 }
@@ -1060,12 +1098,11 @@ defineExpose({
 
 .swipe-candidate-card__cover-fallback {
   display: grid;
-  place-items: center;
-  padding: 2rem;
+  align-content: end;
+  gap: 0.4rem;
+  padding: 1rem;
   color: var(--theme-swipe-cover-fallback-text);
-  font-size: clamp(1.45rem, 4vw, 2rem);
-  font-weight: 700;
-  text-align: center;
+  text-align: left;
   background: var(--theme-swipe-cover-fallback-overlay);
 }
 
@@ -1075,7 +1112,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 1rem;
+  padding: 0.85rem;
   background: var(--theme-swipe-cover-overlay);
 }
 
@@ -1089,48 +1126,64 @@ defineExpose({
 .swipe-candidate-card__type-pill {
   display: inline-flex;
   align-items: center;
-  min-height: 2rem;
-  padding: 0.35rem 0.8rem;
+  min-height: 1.75rem;
+  padding: 0.26rem 0.68rem;
   border: 1px solid var(--theme-swipe-type-pill-border);
   border-radius: var(--radius-full);
   backdrop-filter: blur(12px);
   background: var(--theme-swipe-type-pill-background);
   color: var(--theme-swipe-type-pill-text);
-  font-size: 0.84rem;
+  font-size: 0.76rem;
   font-weight: 700;
 }
 
 .swipe-candidate-card__score-badge {
   display: grid;
   justify-items: end;
-  gap: 0.1rem;
-  min-width: 6.1rem;
-  padding: 0.7rem 0.8rem;
-  border-radius: 1.1rem;
+  gap: 0.08rem;
+  min-width: 5.75rem;
+  padding: 0.48rem 0.62rem 0.52rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.95rem;
   backdrop-filter: blur(14px);
-  background: var(--theme-swipe-score-background);
+  background: color-mix(in srgb, var(--theme-swipe-score-background) 82%, transparent);
   color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 
 .swipe-candidate-card__score-badge--success {
-  background: var(--theme-swipe-score-success-background);
+  border-color: color-mix(in srgb, var(--color-success) 38%, rgba(255, 255, 255, 0.16));
+  background: color-mix(in srgb, var(--theme-swipe-score-success-background) 72%, rgba(10, 16, 36, 0.4));
 }
 
 .swipe-candidate-card__score-badge--accent {
-  background: var(--theme-swipe-score-accent-background);
+  border-color: color-mix(in srgb, var(--color-accent) 34%, rgba(255, 255, 255, 0.16));
+  background: color-mix(in srgb, var(--theme-swipe-score-accent-background) 72%, rgba(10, 16, 36, 0.4));
 }
 
 .swipe-candidate-card__score-badge--muted {
   background: var(--theme-swipe-score-background);
 }
 
+.swipe-candidate-card__score-eyebrow {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .swipe-candidate-card__score-label {
-  font-size: 1.35rem;
+  font-size: 1.16rem;
   font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.96;
 }
 
 .swipe-candidate-card__score-caption {
-  font-size: 0.76rem;
+  max-width: 12ch;
+  font-size: 0.66rem;
+  line-height: 1.18;
   text-align: right;
   color: var(--theme-swipe-score-caption);
 }
@@ -1164,9 +1217,14 @@ defineExpose({
 }
 
 .swipe-candidate-card__title {
+  display: -webkit-box;
+  overflow: hidden;
   color: #fff;
-  font-size: clamp(1.75rem, 5vw, 2.5rem);
-  line-height: 0.98;
+  font-size: clamp(1.45rem, 4vw, 2rem);
+  line-height: 1.02;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .swipe-candidate-card__meta {
@@ -1176,12 +1234,12 @@ defineExpose({
 
 .swipe-candidate-card__body {
   display: grid;
-  gap: 1rem;
-  padding: 1.15rem 1.1rem 1.2rem;
+  gap: 0.72rem;
+  padding: 0.9rem 0.95rem 0.95rem;
 }
 
 .swipe-candidate-card__headline {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--color-text-primary);
 }
@@ -1196,19 +1254,19 @@ defineExpose({
 .swipe-candidate-card__reason-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem;
+  gap: 0.4rem;
 }
 
 .swipe-candidate-card__reason-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 2rem;
-  padding: 0.35rem 0.75rem;
+  min-height: 1.75rem;
+  padding: 0.26rem 0.62rem;
   border: 1px solid color-mix(in srgb, var(--color-accent) 14%, var(--color-border));
   border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--color-accent-soft) 55%, var(--color-surface));
   color: var(--color-text-primary);
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
@@ -1342,17 +1400,16 @@ defineExpose({
 
 @media (max-width: 720px) {
   .swipe-candidate-card__stage {
-    padding-right: 0.55rem;
     padding-bottom: 1.1rem;
   }
 
   .swipe-candidate-card__peek {
-    inset: 0.85rem 0 0.1rem 0.6rem;
-    transform: translate3d(0.28rem, 0.4rem, 0) scale(0.986);
+    inset-block: 0.85rem 0.1rem;
+    transform: translate3d(calc(-50% + 0.28rem), 0.4rem, 0) scale(0.986);
   }
 
   .swipe-candidate-card__peek--visible {
-    transform: translate3d(0.55rem, 0.75rem, 0) scale(0.978);
+    transform: translate3d(calc(-50% + 0.55rem), 0.75rem, 0) scale(0.978);
   }
 
   .swipe-candidate-card__peek-cover-overlay {
@@ -1363,8 +1420,8 @@ defineExpose({
     font-size: 1.12rem;
   }
 
-  .swipe-candidate-card__intents {
-    inset-inline: 0.75rem;
+  .swipe-candidate-card__cover-fallback {
+    padding: 1rem;
   }
 
   .swipe-candidate-card__body,
@@ -1392,23 +1449,35 @@ defineExpose({
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .swipe-candidate-card,
+  .swipe-candidate-card__peek,
+  .swipe-candidate-card__cover-image,
+  .swipe-candidate-card__peek-cover-image {
+    transition-duration: 1ms !important;
+  }
+
+  .swipe-candidate-card__peek--visible {
+    transform: translateX(-50%);
+  }
+}
+
 @media (min-width: 960px) {
   .swipe-candidate-card__stage {
-    padding-right: 0.75rem;
     padding-bottom: 1rem;
   }
 
   .swipe-candidate-card__peek {
-    inset: 0.7rem 0 0 0.8rem;
-    transform: translate3d(0.42rem, 0.5rem, 0) scale(0.982);
+    inset-block: 0.7rem 0;
+    transform: translate3d(calc(-50% + 0.42rem), 0.5rem, 0) scale(0.982);
   }
 
   .swipe-candidate-card__peek--visible {
-    transform: translate3d(0.68rem, 0.82rem, 0) scale(0.968);
+    transform: translate3d(calc(-50% + 0.68rem), 0.82rem, 0) scale(0.968);
   }
 
   .swipe-candidate-card__cover {
-    aspect-ratio: 4 / 5.2;
+    aspect-ratio: 4 / 4.65;
   }
 
   .swipe-candidate-card__cover-overlay {
@@ -1416,7 +1485,7 @@ defineExpose({
   }
 
   .swipe-candidate-card__title {
-    font-size: clamp(1.7rem, 2.6vw, 2.2rem);
+    font-size: clamp(1.4rem, 2.3vw, 1.8rem);
   }
 
   .swipe-candidate-card__body {
@@ -1431,7 +1500,7 @@ defineExpose({
 
 @media (max-width: 520px) {
   .swipe-candidate-card__cover {
-    aspect-ratio: 7 / 9;
+    aspect-ratio: 4 / 5;
   }
 
   .swipe-candidate-card__cover-overlay {
@@ -1443,12 +1512,12 @@ defineExpose({
   }
 
   .swipe-candidate-card__score-badge {
-    min-width: 5.5rem;
-    padding-inline: 0.7rem;
+    min-width: 5.25rem;
+    padding-inline: 0.55rem;
   }
 
   .swipe-candidate-card__score-label {
-    font-size: 1.18rem;
+    font-size: 1.08rem;
   }
 }
 </style>

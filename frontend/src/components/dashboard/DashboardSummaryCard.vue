@@ -26,12 +26,6 @@ withDefaults(
       <p class="eyebrow">
         {{ eyebrow }}
       </p>
-      <RouterLink
-        :to="linkTo"
-        class="dashboard-summary-card__link"
-      >
-        {{ linkLabel }}
-      </RouterLink>
     </div>
 
     <div class="dashboard-summary-card__body">
@@ -45,14 +39,24 @@ withDefaults(
         {{ description }}
       </p>
     </div>
+
+    <RouterLink
+      :to="linkTo"
+      class="dashboard-summary-card__link"
+    >
+      {{ linkLabel }}
+    </RouterLink>
   </article>
 </template>
 
 <style scoped>
 .dashboard-summary-card {
   display: grid;
+  grid-template-rows: auto 1fr auto;
   gap: 0.8rem;
+  height: 100%;
   padding: 1.05rem;
+  align-content: start;
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--color-surface) 92%, transparent),
@@ -85,15 +89,13 @@ withDefaults(
 }
 
 .dashboard-summary-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
+  display: grid;
+  gap: 0.25rem;
 }
 
 .dashboard-summary-card__body {
   display: grid;
-  gap: 0.25rem;
+  gap: 0.3rem;
 }
 
 .dashboard-summary-card__value,
@@ -109,18 +111,14 @@ withDefaults(
 .dashboard-summary-card__link {
   display: inline-flex;
   align-items: center;
-  min-height: 1.8rem;
-  padding: 0.2rem 0.62rem;
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  width: fit-content;
+  margin-top: 0.1rem;
   color: var(--color-text-secondary);
-  font-size: 0.84rem;
-  font-weight: 600;
+  font-size: 0.88rem;
+  font-weight: 700;
 }
 
 .dashboard-summary-card__link:hover {
-  border-color: var(--color-border-strong);
   color: var(--color-text-primary);
 }
 </style>

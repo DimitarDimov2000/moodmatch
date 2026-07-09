@@ -8,7 +8,6 @@ import AppMessage from "@/components/common/AppMessage.vue";
 import { getProfileReadinessSummary } from "@/components/matching/matching-copy";
 import ProfileContributionCard from "@/components/profile/ProfileContributionCard.vue";
 import InterestProfileWeights from "@/components/profile/InterestProfileWeights.vue";
-import TagChip from "@/components/tags/TagChip.vue";
 import { i18n } from "@/i18n";
 import type { InterestProfileResponse } from "@/types/api";
 
@@ -19,8 +18,8 @@ const { t } = i18n.global;
 const activeLocale = computed(() => i18n.global.locale.value);
 const trackLocaleDependency = () => activeLocale.value;
 
-const strongestTags = computed(
-  () => profile.value?.weightedTags.slice(0, 6) ?? [],
+const strongSignalCount = computed(
+  () => profile.value?.weightedTags.length ?? 0,
 );
 const contributionCount = computed(
   () => profile.value?.contributingMedia.length ?? 0,
@@ -58,11 +57,8 @@ function toUserMessage(error: unknown): string {
 
 <template>
   <section class="page-stack">
-    <header class="page-header">
+    <header class="page-header profile-view__header">
       <div>
-        <p class="eyebrow">
-          {{ t("profile.eyebrow") }}
-        </p>
         <h1 class="page-title">
           {{ t("profile.title") }}
         </h1>
@@ -98,7 +94,10 @@ function toUserMessage(error: unknown): string {
 
     <template v-else-if="profile">
       <section class="overview-stats">
-        <article class="page-card overview-stat-card">
+        <article
+          class="page-card overview-stat-card"
+          :class="profile.isReadyForMatching ? 'overview-stat-card--success' : 'overview-stat-card--warning'"
+        >
           <p class="eyebrow">
             {{ t("profile.readiness") }}
           </p>
@@ -110,7 +109,7 @@ function toUserMessage(error: unknown): string {
           </p>
         </article>
 
-        <article class="page-card overview-stat-card">
+        <article class="page-card overview-stat-card overview-stat-card--info">
           <p class="eyebrow">
             {{ t("profile.relevantMedia") }}
           </p>
@@ -128,10 +127,21 @@ function toUserMessage(error: unknown): string {
             {{ t("profile.strongSignals") }}
           </p>
           <p class="overview-stat-card__value">
-            {{ strongestTags.length }}
+            {{ strongSignalCount }}
           </p>
           <p class="overview-stat-card__copy">
             {{ t("profile.strongestSignalsCopy") }}
+          </p>
+        </article>
+        <article class="page-card overview-stat-card overview-stat-card--info">
+          <p class="eyebrow">
+            {{ t("profile.signalSource") }}
+          </p>
+          <p class="overview-stat-card__value">
+            {{ contributionCount }}
+          </p>
+          <p class="overview-stat-card__copy">
+            {{ t("profile.signalSourceDetails") }}
           </p>
         </article>
       </section>
@@ -152,63 +162,14 @@ function toUserMessage(error: unknown): string {
         </div>
       </AppMessage>
 
-      <section class="page-card profile-view__summary">
-        <div class="section-header">
-          <div class="section-header__copy">
-            <p class="eyebrow">
-              {{ t("profile.summary") }}
-            </p>
-            <h2 class="section-title">
-              {{ t("profile.strongestSignals") }}
-            </h2>
-            <p class="body-muted">
-              {{ readinessSummary }}
-            </p>
-          </div>
-        </div>
-
-        <div class="profile-view__summary-grid">
-          <div class="profile-view__spotlight">
-            <p class="profile-view__spotlight-label">
-              {{ t("profile.strongestSignals") }}
-            </p>
-            <div
-              v-if="strongestTags.length > 0"
-              class="profile-view__spotlight-tags"
-            >
-              <TagChip
-                v-for="item in strongestTags"
-                :key="item.tag.id"
-                :tag="item.tag"
-              />
-            </div>
-            <p
-              v-else
-              class="body-muted"
-            >
-              {{ t("profile.noSignalsYet") }}
-            </p>
-          </div>
-
-          <div class="profile-view__summary-notes">
-            <div class="profile-view__summary-note">
-              <p class="profile-view__spotlight-label">
-                {{ t("profile.whatShapesRecommendations") }}
-              </p>
-              <p class="body-muted">
-                {{ t("profile.recommendationFactors") }}
-              </p>
-            </div>
-
-            <div class="profile-view__summary-note">
-              <p class="profile-view__spotlight-label">
-                {{ t("profile.signalSource") }}
-              </p>
-              <p class="body-muted">
-                {{ t("profile.contributingMedia", { count: contributionCount }) }}
-              </p>
-            </div>
-          </div>
+      <section class="profile-view__section-break">
+        <div class="profile-view__section-break-copy">
+          <h2 class="section-title">
+            {{ t("profile.whatShapesRecommendations") }}
+          </h2>
+          <p class="body-muted">
+            {{ t("profile.recommendationFactors") }}
+          </p>
         </div>
       </section>
 
@@ -216,19 +177,10 @@ function toUserMessage(error: unknown): string {
         <InterestProfileWeights
           class="profile-view__weights"
           :tags="profile.weightedTags"
-          :title="t('profile.strongestSignals')"
+          :title="t('profile.profileSignals')"
         />
 
         <section class="profile-view__media">
-          <div class="profile-view__section-header">
-            <h2 class="section-title">
-              {{ t("profile.whatShapesRecommendations") }}
-            </h2>
-            <p class="body-muted">
-              {{ t("profile.signalSourceDetails") }}
-            </p>
-          </div>
-
           <AppMessage
             v-if="profile.contributingMedia.length === 0"
             :title="t('profile.noSourcesTitle')"
@@ -252,74 +204,65 @@ function toUserMessage(error: unknown): string {
 </template>
 
 <style scoped>
+.profile-view__header .page-title {
+  max-width: none;
+}
+
+.profile-view__header .page-copy {
+  max-width: 40rem;
+}
+
 .profile-view__layout {
   display: grid;
-  gap: 0.95rem;
-  grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.35fr);
+  gap: 1.2rem;
+  grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.1fr);
+  align-items: start;
 }
 
-.profile-view__summary {
-  display: grid;
-  gap: 0.9rem;
-  padding: clamp(0.95rem, 2.3vw, 1.1rem);
-}
-
-.profile-view__summary-grid {
+.profile-view__weights,
+.profile-view__media,
+.profile-view__contributions,
+.profile-view__section-break-copy {
   display: grid;
   gap: 0.85rem;
-  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+  min-width: 0;
 }
 
-.profile-view__spotlight {
+.profile-view__section-break {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.5rem;
+  margin-top: 0.42rem;
+  padding-top: 0.86rem;
 }
 
-.profile-view__spotlight-label {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.profile-view__spotlight-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-}
-
-.profile-view__summary-notes {
-  display: grid;
-  gap: 0.65rem;
-}
-
-.profile-view__summary-note {
-  display: grid;
-  gap: 0.35rem;
-  padding: 0.78rem 0.9rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: color-mix(
-    in srgb,
-    var(--color-surface-secondary) 78%,
-    var(--color-surface)
+.profile-view__section-break::before {
+  content: "";
+  width: min(100%, 8rem);
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-accent) 58%, var(--color-border)),
+    color-mix(in srgb, var(--color-border) 24%, transparent)
   );
 }
 
-.profile-view__summary-note p {
+.profile-view__section-break-copy {
+  gap: 0.34rem;
+  max-width: 42rem;
+}
+
+.profile-view__section-break-copy .section-title {
+  font-size: clamp(1.02rem, 1.65vw, 1.18rem);
+}
+
+.profile-view__section-break-copy .body-muted {
+  max-width: 58ch;
+  line-height: 1.45;
+}
+
+.profile-view__section-break-copy p,
+.profile-view__section-break-copy h2 {
   margin: 0;
-}
-
-.profile-view__media,
-.profile-view__contributions {
-  display: grid;
-  gap: 0.8rem;
-}
-
-.profile-view__section-header p {
-  margin: 0.25rem 0 0;
 }
 
 .profile-view__message-actions {
@@ -328,10 +271,6 @@ function toUserMessage(error: unknown): string {
 
 @media (max-width: 980px) {
   .profile-view__layout {
-    grid-template-columns: 1fr;
-  }
-
-  .profile-view__summary-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 
@@ -27,6 +27,7 @@ const showsAuthStatus = computed(
   () => authStore.mode !== 'local-demo' || isAuthenticated.value,
 );
 const authMenuRef = ref<HTMLElement | null>(null);
+const navigationRef = ref<HTMLElement | null>(null);
 const authMenuOpen = ref(false);
 
 const authStatusLabel = computed(() => {
@@ -46,12 +47,36 @@ async function handleLogout() {
 onMounted(() => {
   window.addEventListener('pointerdown', handleWindowPointerDown);
   window.addEventListener('keydown', handleWindowKeydown);
+  void centerActiveNavigationItem();
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('pointerdown', handleWindowPointerDown);
   window.removeEventListener('keydown', handleWindowKeydown);
 });
+
+watch(
+  () => route.fullPath,
+  () => {
+    void centerActiveNavigationItem();
+  },
+);
+
+async function centerActiveNavigationItem() {
+  await nextTick();
+
+  const navigation = navigationRef.value;
+  const activeItem = navigation?.querySelector<HTMLElement>('.router-link-active');
+
+  if (!navigation || !activeItem || navigation.scrollWidth <= navigation.clientWidth) {
+    return;
+  }
+
+  navigation.scrollTo({
+    left: activeItem.offsetLeft - (navigation.clientWidth - activeItem.offsetWidth) / 2,
+    behavior: 'auto',
+  });
+}
 
 function toggleAuthMenu() {
   authMenuOpen.value = !authMenuOpen.value;
@@ -162,6 +187,7 @@ function handleWindowKeydown(event: KeyboardEvent) {
           data-testid="primary-nav-frame"
         >
           <nav
+            ref="navigationRef"
             class="app-shell__nav"
             :aria-label="t('shell.primaryNavigation')"
           >
@@ -468,6 +494,11 @@ function handleWindowKeydown(event: KeyboardEvent) {
     scrollbar-width: none;
   }
 
+  .app-shell__nav::after {
+    content: '';
+    flex: 0 0 1rem;
+  }
+
   .app-shell__nav::-webkit-scrollbar {
     display: none;
   }
@@ -528,6 +559,13 @@ function handleWindowKeydown(event: KeyboardEvent) {
 
   .app-shell__auth-label {
     max-width: 7.5rem;
+  }
+
+  .app-shell__auth-dropdown {
+    right: auto;
+    left: 0;
+    min-width: min(10.5rem, calc(100vw - (var(--page-padding) * 2)));
+    max-width: calc(100vw - (var(--page-padding) * 2));
   }
 
   .app-shell__nav-link {

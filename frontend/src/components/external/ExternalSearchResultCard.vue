@@ -4,7 +4,7 @@ import { RouterLink } from 'vue-router';
 
 import MediaArtwork from '@/components/media/MediaArtwork.vue';
 import { getMediaTypeLabel } from '@/components/media/media-options';
-import { getExternalSourceLabel } from '@/components/media/media-presentation';
+import { getDisplayText, getExternalSourceLabel } from '@/components/media/media-presentation';
 import { i18n } from '@/i18n';
 import type { ExternalSearchResultResponse } from '@/types/api';
 
@@ -109,11 +109,16 @@ const normalizedSubjects = computed(() =>
       .filter((subject): subject is string => Boolean(subject))
       .slice(0, 8);
   });
+const displayTitle = computed(() => getDisplayText(props.result.title));
+const displayOriginalTitle = computed(() => getDisplayText(props.result.originalTitle));
+const displayCreatorNames = computed(() =>
+  props.result.creatorNames.map((name) => getDisplayText(name)),
+);
 const descriptionPreview = computed(() => trimText(props.result.description, DESCRIPTION_PREVIEW_LIMIT));
 const hasTrimmedDescription = computed(
   () =>
     Boolean(props.result.description)
-    && descriptionPreview.value.length < (props.result.description?.trim().length ?? 0),
+    && descriptionPreview.value.length < getDisplayText(props.result.description).trim().length,
 );
 const visibleGenres = computed(() => props.result.externalGenres.slice(0, 6));
 const visibleSuggestedTags = computed(() => props.result.suggestedTags.slice(0, 6));
@@ -122,7 +127,9 @@ const summaryFacts = computed(() =>
     trackLocaleDependency();
     return [
       props.result.releaseYear ? t('externalSearch.year', { year: props.result.releaseYear }) : null,
-      props.result.originalTitle ? t('externalSearch.originalTitle', { title: props.result.originalTitle }) : null,
+      displayOriginalTitle.value
+        ? t('externalSearch.originalTitle', { title: displayOriginalTitle.value })
+        : null,
     ].filter((value): value is string => Boolean(value));
   });
 const importStatusBadge = computed(() => {
@@ -143,7 +150,7 @@ const artworkVariant = computed(() =>
 );
 
 function trimText(value: string | null, maxLength: number): string {
-  const normalized = value?.trim();
+  const normalized = getDisplayText(value).trim();
   if (!normalized) {
     return '';
   }
@@ -217,7 +224,7 @@ function toSentenceCase(value: string): string {
       <div class="external-result-card__cover-column">
         <MediaArtwork
           class="external-result-card__cover"
-          :title="result.title"
+          :title="displayTitle"
           :media-type="result.mediaType"
           :cover-url="result.coverUrl"
           :variant="artworkVariant"
@@ -245,7 +252,7 @@ function toSentenceCase(value: string): string {
           </div>
 
           <h2 class="external-result-card__title">
-            {{ result.title }}
+            {{ displayTitle }}
           </h2>
 
           <div
@@ -263,21 +270,21 @@ function toSentenceCase(value: string): string {
         </div>
 
         <div
-          v-if="result.creatorNames.length > 0"
+          v-if="displayCreatorNames.length > 0"
           class="external-result-card__section"
         >
           <p class="external-result-card__section-label">
             {{ creatorLabel }}
           </p>
           <p class="body-muted external-result-card__supporting-copy">
-            {{ result.creatorNames.join(', ') }}
+            {{ displayCreatorNames.join(', ') }}
           </p>
         </div>
 
         <p
           v-if="descriptionPreview"
           class="external-result-card__description"
-          :title="hasTrimmedDescription ? result.description ?? undefined : undefined"
+          :title="hasTrimmedDescription ? getDisplayText(result.description) || undefined : undefined"
         >
           {{ descriptionPreview }}
         </p>

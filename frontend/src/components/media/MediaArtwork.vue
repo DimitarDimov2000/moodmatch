@@ -38,7 +38,9 @@ const altText = computed(() => {
   return props.altPrefix ? `${props.altPrefix} ${props.title}` : t('mediaArtwork.coverAlt', { title: props.title });
 });
 const showImage = computed(() => Boolean(props.coverUrl) && !imageFailed.value);
-const showLoadingShell = computed(() => Boolean(props.coverUrl) && !imageReady.value && !imageFailed.value);
+const showFallback = computed(
+  () => !props.coverUrl || !imageReady.value || imageFailed.value,
+);
 
 watch(
   () => props.coverUrl,
@@ -70,8 +72,7 @@ function handleError() {
       `media-artwork--${variant}`,
       `media-artwork--${fallback.accent}`,
       {
-        'media-artwork--loading': showLoadingShell,
-        'media-artwork--fallback': !showImage,
+        'media-artwork--fallback': showFallback,
       },
     ]"
   >
@@ -88,18 +89,21 @@ function handleError() {
     >
 
     <div
-      v-if="showLoadingShell"
-      class="media-artwork__loading-shell"
-      aria-hidden="true"
-    />
-
-    <div
-      v-if="!showImage"
+      v-if="showFallback"
       class="media-artwork__fallback-copy"
       :aria-label="t('mediaArtwork.placeholder', { label: fallback.label })"
     >
-      <span class="media-artwork__label">{{ fallback.label }}</span>
-      <span class="media-artwork__title">{{ title }}</span>
+      <span
+        class="media-artwork__monogram"
+        aria-hidden="true"
+      >
+        {{ fallback.initials }}
+      </span>
+      <div class="media-artwork__fallback-body">
+        <span class="media-artwork__label">{{ fallback.label }}</span>
+        <span class="media-artwork__title">{{ title }}</span>
+        <span class="media-artwork__hint">{{ fallback.hint }}</span>
+      </div>
     </div>
   </div>
 </template>
@@ -139,13 +143,15 @@ function handleError() {
 }
 
 .media-artwork__image,
-.media-artwork__loading-shell,
 .media-artwork__fallback-copy {
   position: relative;
   z-index: 1;
 }
 
 .media-artwork__image {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -157,33 +163,41 @@ function handleError() {
   opacity: 1;
 }
 
-.media-artwork__loading-shell {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(
-      100deg,
-      rgba(255, 255, 255, 0.02) 20%,
-      rgba(255, 255, 255, 0.14) 38%,
-      rgba(255, 255, 255, 0.02) 56%
-    ),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 32%);
-  background-size: 180% 100%;
-  animation: media-artwork-shimmer 1.15s linear infinite;
-}
-
 .media-artwork__fallback-copy {
+  position: relative;
   display: grid;
-  align-content: center;
+  align-content: end;
   justify-items: start;
-  gap: 0.35rem;
+  gap: 0.5rem;
   height: 100%;
-  padding: 1rem;
+  padding: 1rem 1rem 1.05rem;
   color: rgba(255, 255, 255, 0.94);
 }
 
 .media-artwork--landscape .media-artwork__fallback-copy {
-  padding: 1rem 1.15rem;
+  padding: 0.95rem 1.1rem 1rem;
+}
+
+.media-artwork__fallback-body {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.28rem;
+  max-width: min(100%, 14rem);
+}
+
+.media-artwork__monogram {
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0.55rem;
+  z-index: 0;
+  color: rgba(255, 255, 255, 0.16);
+  font-size: clamp(2.5rem, 9vw, 4.2rem);
+  font-weight: 800;
+  letter-spacing: -0.08em;
+  line-height: 0.82;
+  pointer-events: none;
+  user-select: none;
 }
 
 .media-artwork__label {
@@ -203,12 +217,36 @@ function handleError() {
 .media-artwork__title {
   display: -webkit-box;
   overflow: hidden;
-  font-size: clamp(1rem, 2.9vw, 1.6rem);
+  font-size: clamp(1rem, 3vw, 1.42rem);
   font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 1.05;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
+}
+
+.media-artwork__hint {
+  max-width: 18ch;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+
+.media-artwork--landscape .media-artwork__fallback-body {
+  max-width: min(100%, 22rem);
+}
+
+.media-artwork--landscape .media-artwork__title {
+  font-size: clamp(0.98rem, 2vw, 1.2rem);
+}
+
+.media-artwork--landscape .media-artwork__hint {
+  max-width: 24ch;
+}
+
+.media-artwork--landscape .media-artwork__monogram {
+  font-size: clamp(2.1rem, 7vw, 3.5rem);
 }
 
 .media-artwork--film {
@@ -260,13 +298,4 @@ function handleError() {
     rgba(34, 43, 78, 0.78);
 }
 
-@keyframes media-artwork-shimmer {
-  0% {
-    background-position: 180% 0;
-  }
-
-  100% {
-    background-position: -20% 0;
-  }
-}
 </style>

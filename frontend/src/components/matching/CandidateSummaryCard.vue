@@ -2,6 +2,7 @@
 import { computed } from "vue";
 
 import MediaArtwork from "@/components/media/MediaArtwork.vue";
+import { getDisplayText } from "@/components/media/media-presentation";
 import TagChip from "@/components/tags/TagChip.vue";
 import { i18n } from "@/i18n";
 import type { CandidateMediaResponse } from "@/types/api";
@@ -58,6 +59,7 @@ const visibleTags = computed(() =>
 const hiddenTagCount = computed(() =>
   Math.max(props.candidate.media.tags.length - visibleTags.value.length, 0),
 );
+const displayTitle = computed(() => getDisplayText(props.candidate.media.title));
 const metaLine = computed(() => {
   trackLocaleDependency();
 
@@ -83,7 +85,7 @@ const metaLine = computed(() => {
     <div class="candidate-summary-card__media">
       <MediaArtwork
         class="candidate-summary-card__cover"
-        :title="candidate.media.title"
+        :title="displayTitle"
         :media-type="candidate.media.mediaType"
         :cover-url="candidate.media.coverUrl"
       />
@@ -95,7 +97,7 @@ const metaLine = computed(() => {
               {{ title ?? t('candidateCard.defaultTitle') }}
             </p>
             <h3 class="candidate-summary-card__title">
-              {{ candidate.media.title }}
+              {{ displayTitle }}
             </h3>
             <p class="candidate-summary-card__meta">
               {{ metaLine }}
@@ -110,7 +112,10 @@ const metaLine = computed(() => {
           </span>
         </div>
 
-        <p class="candidate-summary-card__copy-line">
+        <p
+          v-if="!compact"
+          class="candidate-summary-card__copy-line"
+        >
           {{ helperCopy }}
         </p>
 
@@ -118,7 +123,10 @@ const metaLine = computed(() => {
           <span class="candidate-summary-card__fact">
             {{ t('candidateCard.expectedTagCount', { count: candidate.media.tags.length }) }}
           </span>
-          <span class="candidate-summary-card__fact">
+          <span
+            v-if="!compact"
+            class="candidate-summary-card__fact"
+          >
             {{
               candidate.isCompleteForMatching
                 ? t("candidateCard.compareReady")
@@ -173,6 +181,16 @@ const metaLine = computed(() => {
   gap: 0.75rem;
 }
 
+.candidate-summary-card--compact .candidate-summary-card__copy {
+  gap: 0.55rem;
+}
+
+.candidate-summary-card--compact .candidate-summary-card__fact {
+  min-height: 1.65rem;
+  padding: 0.18rem 0.58rem;
+  font-size: 0.78rem;
+}
+
 .candidate-summary-card__media {
   display: grid;
   grid-template-columns: 6rem minmax(0, 1fr);
@@ -208,7 +226,13 @@ const metaLine = computed(() => {
 
 .candidate-summary-card__title {
   margin-top: 0.3rem;
+  display: -webkit-box;
+  overflow: hidden;
   font-size: clamp(1.1rem, 1.8vw, 1.22rem);
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .candidate-summary-card__meta {
@@ -250,6 +274,7 @@ const metaLine = computed(() => {
   align-items: center;
   min-height: 1.85rem;
   padding: 0.24rem 0.68rem;
+  align-self: start;
   border-radius: var(--radius-full);
   border: 1px solid var(--color-border);
   font-size: 0.84rem;

@@ -61,9 +61,6 @@ function toUserMessage(error: unknown): string {
   <section class="page-stack">
     <header class="page-header">
       <div>
-        <p class="eyebrow">
-          {{ t("mediaLibrary.eyebrow") }}
-        </p>
         <h1 class="page-title">
           {{ t("mediaLibrary.title") }}
         </h1>
@@ -210,6 +207,7 @@ function toUserMessage(error: unknown): string {
   display: grid;
   gap: 0.95rem;
   grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.9fr);
+  align-items: start;
 }
 
 .media-library__content,
@@ -225,7 +223,8 @@ function toUserMessage(error: unknown): string {
 .media-library__tags {
   align-self: start;
   position: sticky;
-  top: var(--shell-sticky-offset);
+  margin-top: calc(0.8rem + 1.55rem);
+  top: calc(var(--shell-sticky-offset) + 3.35rem);
 }
 
 .media-library__state-card {
@@ -247,6 +246,7 @@ function toUserMessage(error: unknown): string {
 
   .media-library__tags {
     position: static;
+    margin-top: 0;
   }
 }
 </style>

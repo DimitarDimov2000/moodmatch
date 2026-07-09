@@ -219,6 +219,13 @@ describe("DashboardView", () => {
     expect(wrapper.text()).toContain("3/3");
     expect(wrapper.text()).toContain("Vorschläge für später");
     expect(wrapper.text()).toContain("Erklärbare Vergleiche");
-    expect(wrapper.text()).toContain("Dune führt aktuell deine Matches an.");
+    expect(wrapper.get(".dashboard__hero-title").attributes("aria-label")).toBe(
+      "Dune führt aktuell deine Matches an.",
+    );
+    expect(wrapper.text()).toContain("Dune");
+    expect(wrapper.text()).toContain("führt aktuell deine Matches an.");
+    expect(wrapper.find(".dashboard__detail-grid").exists()).toBe(false);
+    expect(wrapper.find(".dashboard__overview-group").exists()).toBe(true);
+    expect(wrapper.find(".dashboard__recent-section").exists()).toBe(true);
   });
 });

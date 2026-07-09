@@ -156,7 +156,7 @@ const progressPercent = computed(() => {
   color: var(--theme-swipe-panel-emphasis-text);
 }
 
-@media (max-width: 820px) {
+@media (max-width: 560px) {
   .swipe-progress__stats {
     grid-template-columns: 1fr;
   }

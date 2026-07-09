@@ -5,6 +5,7 @@ import { RouterLink } from 'vue-router';
 import MediaArtwork from '@/components/media/MediaArtwork.vue';
 import { i18n } from '@/i18n';
 import {
+  getDisplayText,
   getExternalSourceLabel,
 } from '@/components/media/media-presentation';
 import TagChip from '@/components/tags/TagChip.vue';
@@ -52,11 +53,12 @@ const ratingLabel = computed(() =>
     ? t('common.states.noRating')
     : t('mediaCard.ratingOutOfFive', { rating: props.media.rating }),
 );
+const displayTitle = computed(() => getDisplayText(props.media.title));
 const favouriteEligible = computed(() =>
   canBeFavourite(props.media.consumptionStatus, props.media.rating),
 );
 const descriptionPreview = computed(
-  () => props.media.description?.trim() ?? '',
+  () => getDisplayText(props.media.description).trim(),
 );
 const tagSummary = computed(() =>
   props.media.tags.length === 1
@@ -71,7 +73,7 @@ const tagSummary = computed(() =>
       <div class="media-card__aside">
         <MediaArtwork
           class="media-card__cover"
-          :title="media.title"
+          :title="displayTitle"
           :media-type="media.mediaType"
           :cover-url="media.coverUrl"
         />
@@ -110,7 +112,7 @@ const tagSummary = computed(() =>
 
         <div class="media-card__header">
           <h2 class="media-card__title">
-            {{ media.title }}
+            {{ displayTitle }}
           </h2>
           <p
             v-if="subtitle"
@@ -142,12 +144,6 @@ const tagSummary = computed(() =>
           </span>
           <span class="media-card__fact">
             {{ tagSummary }}
-          </span>
-          <span
-            v-if="media.sourceType !== 'MANUAL'"
-            class="media-card__fact media-card__fact--accent"
-          >
-            {{ t('mediaCard.source', { source: sourceBadgeLabel }) }}
           </span>
         </div>
 
@@ -215,8 +211,14 @@ const tagSummary = computed(() =>
 
 .media-card__title {
   margin: 0;
+  display: -webkit-box;
+  overflow: hidden;
   font-size: clamp(1.12rem, 2vw, 1.3rem);
   letter-spacing: -0.02em;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .media-card__meta,
@@ -258,6 +260,7 @@ const tagSummary = computed(() =>
 .media-card__aside {
   display: grid;
   gap: 0.75rem;
+  align-content: start;
   justify-items: stretch;
 }
 

@@ -10,9 +10,15 @@ import {
   getGeneratedMatchExplanation,
 } from "./matching-copy";
 
-const props = defineProps<{
-  result: MatchResultResponse;
-}>();
+const props = withDefaults(
+  defineProps<{
+    result: MatchResultResponse;
+    showHeading?: boolean;
+  }>(),
+  {
+    showHeading: true,
+  },
+);
 const { t } = i18n.global;
 const activeLocale = computed(() => i18n.global.locale.value);
 const trackLocaleDependency = () => activeLocale.value;
@@ -64,13 +70,19 @@ const candidateTagNote = computed(() => {
 </script>
 
 <template>
-  <section class="match-explanation">
+  <section
+    class="match-explanation"
+    :class="{ 'match-explanation--compact': !showHeading }"
+  >
     <div class="match-explanation__top">
       <div class="match-explanation__copy">
-        <h3 class="section-title">
+        <h3
+          v-if="showHeading"
+          class="section-title"
+        >
           {{ t("matching.explanationTitle") }}
         </h3>
-        <p class="body-muted">
+        <p class="match-explanation__summary-copy body-muted">
           {{ explanationCopy }}
         </p>
       </div>
@@ -93,7 +105,10 @@ const candidateTagNote = computed(() => {
       <span class="match-explanation__fact">
         {{ t("matching.commonTags", { count: result.matchingTagCount }) }}
       </span>
-      <span class="match-explanation__fact">
+      <span
+        v-if="showHeading"
+        class="match-explanation__fact"
+      >
         {{ t("matching.expectedTags", { count: result.candidateTagCount }) }}
       </span>
     </div>
@@ -184,7 +199,7 @@ const candidateTagNote = computed(() => {
 <style scoped>
 .match-explanation {
   display: grid;
-  gap: 0.8rem;
+  gap: 0.72rem;
 }
 
 .match-explanation__top,
@@ -192,13 +207,13 @@ const candidateTagNote = computed(() => {
 .match-explanation__notes,
 .match-explanation__section {
   display: grid;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
 .match-explanation__top {
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 0.65rem;
 }
 
 .match-explanation__copy p,
@@ -206,22 +221,30 @@ const candidateTagNote = computed(() => {
   margin: 0;
 }
 
+.match-explanation__summary-copy {
+  line-height: 1.45;
+}
+
+.match-explanation--compact .match-explanation__summary-copy {
+  font-size: 0.93rem;
+}
+
 .match-explanation__facts {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
 .match-explanation__fact {
   display: inline-flex;
   align-items: center;
-  min-height: 1.8rem;
-  padding: 0.24rem 0.68rem;
+  min-height: 1.62rem;
+  padding: 0.18rem 0.56rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   background: var(--color-surface-secondary);
   color: var(--color-text-secondary);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 600;
 }
 
@@ -229,11 +252,11 @@ const candidateTagNote = computed(() => {
   display: inline-flex;
   align-items: center;
   width: fit-content;
-  min-height: 1.85rem;
-  padding: 0.24rem 0.68rem;
+  min-height: 1.7rem;
+  padding: 0.2rem 0.6rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  font-size: 0.84rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
@@ -276,19 +299,30 @@ const candidateTagNote = computed(() => {
 .match-explanation__chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem;
+  gap: 0.45rem;
+}
+
+.match-explanation__chips > *,
+.match-explanation__facts > * {
+  max-width: 100%;
+}
+
+.match-explanation__chips :deep(.tag-chip) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .match-explanation__metrics {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.55rem;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   margin: 0;
 }
 
 .match-explanation__details {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.6rem;
 }
 
 .match-explanation__summary {
@@ -303,7 +337,7 @@ const candidateTagNote = computed(() => {
 }
 
 .match-explanation__metrics div {
-  padding: 0.75rem 0.9rem;
+  padding: 0.68rem 0.82rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface-secondary);

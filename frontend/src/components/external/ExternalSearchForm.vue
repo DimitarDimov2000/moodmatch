@@ -38,21 +38,21 @@ const { t } = i18n.global;
 
 <template>
   <form
-    class="external-search-form page-card"
+    class="external-search-form"
     @submit.prevent="emit('search')"
   >
     <div
-      class="external-search-form__grid"
-      :class="{ 'external-search-form__grid--with-sort': showSort }"
+      class="external-search-form__primary"
     >
       <FormField
+        class="external-search-form__query-field"
         :label="t('externalSearch.query')"
         :hint="t('externalSearch.queryHint')"
         required
       >
         <input
           :value="query"
-          class="input"
+          class="input external-search-form__control"
           type="text"
           name="query"
           maxlength="200"
@@ -60,15 +60,21 @@ const { t } = i18n.global;
           @input="emit('update:query', ($event.target as HTMLInputElement).value)"
         >
       </FormField>
+    </div>
 
+    <div
+      class="external-search-form__secondary"
+      :class="{ 'external-search-form__secondary--with-sort': showSort }"
+    >
       <FormField
+        class="external-search-form__field"
         :label="t('externalSearch.mediaType')"
         :hint="t('externalSearch.mediaTypeHint')"
         required
       >
         <select
           :value="mediaType"
-          class="input"
+          class="input external-search-form__control"
           name="mediaType"
           @change="emit('update:mediaType', ($event.target as HTMLSelectElement).value as MediaType)"
         >
@@ -83,13 +89,14 @@ const { t } = i18n.global;
       </FormField>
 
       <FormField
+        class="external-search-form__field"
         :label="t('externalSearch.source')"
         :hint="sourceHint"
         required
       >
         <select
           :value="source"
-          class="input"
+          class="input external-search-form__control"
           name="source"
           @change="emit('update:source', ($event.target as HTMLSelectElement).value as ExternalSourceSelection)"
         >
@@ -106,13 +113,14 @@ const { t } = i18n.global;
 
       <FormField
         v-if="showSort"
+        class="external-search-form__field external-search-form__field--sort"
         :label="t('externalSearch.sort')"
         :hint="t('externalSearch.sortHint')"
         required
       >
         <select
           :value="sort"
-          class="input"
+          class="input external-search-form__control"
           name="sort"
           @change="emit('update:sort', ($event.target as HTMLSelectElement).value as ExternalSearchSort)"
         >
@@ -125,49 +133,85 @@ const { t } = i18n.global;
           </option>
         </select>
       </FormField>
-    </div>
 
-    <div class="external-search-form__actions">
-      <button
-        class="button button--primary"
-        type="submit"
-        :disabled="submitting || !query.trim()"
-      >
-        {{ submitting ? t('common.actions.loadingSearch') : t('common.actions.search') }}
-      </button>
+      <div class="external-search-form__actions">
+        <button
+          class="button button--primary external-search-form__submit"
+          type="submit"
+          :disabled="submitting || !query.trim()"
+        >
+          {{ submitting ? t('common.actions.loadingSearch') : t('common.actions.search') }}
+        </button>
+      </div>
     </div>
   </form>
 </template>
 
 <style scoped>
 .external-search-form {
+  --external-search-control-height: 2.8rem;
+  --external-search-control-radius: calc(var(--radius-md) + 1px);
   display: grid;
-  gap: 1rem;
-  padding: 1.5rem;
+  gap: 0.68rem;
 }
 
-.external-search-form__grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: minmax(0, 1.7fr) minmax(170px, 0.8fr) minmax(220px, 1fr);
+.external-search-form__primary,
+.external-search-form__query-field {
+  min-width: 0;
 }
 
-.external-search-form__grid--with-sort {
-  grid-template-columns: minmax(0, 1.6fr) minmax(170px, 0.75fr) minmax(220px, 0.95fr) minmax(180px, 0.8fr);
+.external-search-form__secondary {
+  display: grid;
+  gap: 0.68rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(7.25rem, auto);
+  align-items: end;
+}
+
+.external-search-form__secondary--with-sort {
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr)
+    minmax(0, 0.9fr)
+    minmax(7.25rem, auto);
+}
+
+.external-search-form :deep(.form-field) {
+  gap: 0.42rem;
+  min-width: 0;
+}
+
+.external-search-form__control {
+  min-height: var(--external-search-control-height);
+  border-radius: var(--external-search-control-radius);
+  font-size: 0.95rem;
 }
 
 .external-search-form__actions {
   display: flex;
-  justify-content: flex-start;
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.external-search-form__submit {
+  min-width: 7.25rem;
+  min-height: var(--external-search-control-height);
+  padding-inline: 0.95rem;
+  border-radius: var(--external-search-control-radius);
+  font-size: 0.95rem;
 }
 
 @media (max-width: 720px) {
-  .external-search-form__grid {
+  .external-search-form__secondary,
+  .external-search-form__secondary--with-sort {
     grid-template-columns: 1fr;
   }
 
   .external-search-form__actions {
     justify-content: stretch;
+  }
+
+  .external-search-form__submit {
+    width: 100%;
   }
 
   .external-search-form__actions .button {

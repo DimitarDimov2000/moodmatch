@@ -27,6 +27,9 @@ const fallbackConfigByMediaType: Record<MediaType, MediaArtworkFallbackConfig> =
   VIDEO: { hint: 'mediaArtwork.thumbnailMissing', accent: 'video' },
 };
 
+const htmlEntityPattern = /&(?:#\d+|#x[a-f0-9]+|[a-z][a-z0-9]+);/i;
+let entityDecoder: HTMLTextAreaElement | null = null;
+
 export function getExternalSourceLabel(
   source: DisplayableExternalSource | null | undefined,
 ): string {
@@ -35,6 +38,26 @@ export function getExternalSourceLabel(
   }
 
   return i18n.global.t(`labels.provider.${source}`);
+}
+
+export function getDisplayText(value: string | null | undefined): string {
+  if (typeof value !== 'string' || value.length === 0 || !htmlEntityPattern.test(value)) {
+    return value ?? '';
+  }
+
+  if (typeof document !== 'undefined') {
+    entityDecoder ??= document.createElement('textarea');
+    entityDecoder.innerHTML = value;
+    return entityDecoder.value.replace(/\u00a0/g, ' ');
+  }
+
+  return value
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ');
 }
 
 export function getMediaArtworkFallback(
@@ -57,7 +80,8 @@ export function getMediaArtworkFallback(
 }
 
 function getTitleInitials(title: string): string {
-  const tokens = title
+  const normalizedTitle = getDisplayText(title);
+  const tokens = normalizedTitle
     .trim()
     .split(/\s+/)
     .filter(Boolean)
@@ -72,5 +96,5 @@ function getTitleInitials(title: string): string {
     .join('')
     .toUpperCase();
 
-  return initials || title.slice(0, 2).toUpperCase() || 'MM';
+  return initials || normalizedTitle.slice(0, 2).toUpperCase() || 'MM';
 }

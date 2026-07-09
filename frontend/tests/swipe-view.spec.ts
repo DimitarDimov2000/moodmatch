@@ -193,7 +193,7 @@ async function mountView() {
 }
 
 async function settleDecisionAnimation() {
-  vi.advanceTimersByTime(260);
+  vi.runOnlyPendingTimers();
   await flushPromises();
 }
 
@@ -252,6 +252,53 @@ describe('SwipeView', () => {
 
     expect(wrapper.text()).toContain('Silo');
     expect(progressValues(wrapper)).toEqual(['1', '0', '1']);
+  });
+
+  it('shows distance-based drag feedback and resets below the decision threshold', async () => {
+    const wrapper = await mountView();
+    const surface = wrapper.get('.swipe-candidate-card__swipe-surface');
+    const likeFeedback = wrapper.get('.swipe-view__destination-zone--like');
+    const skipFeedback = wrapper.get('.swipe-view__destination-zone--skip');
+
+    expect(likeFeedback.text()).toContain('Passt');
+    expect(likeFeedback.text()).toContain('Merken');
+    expect(skipFeedback.text()).toContain('Überspringen');
+    expect(skipFeedback.text()).toContain('Nicht passend');
+    expect(likeFeedback.element.parentElement?.classList).toContain('swipe-view__deck');
+    expect(likeFeedback.element.closest('.swipe-candidate-card')).toBeNull();
+    expect(likeFeedback.attributes('style')).toContain('opacity: 0');
+
+    await surface.trigger('pointerdown', { pointerId: 10, clientX: 0, clientY: 0 });
+    await surface.trigger('pointermove', { pointerId: 10, clientX: 72, clientY: 4 });
+
+    expect(likeFeedback.attributes('style')).not.toContain('opacity: 0;');
+    expect(skipFeedback.attributes('style')).toContain('opacity: 0');
+
+    await surface.trigger('pointerup', { pointerId: 10, clientX: 72, clientY: 4 });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Dune');
+    expect(likeFeedback.attributes('style')).toContain('opacity: 0');
+    expect(progressValues(wrapper)).toEqual(['2', '0', '0']);
+  });
+
+  it.each([
+    { direction: 'right', deltaX: 140, expected: ['1', '1', '0'] },
+    { direction: 'left', deltaX: -140, expected: ['1', '0', '1'] },
+  ])('commits one decision after a $direction drag crosses the threshold', async ({
+    deltaX,
+    expected,
+  }) => {
+    const wrapper = await mountView();
+    const surface = wrapper.get('.swipe-candidate-card__swipe-surface');
+
+    await surface.trigger('pointerdown', { pointerId: 11, clientX: 0, clientY: 0 });
+    await surface.trigger('pointermove', { pointerId: 11, clientX: deltaX, clientY: 2 });
+    await surface.trigger('pointerup', { pointerId: 11, clientX: deltaX, clientY: 2 });
+    await settleDecisionAnimation();
+
+    expect(wrapper.text()).toContain('Silo');
+    expect(progressValues(wrapper)).toEqual(expected);
   });
 
   it('does not use vertical swipes for actions or details anymore', async () => {
@@ -338,7 +385,7 @@ describe('SwipeView', () => {
     const wrapper = await mountView();
 
     expect(wrapper.text()).toContain('Profil noch nicht bereit');
-    expect(wrapper.text()).toContain('Aktuell 2 von 3 relevanten Medien. Mehr bestätigte Tags machen deine Empfehlungen aussagekräftiger.');
+    expect(wrapper.text()).toContain('Aktuell zählen 2 von 3 relevanten Medien fürs Matching. Mehr starke Bewertungen und bestätigte Tags machen dein Profil klarer.');
     expect(wrapper.text()).toContain('Medien bewerten');
   });
 

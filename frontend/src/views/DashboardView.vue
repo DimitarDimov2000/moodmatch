@@ -9,7 +9,7 @@ import { getMatches } from "@/api/matches";
 import { getProfile } from "@/api/profile";
 import AppMessage from "@/components/common/AppMessage.vue";
 import DashboardSummaryCard from "@/components/dashboard/DashboardSummaryCard.vue";
-import { getGeneratedMatchExplanation } from "@/components/matching/matching-copy";
+import { getDisplayText } from "@/components/media/media-presentation";
 import {
   consumptionStatusLabels,
   mediaTypeLabels,
@@ -57,6 +57,11 @@ const candidateCount = computed(
 const bestMatch = computed<MatchResultResponse | null>(
   () => matching.value?.matches[0] ?? null,
 );
+const leadingMatchTitle = computed(() =>
+  bestMatch.value?.relativeScore != null
+    ? getDisplayText(bestMatch.value.candidate.media.title)
+    : "",
+);
 const recentMediaItems = computed(() =>
   [...(media.value ?? [])]
     .sort(
@@ -66,10 +71,8 @@ const recentMediaItems = computed(() =>
     )
     .slice(0, 3),
 );
-
 const heroTitle = computed(() => {
   trackLocaleDependency();
-  const match = bestMatch.value;
 
   if (mediaCount.value === 0 && candidateCount.value === 0) {
     return t("dashboard.heroEmpty");
@@ -83,14 +86,15 @@ const heroTitle = computed(() => {
     return t("dashboard.heroSuppressed");
   }
 
-  if (match?.relativeScore != null) {
-    return t("dashboard.heroLeading", {
-      title: match.candidate.media.title,
-    });
-  }
-
   return t("dashboard.heroDefault");
 });
+const showsLeadingHeroTitle = computed(() =>
+  mediaCount.value > 0
+  && candidateCount.value > 0
+  && profile.value?.isReadyForMatching !== false
+  && !matching.value?.scoresSuppressed
+  && bestMatch.value?.relativeScore != null,
+);
 
 const heroCopy = computed(() => {
   trackLocaleDependency();
@@ -154,33 +158,19 @@ const nextAction = computed(() => {
     label: t("common.actions.openMatches"),
   };
 });
-
-const focusCard = computed(() => {
+const recentCollectionAction = computed(() => {
   trackLocaleDependency();
 
-  if (bestMatch.value) {
+  if (mediaCount.value === 0) {
     return {
-      title: bestMatch.value.candidate.media.title,
-      copy: getGeneratedMatchExplanation(bestMatch.value),
-      to: { name: "matches" as const },
-      label: t("common.actions.readMatch"),
-    };
-  }
-
-  if (candidateCount.value > 0) {
-    return {
-      title: t("dashboard.focusWaitingTitle"),
-      copy: t("dashboard.focusWaitingCopy"),
-      to: { name: "candidates" as const },
-      label: t("common.actions.openCandidates"),
+      to: { name: "media-create" as const },
+      label: t("common.actions.createMedia"),
     };
   }
 
   return {
-    title: t("dashboard.focusEmptyTitle"),
-    copy: t("dashboard.focusEmptyCopy"),
-    to: { name: "candidates" as const },
-    label: t("common.actions.openCandidates"),
+    to: { name: "media-list" as const },
+    label: t("dashboard.reviewCollection"),
   };
 });
 
@@ -248,6 +238,12 @@ function toUserMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+function getRecentTagBadgeLabel(count: number): string {
+  return count === 0
+    ? t("dashboard.recentTagCountEmpty")
+    : t("dashboard.recentTagCount", { count });
+}
+
 const mediaSummaryDescription = computed(() => {
   trackLocaleDependency();
 
@@ -303,11 +299,26 @@ const matchesSummaryDescription = computed(() => {
   <section class="dashboard page-stack">
     <header class="dashboard__hero page-card">
       <div class="dashboard__hero-copy">
-        <p class="eyebrow">
-          {{ t("dashboard.eyebrow") }}
-        </p>
-        <h1 class="page-title">
-          {{ heroTitle }}
+        <h1
+          class="page-title dashboard__hero-title"
+          :class="{ 'dashboard__hero-title--leading': showsLeadingHeroTitle }"
+          :aria-label="
+            showsLeadingHeroTitle
+              ? t('dashboard.heroLeading', { title: leadingMatchTitle })
+              : undefined
+          "
+        >
+          <template v-if="showsLeadingHeroTitle">
+            <span class="dashboard__hero-title-emphasis">
+              {{ leadingMatchTitle }}
+            </span>
+            <span class="dashboard__hero-title-copy">
+              {{ t("dashboard.heroLeadingLine") }}
+            </span>
+          </template>
+          <template v-else>
+            {{ heroTitle }}
+          </template>
         </h1>
         <p class="page-copy">
           {{ heroCopy }}
@@ -353,35 +364,8 @@ const matchesSummaryDescription = computed(() => {
             >
               {{ nextAction.label }}
             </RouterLink>
-            <RouterLink
-              :to="focusCard.to"
-              class="button button--secondary"
-            >
-              {{ focusCard.label }}
-            </RouterLink>
           </div>
         </article>
-
-        <div class="dashboard__quick-actions">
-          <RouterLink
-            :to="{ name: 'media-list' }"
-            class="button button--secondary"
-          >
-            {{ t("common.actions.openMediaLibrary") }}
-          </RouterLink>
-          <RouterLink
-            :to="{ name: 'profile' }"
-            class="button button--secondary"
-          >
-            {{ t("navigation.profile") }}
-          </RouterLink>
-          <RouterLink
-            :to="{ name: 'swipe' }"
-            class="button button--secondary"
-          >
-            {{ t("navigation.swipe") }}
-          </RouterLink>
-        </div>
       </aside>
     </header>
 
@@ -425,124 +409,115 @@ const matchesSummaryDescription = computed(() => {
           </div>
         </div>
 
-        <div class="dashboard__grid">
-          <DashboardSummaryCard
-            :eyebrow="t('navigation.media')"
-            :value="String(media?.length ?? '–')"
-            :title="t('dashboard.summaryMediaTitle')"
-            :description="mediaSummaryDescription"
-            :link-to="{ name: 'media-list' }"
-            :link-label="t('common.actions.openMediaLibrary')"
-            tone="info"
-          />
+        <div class="dashboard__overview-layout">
+          <div class="dashboard__overview-group">
+            <div class="dashboard__grid">
+              <DashboardSummaryCard
+                :eyebrow="t('navigation.media')"
+                :value="String(media?.length ?? '–')"
+                :title="t('dashboard.summaryMediaTitle')"
+                :description="mediaSummaryDescription"
+                :link-to="{ name: 'media-list' }"
+                :link-label="t('common.actions.openMediaLibrary')"
+                tone="info"
+              />
 
-          <DashboardSummaryCard
-            :eyebrow="t('navigation.profile')"
-            :value="
-              profile
-                ? `${profile.profileRelevantMediaCount}/${profile.requiredProfileRelevantMediaCount}`
-                : '–'
-            "
-            :title="t('dashboard.summaryProfileTitle')"
-            :description="profileSummaryDescription"
-            :link-to="{ name: 'profile' }"
-            :link-label="t('common.actions.openProfile')"
-            :tone="profile?.isReadyForMatching ? 'success' : 'warning'"
-          />
+              <DashboardSummaryCard
+                :eyebrow="t('navigation.profile')"
+                :value="
+                  profile
+                    ? `${profile.profileRelevantMediaCount}/${profile.requiredProfileRelevantMediaCount}`
+                    : '–'
+                "
+                :title="t('dashboard.summaryProfileTitle')"
+                :description="profileSummaryDescription"
+                :link-to="{ name: 'profile' }"
+                :link-label="t('common.actions.openProfile')"
+                :tone="profile?.isReadyForMatching ? 'success' : 'warning'"
+              />
 
-          <DashboardSummaryCard
-            :eyebrow="t('navigation.candidates')"
-            :value="String(candidateSelection?.candidates.length ?? '–')"
-            :title="t('dashboard.summaryCandidatesTitle')"
-            :description="candidatesSummaryDescription"
-            :link-to="{ name: 'candidates' }"
-            :link-label="t('common.actions.openCandidates')"
-            tone="default"
-          />
+              <DashboardSummaryCard
+                :eyebrow="t('navigation.candidates')"
+                :value="String(candidateSelection?.candidates.length ?? '–')"
+                :title="t('dashboard.summaryCandidatesTitle')"
+                :description="candidatesSummaryDescription"
+                :link-to="{ name: 'candidates' }"
+                :link-label="t('common.actions.openCandidates')"
+                tone="default"
+              />
 
-          <DashboardSummaryCard
-            :eyebrow="t('navigation.matches')"
-            :value="String(matching?.matches.length ?? '–')"
-            :title="t('dashboard.summaryMatchesTitle')"
-            :description="matchesSummaryDescription"
-            :link-to="{ name: 'matches' }"
-            :link-label="t('common.actions.readMatch')"
-            :tone="matching?.scoresSuppressed ? 'warning' : 'success'"
-          />
-        </div>
-      </section>
-
-      <section class="dashboard__detail-grid">
-        <article class="page-card dashboard__detail-card">
-          <p class="eyebrow">
-            {{ t("dashboard.focusEyebrow") }}
-          </p>
-          <h2 class="section-title">
-            {{ focusCard.title }}
-          </h2>
-          <p class="body-muted">
-            {{ focusCard.copy }}
-          </p>
-          <RouterLink
-            :to="focusCard.to"
-            class="button button--secondary"
-          >
-            {{ focusCard.label }}
-          </RouterLink>
-        </article>
-
-        <article class="page-card dashboard__detail-card">
-          <div class="dashboard__detail-heading">
-            <p class="eyebrow">
-              {{ t("dashboard.recentEyebrow") }}
-            </p>
-            <h2 class="section-title">
-              {{
-                recentMediaItems.length > 0
-                  ? t("dashboard.recentTitle")
-                  : t("dashboard.recentEmptyTitle")
-              }}
-            </h2>
-            <p class="body-muted">
-              {{
-                recentMediaItems.length > 0
-                  ? t("dashboard.recentCopy")
-                  : t("dashboard.recentEmptyCopy")
-              }}
-            </p>
+              <DashboardSummaryCard
+                :eyebrow="t('navigation.matches')"
+                :value="String(matching?.matches.length ?? '–')"
+                :title="t('dashboard.summaryMatchesTitle')"
+                :description="matchesSummaryDescription"
+                :link-to="{ name: 'matches' }"
+                :link-label="t('common.actions.readMatch')"
+                :tone="matching?.scoresSuppressed ? 'warning' : 'success'"
+              />
+            </div>
           </div>
 
-          <ul
-            v-if="recentMediaItems.length > 0"
-            class="dashboard__recent-list"
-          >
-            <li
-              v-for="item in recentMediaItems"
-              :key="item.id"
-              class="dashboard__recent-item"
-            >
-              <div>
-                <p class="dashboard__recent-title">
-                  {{ item.title }}
+          <div class="dashboard__recent-section">
+            <article class="page-card dashboard__detail-card">
+              <div class="dashboard__detail-heading">
+                <p class="eyebrow">
+                  {{ t("dashboard.recentEyebrow") }}
                 </p>
-                <p class="dashboard__recent-meta">
-                  {{ mediaTypeLabels[item.mediaType] }} ·
-                  {{ consumptionStatusLabels[item.consumptionStatus]
-                  }}<span v-if="item.releaseYear">
-                    · {{ item.releaseYear }}</span>
+                <h2 class="section-title">
+                  {{
+                    recentMediaItems.length > 0
+                      ? t("dashboard.recentTitle")
+                      : t("dashboard.recentEmptyTitle")
+                  }}
+                </h2>
+                <p class="body-muted">
+                  {{
+                    recentMediaItems.length > 0
+                      ? t("dashboard.recentCopy")
+                      : t("dashboard.recentEmptyCopy")
+                  }}
                 </p>
               </div>
-              <span class="badge"> {{ t("dashboard.recentTagCount", { count: item.tags.length }) }} </span>
-            </li>
-          </ul>
 
-          <RouterLink
-            :to="{ name: 'media-list' }"
-            class="button button--secondary"
-          >
-            {{ t("common.actions.openMediaLibrary") }}
-          </RouterLink>
-        </article>
+              <ul
+                v-if="recentMediaItems.length > 0"
+                class="dashboard__recent-list"
+              >
+                <li
+                  v-for="item in recentMediaItems"
+                  :key="item.id"
+                  class="dashboard__recent-item"
+                >
+                  <div>
+                    <p class="dashboard__recent-title">
+                      {{ getDisplayText(item.title) }}
+                    </p>
+                    <p class="dashboard__recent-meta">
+                      {{ mediaTypeLabels[item.mediaType] }} ·
+                      {{ consumptionStatusLabels[item.consumptionStatus]
+                      }}<span v-if="item.releaseYear">
+                        · {{ item.releaseYear }}</span>
+                    </p>
+                  </div>
+                  <span
+                    class="badge dashboard__recent-tag-badge"
+                    :class="{ 'dashboard__recent-tag-badge--empty': item.tags.length === 0 }"
+                  >
+                    {{ getRecentTagBadgeLabel(item.tags.length) }}
+                  </span>
+                </li>
+              </ul>
+
+              <RouterLink
+                :to="recentCollectionAction.to"
+                class="button button--secondary dashboard__detail-action"
+              >
+                {{ recentCollectionAction.label }}
+              </RouterLink>
+            </article>
+          </div>
+        </div>
       </section>
     </template>
   </section>
@@ -551,9 +526,9 @@ const matchesSummaryDescription = computed(() => {
 <style scoped>
 .dashboard__hero {
   display: grid;
-  gap: 0.95rem;
+  gap: 0.82rem;
   grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.9fr);
-  padding: clamp(1.08rem, 2.3vw, 1.4rem);
+  padding: clamp(1rem, 2.1vw, 1.28rem);
   background: radial-gradient(
       circle at top right,
       color-mix(in srgb, var(--color-accent-soft) 58%, transparent),
@@ -572,11 +547,57 @@ const matchesSummaryDescription = computed(() => {
 
 .dashboard__hero-copy {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.42rem;
+}
+
+.dashboard__hero-title {
+  max-width: 18ch;
+}
+
+.dashboard__hero-title--leading {
+  display: grid;
+  gap: 0.12rem;
+  max-width: none;
+}
+
+.dashboard__hero-title-emphasis,
+.dashboard__hero-title-copy {
+  display: block;
+}
+
+.dashboard__hero-title-emphasis {
+  max-width: 20ch;
+  font-size: clamp(1.34rem, 2.55vw, 1.88rem);
+  font-weight: 800;
+  line-height: 1.04;
+  color: color-mix(in srgb, #82a7d7 45%, var(--color-text-primary));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #f6fbff 86%, var(--color-text-primary)) 0%,
+    #bfd4f1 42%,
+    #e6d6b8 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12),
+    0 8px 18px rgba(86, 112, 150, 0.16);
+  text-wrap: balance;
+}
+
+.dashboard__hero-title-copy {
+  color: var(--color-text-secondary);
+  max-width: none;
+  font-size: clamp(0.86rem, 1vw, 0.95rem);
+  font-weight: 600;
+  line-height: 1.12;
+  white-space: nowrap;
 }
 
 .dashboard__hero-copy .page-copy {
   margin: 0;
+  max-width: 58ch;
 }
 
 .dashboard__hero-badges {
@@ -609,29 +630,52 @@ const matchesSummaryDescription = computed(() => {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
-.dashboard__grid,
-.dashboard__detail-grid {
+.dashboard__overview-layout {
   display: grid;
-  gap: 0.8rem;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.9rem;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.92fr);
 }
 
-.dashboard__detail-grid {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+.dashboard__overview-group {
+  display: grid;
+  padding: 0.72rem;
+  border: 1px solid color-mix(in srgb, var(--color-border-strong) 74%, transparent);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 26%),
+    color-mix(in srgb, var(--color-surface-secondary) 64%, var(--color-surface));
+}
+
+.dashboard__grid {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+}
+
+.dashboard__recent-section {
+  display: grid;
 }
 
 .dashboard__detail-card {
+  height: 100%;
+  align-content: start;
+  justify-items: stretch;
+  grid-template-rows: auto 1fr auto;
   padding: 1rem;
 }
 
 .dashboard__detail-heading {
   display: grid;
   gap: 0.3rem;
+  justify-items: start;
 }
 
 .dashboard__recent-list {
   display: grid;
   gap: 0.6rem;
+  align-content: start;
+  width: 100%;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -657,15 +701,16 @@ const matchesSummaryDescription = computed(() => {
   margin: 0;
 }
 
-.dashboard__hero-panel-actions,
-.dashboard__quick-actions {
+.dashboard__hero-panel-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.55rem;
 }
 
-.dashboard__quick-actions > * {
-  flex: 1 1 8rem;
+.dashboard__detail-action {
+  margin-top: auto;
+  justify-self: center;
+  min-width: min(100%, 13rem);
 }
 
 .dashboard__recent-title,
@@ -675,12 +720,23 @@ const matchesSummaryDescription = computed(() => {
 
 .dashboard__recent-title {
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .dashboard__recent-meta {
   margin-top: 0.2rem;
   color: var(--color-text-secondary);
   font-size: 0.9rem;
+}
+
+.dashboard__recent-tag-badge {
+  flex: 0 0 auto;
+}
+
+.dashboard__recent-tag-badge--empty {
+  background: color-mix(in srgb, var(--color-surface-muted) 78%, transparent);
+  border-color: color-mix(in srgb, var(--color-border) 82%, transparent);
+  color: var(--color-text-muted);
 }
 
 .dashboard__message-actions {
@@ -691,23 +747,39 @@ const matchesSummaryDescription = computed(() => {
   .dashboard__hero {
     grid-template-columns: 1fr;
   }
-}
 
-@media (max-width: 720px) {
-  .dashboard__quick-actions > * {
-    flex: 1 1 10rem;
+  .dashboard__overview-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard__hero-title--leading {
+    display: grid;
+    gap: 0.28rem;
+  }
+
+  .dashboard__hero-title-copy {
+    white-space: normal;
   }
 }
 
 @media (max-width: 560px) {
-  .dashboard__hero-panel-actions > *,
-  .dashboard__quick-actions > * {
+  .dashboard__hero-panel-actions > * {
     width: 100%;
   }
 
   .dashboard__recent-item {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .dashboard__recent-tag-badge {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 560px) {
+  .dashboard__grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

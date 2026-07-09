@@ -51,26 +51,37 @@ const providerSummaryRows = computed(() => {
 
   return [
     {
+      key: 'film-series',
       label: t('externalSearch.providerSummary.filmSeriesLabel'),
-      providers: ['TMDB', 'AniList'],
+      providers: ['TMDB'],
       note: t('externalSearch.providerSummary.filmSeriesNote'),
     },
     {
+      key: 'book',
       label: t('externalSearch.providerSummary.bookLabel'),
-      providers: ['Open Library', 'AniList'],
+      providers: ['Open Library'],
       note: t('externalSearch.providerSummary.bookNote'),
     },
     {
+      key: 'anime-manga',
+      label: t('externalSearch.providerSummary.animeMangaLabel'),
+      providers: ['AniList'],
+      note: t('externalSearch.providerSummary.animeMangaNote'),
+    },
+    {
+      key: 'game',
       label: t('externalSearch.providerSummary.gameLabel'),
       providers: ['RAWG', 'Demo'],
       note: t('externalSearch.providerSummary.gameNote'),
     },
     {
+      key: 'audio',
       label: t('externalSearch.providerSummary.audioLabel'),
       providers: ['LibriVox', 'Podcast Index'],
       note: t('externalSearch.providerSummary.audioNote'),
     },
     {
+      key: 'video',
       label: t('externalSearch.providerSummary.videoLabel'),
       providers: ['YouTube'],
       note: t('externalSearch.providerSummary.videoNote'),
@@ -159,6 +170,9 @@ const automaticSearchExplanation = computed(() => {
 
   return t('externalSearch.autoExplanation');
 });
+const showPreviewPanel = computed(
+  () => youTubeResolveLoading.value || Boolean(youTubeResolveError.value) || Boolean(resolvedYouTubeResult.value),
+);
 
 async function runSearch() {
   const trimmedQuery = query.value.trim();
@@ -379,11 +393,8 @@ interface ImportState {
 
 <template>
   <section class="page-stack">
-    <header class="page-header">
+    <header class="page-header external-search-view__header">
       <div>
-        <p class="eyebrow">
-          {{ t('externalSearch.eyebrow') }}
-        </p>
         <h1 class="page-title">
           {{ t('externalSearch.title') }}
         </h1>
@@ -402,59 +413,8 @@ interface ImportState {
       </div>
     </header>
 
-    <section class="external-search-view__workflow page-card">
-      <div class="external-search-view__workflow-copy">
-        <p class="eyebrow">
-          {{ t('externalSearch.workflowEyebrow') }}
-        </p>
-        <h2 class="section-title">
-          {{ t('externalSearch.workflowTitle') }}
-        </h2>
-        <p class="body-muted">
-          {{ t('externalSearch.workflowCopy') }}
-        </p>
-      </div>
-
-      <div class="external-search-view__step-row">
-        <span class="badge">{{ t('externalSearch.workflowStepSearch') }}</span>
-        <span class="badge">{{ t('externalSearch.workflowStepPreview') }}</span>
-        <span class="badge badge--accent">{{ t('externalSearch.workflowStepImport') }}</span>
-      </div>
-
-      <div class="external-search-view__provider-grid">
-        <article
-          v-for="row in providerSummaryRows"
-          :key="row.label"
-          class="external-search-view__provider-card"
-        >
-          <p class="external-search-view__provider-label">
-            {{ row.label }}
-          </p>
-          <div class="external-search-view__provider-badges">
-            <span
-              v-for="provider in row.providers"
-              :key="provider"
-              class="badge badge--accent"
-            >
-              {{ provider }}
-            </span>
-          </div>
-          <p class="body-muted external-search-view__provider-note">
-            {{ row.note }}
-          </p>
-        </article>
-      </div>
-    </section>
-
-    <AppMessage
-      v-if="warningMessage"
-      :title="t('externalSearch.providerHintTitle')"
-      :description="warningMessage"
-      tone="info"
-    />
-
     <div class="external-search-view__entry-grid">
-      <section class="external-search-view__lane">
+      <section class="external-search-view__lane page-card">
         <div class="external-search-view__lane-copy">
           <p class="eyebrow">
             {{ t('externalSearch.resultsEyebrow') }}
@@ -465,6 +425,14 @@ interface ImportState {
           <p class="body-muted">
             {{ t('externalSearch.resultsCopy') }}
           </p>
+        </div>
+
+        <div
+          v-if="!hasSearched"
+          class="external-search-view__helper-strip"
+        >
+          <strong>{{ t('externalSearch.readyTitle') }}</strong>
+          <span>{{ t('externalSearch.readyDescription') }}</span>
         </div>
 
         <ExternalSearchForm
@@ -478,7 +446,7 @@ interface ImportState {
         />
       </section>
 
-      <section class="external-search-view__youtube-stack">
+      <section class="external-search-view__youtube-stack page-card">
         <div class="external-search-view__lane-copy">
           <p class="eyebrow">
             {{ t('externalSearch.youtubeImportEyebrow') }}
@@ -496,33 +464,95 @@ interface ImportState {
           :submitting="youTubeResolveLoading"
           @resolve="resolveYouTube"
         />
-
-        <AppMessage
-          v-if="youTubeResolveLoading"
-          :title="t('common.actions.loadingPreview')"
-          :description="t('externalSearch.resolveCard')"
-          tone="info"
-        />
-
-        <AppMessage
-          v-else-if="youTubeResolveError"
-          :title="t('externalSearch.youtubeResolveWarningTitle')"
-          :description="youTubeResolveError"
-          tone="warning"
-        />
-
-        <ExternalSearchResultCard
-          v-else-if="resolvedYouTubeResult"
-          :result="resolvedYouTubeResult"
-          :is-importing="getImportState(resolvedYouTubeResult).importing"
-          :import-error="getImportState(resolvedYouTubeResult).error"
-          :import-message="getImportState(resolvedYouTubeResult).message"
-          :imported-media-id="getImportState(resolvedYouTubeResult).mediaId"
-          :import-created="getImportState(resolvedYouTubeResult).created"
-          @import="importResult"
-        />
       </section>
     </div>
+
+    <section
+      v-if="showPreviewPanel"
+      class="external-search-view__preview page-card"
+    >
+      <div class="external-search-view__preview-copy">
+        <p class="eyebrow">
+          {{ t('externalSearch.previewEyebrow') }}
+        </p>
+        <h2 class="section-title">
+          {{ t('externalSearch.previewTitle') }}
+        </h2>
+        <p class="body-muted">
+          {{ t('externalSearch.previewCopy') }}
+        </p>
+      </div>
+
+      <AppMessage
+        v-if="youTubeResolveLoading"
+        :title="t('common.actions.loadingPreview')"
+        :description="t('externalSearch.resolveCard')"
+        tone="info"
+      />
+
+      <AppMessage
+        v-else-if="youTubeResolveError"
+        :title="t('externalSearch.youtubeResolveWarningTitle')"
+        :description="youTubeResolveError"
+        tone="warning"
+      />
+
+      <ExternalSearchResultCard
+        v-else-if="resolvedYouTubeResult"
+        :result="resolvedYouTubeResult"
+        :is-importing="getImportState(resolvedYouTubeResult).importing"
+        :import-error="getImportState(resolvedYouTubeResult).error"
+        :import-message="getImportState(resolvedYouTubeResult).message"
+        :imported-media-id="getImportState(resolvedYouTubeResult).mediaId"
+        :import-created="getImportState(resolvedYouTubeResult).created"
+        @import="importResult"
+      />
+    </section>
+
+    <section class="external-search-view__workflow page-card">
+      <div class="external-search-view__workflow-copy">
+        <p class="eyebrow">
+          {{ t('externalSearch.workflowEyebrow') }}
+        </p>
+        <h2 class="section-title">
+          {{ t('externalSearch.workflowTitle') }}
+        </h2>
+        <p class="body-muted">
+          {{ t('externalSearch.workflowCopy') }}
+        </p>
+      </div>
+
+      <div class="external-search-view__provider-list">
+        <article
+          v-for="row in providerSummaryRows"
+          :key="row.key"
+          class="external-search-view__provider-row"
+        >
+          <p class="external-search-view__provider-label">
+            {{ row.label }}
+          </p>
+          <div class="external-search-view__provider-badges">
+            <span
+              v-for="provider in row.providers"
+              :key="provider"
+              class="badge external-search-view__provider-badge"
+            >
+              {{ provider }}
+            </span>
+          </div>
+          <p class="body-muted external-search-view__provider-note">
+            {{ row.note }}
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <AppMessage
+      v-if="warningMessage"
+      :title="t('externalSearch.providerHintTitle')"
+      :description="warningMessage"
+      tone="info"
+    />
 
     <AppMessage
       v-if="loading"
@@ -554,12 +584,6 @@ interface ImportState {
         </button>
       </div>
     </AppMessage>
-
-    <AppMessage
-      v-else-if="!hasSearched"
-      :title="t('externalSearch.readyTitle')"
-      :description="t('externalSearch.readyDescription')"
-    />
 
     <AppMessage
       v-else-if="searchResponse && searchResponse.results.length === 0"
@@ -661,73 +685,146 @@ interface ImportState {
   margin-top: 1rem;
 }
 
+.external-search-view__header .page-title {
+  max-width: none;
+}
+
+.external-search-view__header .page-copy {
+  max-width: 42rem;
+}
+
 .external-search-view__workflow {
   display: grid;
-  gap: 1rem;
-  padding: clamp(1rem, 2.4vw, 1.2rem);
+  gap: 0.72rem;
+  padding: clamp(0.92rem, 2vw, 1.08rem);
 }
 
 .external-search-view__workflow-copy,
-.external-search-view__lane-copy {
+.external-search-view__lane-copy,
+.external-search-view__preview-copy {
   display: grid;
-  gap: 0.4rem;
+  gap: 0.32rem;
 }
 
 .external-search-view__workflow-copy p,
 .external-search-view__provider-label,
 .external-search-view__provider-note,
-.external-search-view__lane-copy p {
+.external-search-view__lane-copy p,
+.external-search-view__preview-copy p {
   margin: 0;
 }
 
-.external-search-view__step-row,
 .external-search-view__provider-badges {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
 }
 
-.external-search-view__provider-grid {
+.external-search-view__provider-list {
   display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.48rem;
 }
 
-.external-search-view__provider-card {
+.external-search-view__provider-row {
   display: grid;
-  gap: 0.45rem;
-  padding: 0.9rem 0.95rem;
+  gap: 0.4rem 0.8rem;
+  grid-template-columns: minmax(148px, 0.4fr) minmax(176px, 0.58fr) minmax(0, 1fr);
+  align-items: start;
+  min-height: 0;
+  padding: 0.6rem 0.74rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-surface-secondary) 78%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 38%),
+    color-mix(in srgb, var(--color-surface-secondary) 82%, transparent);
 }
 
 .external-search-view__provider-label {
   color: var(--color-text-primary);
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
+.external-search-view__provider-badge {
+  background: color-mix(in srgb, var(--color-surface) 84%, var(--color-surface-secondary));
+  border-color: color-mix(in srgb, var(--color-border-strong) 68%, transparent);
+  color: var(--color-text-primary);
+}
+
 .external-search-view__provider-note {
-  font-size: 0.88rem;
+  font-size: 0.82rem;
+  line-height: 1.36;
 }
 
 .external-search-view__entry-grid {
   display: grid;
-  gap: 1rem;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  align-items: start;
+  gap: 0.95rem;
+  grid-template-columns: minmax(0, 1.04fr) minmax(320px, 0.96fr);
+  align-items: stretch;
 }
 
 .external-search-view__lane,
 .external-search-view__results,
-.external-search-view__youtube-stack {
+.external-search-view__youtube-stack,
+.external-search-view__preview {
   display: grid;
-  gap: 1rem;
+  gap: 0.88rem;
+}
+
+.external-search-view__lane,
+.external-search-view__youtube-stack {
+  align-content: start;
+  padding: clamp(0.92rem, 1.8vw, 1.08rem);
+}
+
+.external-search-view__lane-copy {
+  min-height: 5.2rem;
+}
+
+.external-search-view__lane-copy {
+  align-content: start;
+}
+
+.external-search-view__helper-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.7rem;
+  align-items: center;
+  padding: 0.44rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--color-info) 20%, var(--color-border));
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 42%),
+    color-mix(in srgb, var(--color-info-soft) 44%, var(--color-surface));
+  color: var(--color-text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.34;
+}
+
+.external-search-view__helper-strip strong,
+.external-search-view__helper-strip span {
+  margin: 0;
+}
+
+.external-search-view__helper-strip strong {
+  color: var(--color-text-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.external-search-view__preview {
+  align-content: start;
+  padding: clamp(0.9rem, 1.9vw, 1.05rem);
 }
 
 .external-search-view__results-header {
-  padding: 1.25rem;
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.9fr);
+  align-items: end;
+  padding: 1rem 1.05rem;
 }
 
 .external-search-view__results-header h2,
@@ -752,6 +849,14 @@ interface ImportState {
 
 @media (max-width: 980px) {
   .external-search-view__entry-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .external-search-view__results-header {
+    grid-template-columns: 1fr;
+  }
+
+  .external-search-view__provider-row {
     grid-template-columns: 1fr;
   }
 }

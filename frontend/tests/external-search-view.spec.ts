@@ -44,11 +44,29 @@ describe('ExternalSearchView', () => {
       .find((candidate) => candidate.text().includes('In Mediathek importieren'));
   }
 
+  it('shows the main search area before the provider overview', () => {
+    const wrapper = mountView();
+
+    const entryGrid = wrapper.get('.external-search-view__entry-grid').element;
+    const workflow = wrapper.get('.external-search-view__workflow').element;
+
+    expect(wrapper.text()).toContain('Provider-Überblick');
+    expect(wrapper.text()).toContain('Film & Serie');
+    expect(wrapper.text()).toContain('Anime & Manga');
+    expect(wrapper.text()).toContain(
+      'Anime kommt über AniList als Film oder Serie herein; Manga und Light Novels werden als Bücher importiert.',
+    );
+    expect(wrapper.findAll('.external-search-view__provider-row')).toHaveLength(6);
+    expect(
+      Boolean(entryGrid.compareDocumentPosition(workflow) & Node.DOCUMENT_POSITION_FOLLOWING),
+    ).toBe(true);
+  });
+
   it('enables the audiobook LibriVox option without introducing music UI', async () => {
     const wrapper = mountView();
 
-    expect(wrapper.text()).toContain('Externe Medien suchen und importieren');
-    expect(wrapper.text()).toContain('Bereit für die erste Suche');
+    expect(wrapper.text()).toContain('Medien suchen & importieren');
+    expect(wrapper.text()).toContain('Bereit für die Suche');
 
     await wrapper.get('select[name="mediaType"]').setValue('AUDIOBOOK');
 
@@ -84,7 +102,7 @@ describe('ExternalSearchView', () => {
   it('enables normal youtube query search for videos while keeping the dedicated url import lane', async () => {
     const wrapper = mountView();
 
-    expect(wrapper.text()).toContain('YouTube-Video per URL oder ID prüfen');
+    expect(wrapper.text()).toContain('YouTube-URL oder ID prüfen');
     expect(wrapper.get('input[name="youtubeUrl"]').attributes('placeholder')).toContain('youtube.com/watch');
 
     await wrapper.get('select[name="mediaType"]').setValue('VIDEO');
@@ -396,7 +414,7 @@ describe('ExternalSearchView', () => {
     const wrapper = mountView();
 
     expect(wrapper.text()).toContain('Automatisch (TMDB + AniList)');
-    expect(wrapper.text()).toContain('Automatisch durchsucht alle passenden Provider für den gewählten Medientyp');
+    expect(wrapper.text()).toContain('Automatisch durchsucht TMDB und AniList');
     expect(wrapper.text()).toContain('AniList (Anime-Film)');
     expect(wrapper.get('option[value="ANILIST"]').attributes('disabled')).toBeUndefined();
 
@@ -409,6 +427,7 @@ describe('ExternalSearchView', () => {
 
     expect(wrapper.text()).toContain('AniList (Manga)');
     expect(wrapper.text()).toContain('Automatisch (Open Library + AniList)');
+    expect(wrapper.text()).toContain('Manga und Light Novels werden als normale Bücher importiert.');
     expect(wrapper.get('option[value="ANILIST"]').attributes('disabled')).toBeUndefined();
     expect(wrapper.find('option[value="ANIME"]').exists()).toBe(false);
     expect(wrapper.find('option[value="MANGA"]').exists()).toBe(false);

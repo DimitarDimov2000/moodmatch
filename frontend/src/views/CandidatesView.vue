@@ -50,11 +50,8 @@ function toUserMessage(error: unknown): string {
 
 <template>
   <section class="page-stack">
-    <header class="page-header">
+    <header class="page-header candidates-view__header">
       <div>
-        <p class="eyebrow">
-          {{ t("candidates.eyebrow") }}
-        </p>
         <h1 class="page-title">
           {{ t("candidates.title") }}
         </h1>
@@ -186,6 +183,14 @@ function toUserMessage(error: unknown): string {
 </template>
 
 <style scoped>
+.candidates-view__header .page-title {
+  max-width: none;
+}
+
+.candidates-view__header .page-copy {
+  max-width: 40rem;
+}
+
 .candidates-view__content {
   display: grid;
   gap: 0.8rem;

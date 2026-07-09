@@ -330,11 +330,11 @@ describe('page-level frontend i18n coverage', () => {
   });
 
   it.each([
-    ['/', 'Dune führt aktuell deine Matches an.', 'Dune is currently leading your matches.'],
+    ['/', 'führt aktuell deine Matches an.', 'is currently leading your matches.'],
     ['/profile', 'So versteht MoodMatch deinen Geschmack', 'How MoodMatch understands your taste'],
-    ['/external-search', 'Externe Medien suchen und importieren', 'Search and import external media'],
+    ['/external-search', 'Medien suchen & importieren', 'Search & import media'],
     ['/media', 'Deine Mediathek', 'Your media library'],
-    ['/candidates', 'Kandidaten für dein nächstes Match', 'Candidates for your next match'],
+    ['/candidates', 'Kandidaten fürs nächste Match', 'Next match candidates'],
     ['/swipe', 'Deine nächste Empfehlung', 'Your next recommendation'],
     ['/matches', 'Warum diese Titel zu dir passen', 'Why these titles fit you'],
   ])('switches %s between German and English', async (path, germanText, englishText) => {

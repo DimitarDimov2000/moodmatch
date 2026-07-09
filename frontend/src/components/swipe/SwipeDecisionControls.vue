@@ -17,12 +17,6 @@ const { t } = i18n.global;
 
 <template>
   <section class="swipe-decision-controls page-card">
-    <div class="swipe-decision-controls__copy">
-      <p class="eyebrow">
-        {{ t('swipeCards.quickDecide') }}
-      </p>
-    </div>
-
     <div
       class="swipe-decision-controls__buttons"
       role="group"
@@ -81,44 +75,31 @@ const { t } = i18n.global;
 
 <style scoped>
 .swipe-decision-controls {
-  display: grid;
-  gap: 0.7rem;
-  padding: 0.85rem 0.9rem;
+  padding: 0.72rem;
   border-color: var(--theme-swipe-panel-border);
   background: var(--theme-swipe-panel-background);
   backdrop-filter: blur(18px);
 }
 
-.swipe-decision-controls__copy {
-  display: grid;
-}
-
-.swipe-decision-controls__copy p {
-  margin: 0;
-}
-
-.swipe-decision-controls__copy .eyebrow {
-  color: var(--theme-swipe-eyebrow-color);
-}
-
 .swipe-decision-controls__buttons {
   display: grid;
-  gap: 0.6rem;
+  gap: 0.58rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .swipe-decision-controls__button {
   display: grid;
   justify-items: center;
-  gap: 0.1rem;
-  min-height: 4.1rem;
-  padding: 0.62rem 0.55rem;
-  border-radius: 1.6rem;
+  gap: 0.14rem;
+  min-height: 3.75rem;
+  padding: 0.55rem 0.5rem;
+  border-radius: 1.4rem;
   border-width: 1px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .swipe-decision-controls__icon {
-  font-size: 1.02rem;
+  font-size: 1.08rem;
   font-weight: 700;
   line-height: 1;
 }
@@ -155,13 +136,9 @@ const { t } = i18n.global;
 @media (max-width: 640px) {
   .swipe-decision-controls {
     position: sticky;
-    bottom: max(0.65rem, env(safe-area-inset-bottom));
+    bottom: max(0.7rem, env(safe-area-inset-bottom));
     z-index: 2;
     box-shadow: var(--theme-swipe-sticky-shadow);
-  }
-
-  .swipe-decision-controls__copy {
-    display: none;
   }
 }
 

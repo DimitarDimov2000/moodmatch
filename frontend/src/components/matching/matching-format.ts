@@ -66,14 +66,14 @@ export function formatPercentage(value: number | string | null): string | null {
   return `${createNumberFormatter(1).format(parsed)}${i18n.global.t('formatting.percentSuffix')}`;
 }
 
-export function getScoreTone(score: number | string | null): 'muted' | 'warning' | 'accent' | 'success' {
+export function getScoreTone(score: number | string | null): 'muted' | 'low' | 'warning' | 'success' {
   if (score === null) {
     return 'muted';
   }
 
   const parsed = Number(score);
 
-  if (Number.isNaN(parsed) || parsed <= 0) {
+  if (Number.isNaN(parsed)) {
     return 'muted';
   }
 
@@ -81,9 +81,9 @@ export function getScoreTone(score: number | string | null): 'muted' | 'warning'
     return 'success';
   }
 
-  if (parsed >= 60) {
-    return 'accent';
+  if (parsed >= 40) {
+    return 'warning';
   }
 
-  return 'warning';
+  return 'low';
 }
